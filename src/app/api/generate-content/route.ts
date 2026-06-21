@@ -6,6 +6,14 @@ import {
   isErrorResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
+import {
+  parseProContentPack,
+  proPackToLegacyFields,
+} from "@/lib/ai/content-pack"
+import { buildGenerationPrompts } from "@/lib/ai/prompts"
+import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
+import type { GeneratedContent } from "@/lib/generations"
+import { saveUserGeneration } from "@/lib/generations"
 import { parseJsonBody } from "@/lib/api/parse-body"
 import {
   extractYouTubeVideoId,
@@ -16,6 +24,61 @@ const openrouter = createOpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 })
+
+async function generateStarterContent(
+  model: ReturnType<typeof openrouter>,
+  prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "starter" }>,
+  rawTranscript: string
+): Promise<GeneratedContent> {
+  const [outputX, outputLinkedIn, outputTelegram] = await Promise.all([
+    generateText({
+      model,
+      system: prompts.twitter,
+      prompt: rawTranscript,
+      maxOutputTokens: 2000,
+    }).then((result) => result.text),
+    generateText({
+      model,
+      system: prompts.linkedin,
+      prompt: rawTranscript,
+      maxOutputTokens: 2000,
+    }).then((result) => result.text),
+    generateText({
+      model,
+      system: prompts.telegram,
+      prompt: rawTranscript,
+      maxOutputTokens: 2000,
+    }).then((result) => result.text),
+  ])
+
+  return {
+    packTier: "starter",
+    outputX,
+    outputLinkedIn,
+    outputTelegram,
+  }
+}
+
+async function generateProContent(
+  model: ReturnType<typeof openrouter>,
+  prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "pro" }>,
+  rawTranscript: string
+): Promise<GeneratedContent> {
+  const { text } = await generateText({
+    model,
+    system: prompts.system,
+    prompt: rawTranscript,
+    maxOutputTokens: 6000,
+  })
+
+  const pack = parseProContentPack(text)
+  const fields = proPackToLegacyFields(pack)
+
+  return {
+    packTier: "pro",
+    ...fields,
+  }
+}
 
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser()
@@ -41,56 +104,82 @@ export async function POST(request: Request) {
 
     const sanitizedVideoUrl = `https://www.youtube.com/watch?v=${videoId}`
 
-    const twitterPrompt =
-      "You are a viral content strategist and expert at transforming video transcripts into aggressive, catchy, viral-ready Twitter/X thread content. Convert the provided transcript into a high-impact thread with a strong hook, punchy lines, and a clear call-to-action. Output only the final thread text."
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("credits, tier, brand_voice")
+      .eq("id", user.id)
+      .maybeSingle()
 
-    const linkedinPrompt =
-      "You are a LinkedIn thought leader and expert at transforming video transcripts into aggressive, catchy, viral-ready long-form LinkedIn posts. Convert the provided transcript into a professional yet engaging post with a compelling hook, structured insights, and a clear call-to-action. Output only the final post text."
-
-    const telegramPrompt =
-      "You are a Telegram channel guru, creating aggressive, catchy, viral-ready Telegram articles from video transcripts. Convert the provided transcript into a conversational, scannable channel post with bold hooks and high energy. Output only the final article text."
-
-    const model = openrouter("anthropic/claude-3.5-sonnet")
-
-    const [outputX, outputLinkedIn, outputTelegram] = await Promise.all([
-      generateText({
-        model,
-        system: twitterPrompt,
-        prompt: rawTranscript,
-        maxOutputTokens: 2000,
-      }).then((result) => result.text),
-      generateText({
-        model,
-        system: linkedinPrompt,
-        prompt: rawTranscript,
-        maxOutputTokens: 2000,
-      }).then((result) => result.text),
-      generateText({
-        model,
-        system: telegramPrompt,
-        prompt: rawTranscript,
-        maxOutputTokens: 2000,
-      }).then((result) => result.text),
-    ])
-
-    const { error: dbError } = await supabase.from("generations").insert({
-      user_id: user.id,
-      video_url: sanitizedVideoUrl,
-      raw_transcript: rawTranscript,
-      output_x: outputX,
-      output_linkedin: outputLinkedIn,
-      output_telegram: outputTelegram,
-    })
-
-    if (dbError) {
-      console.error("Error inserting generation record:", dbError)
+    if (profileError) {
+      console.error("Error fetching user credits:", profileError)
       return NextResponse.json(
-        { error: "Failed to save generation record" },
+        { error: "Failed to verify credit balance" },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ outputX, outputLinkedIn, outputTelegram })
+    if (!profile || profile.credits <= 0) {
+      return NextResponse.json(
+        { error: INSUFFICIENT_CREDITS_MESSAGE },
+        { status: 403 }
+      )
+    }
+
+    const prompts = buildGenerationPrompts({
+      tier: profile.tier,
+      brand_voice: profile.brand_voice,
+    })
+
+    const model = openrouter("anthropic/claude-3.5-sonnet")
+
+    const generatedContent =
+      prompts.mode === "pro"
+        ? await generateProContent(model, prompts, rawTranscript)
+        : await generateStarterContent(model, prompts, rawTranscript)
+
+    const { data: deductData, error: deductError } =
+      await supabase.rpc("deduct_credit")
+
+    if (deductError) {
+      console.error("Error deducting credit after generation:", deductError)
+      return NextResponse.json(
+        { error: "Failed to deduct credit" },
+        { status: 500 }
+      )
+    }
+
+    const deductResult = deductData?.[0]
+    if (!deductResult?.success) {
+      console.error("Credit deduction rejected:", deductResult?.message)
+      return NextResponse.json(
+        { error: INSUFFICIENT_CREDITS_MESSAGE },
+        { status: 403 }
+      )
+    }
+
+    let generation
+    try {
+      generation = await saveUserGeneration(supabase, {
+        userId: user.id,
+        youtubeUrl: sanitizedVideoUrl,
+        generatedContent: {
+          ...generatedContent,
+          rawTranscript,
+        },
+      })
+    } catch (saveError) {
+      console.error("Error saving generation record:", saveError)
+      return NextResponse.json(
+        { error: "Generation completed but failed to save history" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      ...generatedContent,
+      newCredits: deductResult.new_credits,
+      generationId: generation.id,
+    })
   } catch (error) {
     console.error("Error generating content:", error)
     return NextResponse.json(

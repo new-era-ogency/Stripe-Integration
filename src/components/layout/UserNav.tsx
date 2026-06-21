@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
+import CreditBalance from "@/components/layout/CreditBalance"
 import { Button } from "@/components/ui/button"
 import { redirect } from "next/navigation"
 
@@ -26,7 +27,8 @@ export default async function UserNav() {
       </Link>
       {user ? (
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-zinc-300">{user.email}</span>
+          <CreditBalance />
+          <span className="hidden text-sm text-zinc-300 sm:inline">{user.email}</span>
           <form action={signOut}>
             <Button
               type="submit"

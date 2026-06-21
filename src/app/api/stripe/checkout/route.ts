@@ -1,9 +1,15 @@
+import Stripe from "stripe"
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
 import { parseJsonBody } from "@/lib/api/parse-body"
-import { getStripe } from "@/lib/stripe/client"
-import { getPlanConfig } from "@/lib/stripe/plans"
+import { getStarterPlanConfig } from "@/config/plans"
+import {
+  createStarterCheckoutSession,
+  getStripeErrorMessage,
+} from "@/lib/stripe/checkout"
 import { checkoutRequestSchema } from "@/lib/validation"
+
+export const runtime = "nodejs"
 
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
@@ -18,40 +24,37 @@ export async function POST(request: Request) {
   const { user } = auth
 
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => ({}))
     const parsed = parseJsonBody(body, checkoutRequestSchema)
     if (parsed instanceof NextResponse) {
       return parsed
     }
 
-    const planConfig = getPlanConfig(parsed.data.plan)
+    const planConfig = getStarterPlanConfig()
     if (!planConfig) {
+      console.error("Checkout unavailable: STRIPE_PRICE_STARTER is missing or invalid")
       return NextResponse.json(
-        { error: "Stripe price is not configured for this plan" },
+        {
+          error:
+            "Checkout is not configured. Set STRIPE_PRICE_STARTER to your €19 Stripe price ID.",
+          code: "PLAN_NOT_CONFIGURED",
+        },
         { status: 503 }
       )
     }
 
-    const stripe = getStripe()
     const appUrl = getAppUrl()
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [{ price: planConfig.priceId, quantity: 1 }],
-      client_reference_id: user.id,
-      customer_email: user.email ?? undefined,
-      metadata: {
-        supabase_user_id: user.id,
-        plan: parsed.data.plan,
-        credits: String(planConfig.credits),
-      },
-      success_url: `${appUrl}/dashboard?checkout=success`,
-      cancel_url: `${appUrl}/pricing?checkout=canceled`,
+    const session = await createStarterCheckoutSession({
+      planConfig,
+      userId: user.id,
+      customerEmail: user.email,
+      successUrl: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${appUrl}/pricing?checkout=canceled`,
     })
 
     if (!session.url) {
       return NextResponse.json(
-        { error: "Failed to create checkout session" },
+        { error: "Stripe did not return a checkout URL." },
         { status: 500 }
       )
     }
@@ -59,9 +62,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error("Stripe checkout error:", error)
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
-      { status: 500 }
-    )
+    const message = getStripeErrorMessage(error)
+    const status =
+      error instanceof Stripe.errors.StripeInvalidRequestError ? 400 : 500
+
+    return NextResponse.json({ error: message }, { status })
   }
 }

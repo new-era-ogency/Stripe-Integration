@@ -1,7 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-
-const STARTER_CREDITS = 3
+import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 
 async function ensureUserProfile(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, userId: string) {
   const { data: existing } = await supabase
@@ -11,7 +10,7 @@ async function ensureUserProfile(supabase: Awaited<ReturnType<typeof createServe
     .maybeSingle()
 
   if (!existing) {
-    await supabase.from("users").insert({ id: userId, credits: STARTER_CREDITS })
+    await supabase.from("users").insert({ id: userId, credits: DEFAULT_USER_CREDITS })
   }
 }
 

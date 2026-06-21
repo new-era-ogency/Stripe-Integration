@@ -1,10 +1,22 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import DashboardCheckoutSync from "@/components/dashboard/DashboardCheckoutSync"
+import BrandVoiceSettings from "@/components/dashboard/BrandVoiceSettings"
+import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
+import GenerationHistory from "@/components/dashboard/GenerationHistory"
 import AuthNavButtons from "@/components/layout/AuthNavButtons"
-import { CopyIcon, Loader2 } from "lucide-react"
+import CreditBalance from "@/components/layout/CreditBalance"
+import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
+import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
+import {
+  formatShortsScriptForCopy,
+  formatTwitterThreadForCopy,
+} from "@/lib/ai/content-pack"
+import { isProTier, type UserTier } from "@/lib/profile"
+import { Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,17 +27,6 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-
-type GenerationHistory = {
-  id: string
-  video_url: string
-  created_at: string
-  output_x: string
-  output_linkedin: string
-  output_telegram: string
-}
 
 type StylePreset = "viral-thread" | "deep-dive" | "punchy-short"
 
@@ -41,87 +42,96 @@ const PRESET_TONES: Record<StylePreset, string> = {
   "punchy-short": "PUNCHY",
 }
 
-const CHAR_LIMITS = {
-  x: 280,
-  linkedin: 3000,
-  telegram: 4096,
-} as const
-
-const tabTriggerClass =
-  "rounded-none border-b-2 border-transparent bg-transparent text-xs uppercase tracking-wider text-zinc-500 shadow-none data-[state=active]:border-violet-500 data-[state=active]:bg-transparent data-[state=active]:text-white"
-
-const textareaClass =
-  "min-h-[200px] resize-none rounded-lg border-zinc-800 bg-[#020202] p-4 font-sans text-sm leading-relaxed tracking-wide text-zinc-200 shadow-inner focus-visible:ring-0"
-
 const metricCardClass =
   "rounded-xl border border-zinc-900 bg-[#050505] p-4 shadow-[0_0_24px_-12px_rgba(139,92,246,0.08)]"
 
-function estimateTokens(...texts: string[]) {
-  const chars = texts.reduce((sum, t) => sum + t.length, 0)
-  return Math.max(1, Math.ceil(chars / 4))
-}
+const emptyGeneratedContent = (): GeneratedContent => ({
+  outputX: "",
+  outputLinkedIn: "",
+  outputTelegram: "",
+})
 
-function getAccountTier(credits: number | null, isGuest: boolean) {
+function getAccountTier(tier: UserTier | null, isGuest: boolean) {
   if (isGuest) return { label: "GUEST ACCESS", isPro: false }
-  if (credits === null) return { label: "—", isPro: false }
-  return credits >= 20
+  if (tier === null) return { label: "—", isPro: false }
+  return isProTier(tier)
     ? { label: "PRO PLAN", isPro: true }
-    : { label: "FREE TRIAL", isPro: false }
+    : { label: "STARTER", isPro: false }
 }
 
 export default function DashboardPage() {
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [credits, setCredits] = useState<number | null>(null)
-  const [history, setHistory] = useState<GenerationHistory[]>([])
-  const [generatedOutputs, setGeneratedOutputs] = useState({
-    outputX: "",
-    outputLinkedIn: "",
-    outputTelegram: "",
-  })
+  const [tier, setTier] = useState<UserTier>("starter")
+  const [brandVoice, setBrandVoice] = useState<string | null>(null)
+  const [tgChannelId, setTgChannelId] = useState<string | null>(null)
+  const [generations, setGenerations] = useState<GenerationRecord[]>([])
+  const [activeGenerationId, setActiveGenerationId] = useState<string | null>(null)
+  const [generatedOutputs, setGeneratedOutputs] = useState<GeneratedContent>(
+    emptyGeneratedContent
+  )
   const [isGuest, setIsGuest] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
+  const [sessionClock, setSessionClock] = useState<string | null>(null)
   const router = useRouter()
 
-  const accountTier = getAccountTier(credits, isGuest)
+  const handleCreditsUpdated = useCallback((updatedCredits: number) => {
+    setCredits(updatedCredits)
+    setIsGuest(false)
+    setAuthChecked(true)
+  }, [])
+
+  const accountTier = getAccountTier(tier, isGuest)
+  const outOfCredits =
+    !isGuest && authChecked && credits !== null && credits <= 0
 
   const usageStats = useMemo(() => {
-    const used = history.length
+    const used = generations.length
     const remaining = credits ?? 0
     const total = used + remaining
     const ratio = total > 0 ? (used / total) * 100 : 0
     return { used, remaining, total, ratio }
-  }, [history.length, credits])
+  }, [generations.length, credits])
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const response = await fetch("/api/user-data")
       if (response.status === 401) {
         setIsGuest(true)
         setCredits(null)
-        setHistory([])
+        setTier("starter")
+        setBrandVoice(null)
+        setTgChannelId(null)
+        setGenerations([])
         setAuthChecked(true)
         return
       }
       if (!response.ok) {
         setIsGuest(true)
         setCredits(null)
-        setHistory([])
+        setTier("starter")
+        setBrandVoice(null)
+        setTgChannelId(null)
+        setGenerations([])
         setAuthChecked(true)
         return
       }
       const data = await response.json()
       setIsGuest(false)
       setCredits(data.credits)
-      setHistory(data.history ?? [])
+      setTier(data.tier ?? data.profile?.tier ?? "starter")
+      setBrandVoice(data.brandVoice ?? data.profile?.brand_voice ?? null)
+      setTgChannelId(data.tgChannelId ?? data.profile?.tg_channel_id ?? null)
+      setGenerations(data.generations ?? [])
       setAuthChecked(true)
     } catch (error) {
       console.error("Error fetching user data:", error)
       setIsGuest(true)
       setAuthChecked(true)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchUserData()
@@ -134,6 +144,18 @@ export default function DashboardPage() {
     })
 
     return () => subscription.unsubscribe()
+  }, [fetchUserData])
+
+  useEffect(() => {
+    const formatClock = () =>
+      `${new Date().toISOString().slice(0, 19).replace("T", " ")} UTC`
+
+    setSessionClock(formatClock())
+    const intervalId = window.setInterval(() => {
+      setSessionClock(formatClock())
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
   }, [])
 
   const handleGenerate = async () => {
@@ -142,28 +164,13 @@ export default function DashboardPage() {
       return
     }
 
+    if (outOfCredits) {
+      router.push("/pricing")
+      return
+    }
+
     setIsLoading(true)
     try {
-      const deductResponse = await fetch("/api/deduct-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
-
-      if (!deductResponse.ok) {
-        const errorData = await deductResponse.json()
-        if (deductResponse.status === 401) {
-          router.push("/login")
-          return
-        }
-        if (deductResponse.status === 402) {
-          alert("Insufficient credits. Redirecting to pricing...")
-          router.push("/pricing")
-        } else {
-          throw new Error(errorData.error || "Failed to deduct credit")
-        }
-        return
-      }
-
       const transcriptResponse = await fetch("/api/transcript", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -186,11 +193,35 @@ export default function DashboardPage() {
 
       if (!generateResponse.ok) {
         const errorData = await generateResponse.json()
+        if (generateResponse.status === 403) {
+          setCredits(0)
+          router.push("/pricing")
+          return
+        }
+        if (generateResponse.status === 401) {
+          router.push("/login")
+          return
+        }
         throw new Error(errorData.error || "Failed to generate content")
       }
 
       const generatedContent = await generateResponse.json()
-      setGeneratedOutputs(generatedContent)
+      setGeneratedOutputs({
+        packTier: generatedContent.packTier,
+        outputX: generatedContent.outputX ?? "",
+        outputLinkedIn: generatedContent.outputLinkedIn ?? "",
+        outputTelegram: generatedContent.outputTelegram ?? "",
+        twitterThread: generatedContent.twitterThread,
+        linkedinArticle: generatedContent.linkedinArticle,
+        telegramPost: generatedContent.telegramPost,
+        shortsScript: generatedContent.shortsScript,
+      })
+      if (typeof generatedContent.newCredits === "number") {
+        setCredits(generatedContent.newCredits)
+      }
+      if (typeof generatedContent.generationId === "string") {
+        setActiveGenerationId(generatedContent.generationId)
+      }
       await fetchUserData()
     } catch (error) {
       console.error("Generation error:", error)
@@ -202,53 +233,43 @@ export default function DashboardPage() {
     }
   }
 
-  const handleViewHistory = (item: GenerationHistory) => {
-    setGeneratedOutputs({
-      outputX: item.output_x,
-      outputLinkedIn: item.output_linkedin,
-      outputTelegram: item.output_telegram,
-    })
+  const handleViewGeneration = (record: GenerationRecord) => {
+    setGeneratedOutputs(record.generated_content)
+    setActiveGenerationId(record.id)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    alert("Copied to clipboard!")
-  }
+  const handleCopyGeneration = (record: GenerationRecord) => {
+    const content = record.generated_content
+    const twitterText =
+      content.twitterThread && content.twitterThread.length > 0
+        ? formatTwitterThreadForCopy(content.twitterThread)
+        : content.outputX
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+    const combined = [
+      twitterText && `--- Twitter Thread ---\n${twitterText}`,
+      (content.linkedinArticle || content.outputLinkedIn) &&
+        `--- LinkedIn ---\n${content.linkedinArticle ?? content.outputLinkedIn}`,
+      (content.telegramPost || content.outputTelegram) &&
+        `--- Telegram ---\n${content.telegramPost ?? content.outputTelegram}`,
+      content.shortsScript &&
+        `--- Shorts Script ---\n${formatShortsScriptForCopy(content.shortsScript)}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n")
 
-  const outputTabs = [
-    {
-      value: "x" as const,
-      label: "X",
-      content: generatedOutputs.outputX,
-      charLimit: CHAR_LIMITS.x,
-    },
-    {
-      value: "linkedin" as const,
-      label: "LinkedIn",
-      content: generatedOutputs.outputLinkedIn,
-      charLimit: CHAR_LIMITS.linkedin,
-    },
-    {
-      value: "telegram" as const,
-      label: "Telegram",
-      content: generatedOutputs.outputTelegram,
-      charLimit: CHAR_LIMITS.telegram,
-    },
-  ]
+    navigator.clipboard.writeText(combined)
+    alert("Copied all platforms to clipboard!")
+  }
 
   return (
     <div className="relative min-h-screen bg-[#000000] text-white">
+      <Suspense fallback={null}>
+        <DashboardCheckoutSync
+          onCreditsUpdated={handleCreditsUpdated}
+          onRefresh={fetchUserData}
+        />
+      </Suspense>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.05)_0%,transparent_50%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:72px_72px]" />
 
@@ -266,10 +287,12 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            {!isGuest && authChecked && credits !== null ? (
-              <div className="rounded-full border border-zinc-800 bg-[#09090b] px-3 py-1.5 font-mono text-xs text-zinc-300 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
-                CREDITS · {credits}
-              </div>
+            {!isGuest && authChecked ? (
+              <CreditBalance
+                credits={credits}
+                loading={!authChecked}
+                linkToPricing
+              />
             ) : !authChecked ? (
               <div className="h-7 w-28 animate-pulse rounded-full bg-zinc-900" />
             ) : null}
@@ -293,7 +316,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <p className="font-mono text-[10px] text-zinc-700">
-            {new Date().toISOString().slice(0, 19).replace("T", " ")} UTC
+            {sessionClock ?? "— UTC"}
           </p>
         </div>
 
@@ -437,9 +460,23 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {outOfCredits ? (
+              <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-4 py-3 text-center">
+                <p className="font-mono text-xs text-amber-200/90">
+                  {INSUFFICIENT_CREDITS_MESSAGE}
+                </p>
+                <Link
+                  href="/pricing"
+                  className="mt-2 inline-block font-mono text-xs text-violet-400 underline-offset-4 hover:text-violet-300 hover:underline"
+                >
+                  View pricing plans →
+                </Link>
+              </div>
+            ) : null}
+
             <Button
               onClick={handleGenerate}
-              disabled={!youtubeUrl || isLoading}
+              disabled={!youtubeUrl || isLoading || isGuest || outOfCredits}
               className="h-11 w-full rounded-lg bg-white font-medium text-black transition-all hover:bg-zinc-200 disabled:opacity-30"
             >
               {isLoading ? (
@@ -449,6 +486,8 @@ export default function DashboardPage() {
                 </span>
               ) : isGuest ? (
                 "Sign In to Generate"
+              ) : outOfCredits ? (
+                "Upgrade to Generate"
               ) : (
                 "Execute Generation"
               )}
@@ -456,185 +495,32 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Output Tabs */}
-        {generatedOutputs.outputX && (
-          <Card className="mb-6 gap-0 rounded-xl border-zinc-900 bg-[#050505] py-0 shadow-[0_0_40px_-12px_rgba(139,92,246,0.12)]">
-            <CardHeader className="border-b border-zinc-900 px-5 py-4">
-              <CardTitle className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-                Generated Output · 3 Channels
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 py-4">
-              <Tabs defaultValue="x">
-                <TabsList className="grid h-auto w-full grid-cols-3 gap-0 rounded-none border-b border-zinc-900 bg-transparent p-0">
-                  {outputTabs.map((tab) => (
-                    <TabsTrigger
-                      key={tab.value}
-                      value={tab.value}
-                      className={tabTriggerClass}
-                    >
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {outputTabs.map((tab) => {
-                  const charCount = tab.content.length
-                  const tone = PRESET_TONES[stylePreset]
-                  return (
-                    <TabsContent
-                      key={tab.value}
-                      value={tab.value}
-                      className="mt-3 space-y-2"
-                    >
-                      <div className="flex items-center justify-between px-0.5">
-                        <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] text-zinc-600">
-                          <span>
-                            CHARS: {charCount}/{tab.charLimit}
-                          </span>
-                          <span className="text-zinc-800">|</span>
-                          <span>TONE: {tone}</span>
-                          <span className="text-zinc-800">|</span>
-                          <span>
-                            TOKENS ≈ {estimateTokens(tab.content)}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(tab.content)}
-                          className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-500 transition-colors hover:text-white"
-                          aria-label={`Copy ${tab.label} content`}
-                        >
-                          <CopyIcon className="h-3.5 w-3.5" />
-                          COPY
-                        </button>
-                      </div>
-                      <Textarea
-                        value={tab.content}
-                        readOnly
-                        className={textareaClass}
-                      />
-                    </TabsContent>
-                  )
-                })}
-              </Tabs>
-            </CardContent>
-          </Card>
-        )}
+        <BrandVoiceSettings
+          tier={tier}
+          brandVoice={brandVoice}
+          isGuest={isGuest}
+          authChecked={authChecked}
+          onSaved={setBrandVoice}
+        />
 
-        {/* History Grid */}
-        <section className="border-t border-zinc-900 pt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-600">
-              Generation History · Log
-            </h2>
-            {!isGuest && (
-              <span className="font-mono text-[10px] text-zinc-700">
-                {history.length} RECORD{history.length !== 1 ? "S" : ""}
-              </span>
-            )}
-          </div>
+        {generatedOutputs.outputX ? (
+          <GeneratedOutputPanel
+            content={generatedOutputs}
+            tier={tier}
+            tgChannelId={tgChannelId}
+            onTgChannelSaved={setTgChannelId}
+            styleTone={PRESET_TONES[stylePreset]}
+          />
+        ) : null}
 
-          {isGuest ? (
-            <div className="rounded-xl border border-dashed border-zinc-900 bg-[#020202] px-6 py-10 text-center">
-              <p className="font-mono text-[11px] text-zinc-600">
-                [SYSTEM: AUTHENTICATION REQUIRED TO ACCESS HISTORY LOG]
-              </p>
-            </div>
-          ) : history.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-950 bg-[#020202] px-6 py-12 text-center">
-              <p className="font-mono text-[11px] leading-relaxed text-zinc-600">
-                [SYSTEM: NO PREVIOUS GENERATIONS FOUND IN REGION_EU]
-              </p>
-              <p className="mt-2 font-mono text-[10px] text-zinc-800">
-                AWAITING FIRST INPUT STREAM...
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-zinc-900">
-                    <th className="pb-2 pr-3 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-                      Video URL
-                    </th>
-                    <th className="pb-2 pr-3 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-                      Date
-                    </th>
-                    <th className="pb-2 pr-3 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-                      Platforms
-                    </th>
-                    <th className="pb-2 pr-3 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-                      Tokens
-                    </th>
-                    <th className="pb-2 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item) => {
-                    const tokens = estimateTokens(
-                      item.output_x,
-                      item.output_linkedin,
-                      item.output_telegram
-                    )
-                    return (
-                      <tr
-                        key={item.id}
-                        className="border-b border-zinc-900/50"
-                      >
-                        <td className="max-w-[180px] truncate py-3 pr-3">
-                          <a
-                            href={item.video_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-[11px] text-zinc-400 transition-colors hover:text-zinc-200 hover:underline"
-                          >
-                            {item.video_url}
-                          </a>
-                        </td>
-                        <td className="whitespace-nowrap py-3 pr-3 font-mono text-[10px] text-zinc-600">
-                          {formatDate(item.created_at)}
-                        </td>
-                        <td className="py-3 pr-3">
-                          <div className="flex gap-1">
-                            {item.output_x && (
-                              <span className="rounded border border-zinc-900 px-1.5 py-0.5 font-mono text-[9px] text-zinc-500">
-                                X
-                              </span>
-                            )}
-                            {item.output_linkedin && (
-                              <span className="rounded border border-zinc-900 px-1.5 py-0.5 font-mono text-[9px] text-zinc-500">
-                                LI
-                              </span>
-                            )}
-                            {item.output_telegram && (
-                              <span className="rounded border border-zinc-900 px-1.5 py-0.5 font-mono text-[9px] text-zinc-500">
-                                TG
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 pr-3 font-mono text-[10px] text-zinc-600">
-                          ~{tokens}
-                        </td>
-                        <td className="py-3">
-                          <button
-                            type="button"
-                            onClick={() => handleViewHistory(item)}
-                            className="rounded border border-zinc-800 px-2.5 py-0.5 font-mono text-[10px] text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-zinc-200"
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        <GenerationHistory
+          generations={generations}
+          isGuest={isGuest}
+          authChecked={authChecked}
+          activeId={activeGenerationId}
+          onView={handleViewGeneration}
+          onCopy={handleCopyGeneration}
+        />
       </div>
     </div>
   )

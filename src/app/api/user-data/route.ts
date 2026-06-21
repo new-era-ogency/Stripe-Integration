@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
-
-const STARTER_CREDITS = 3
+import { DEFAULT_USER_CREDITS } from "@/lib/credits"
+import {
+  getUserGenerations,
+  toGenerationHistoryItem,
+} from "@/lib/generations"
+import type { UserTier } from "@/lib/profile"
 
 export async function GET() {
   const auth = await requireAuthenticatedUser()
@@ -14,7 +18,7 @@ export async function GET() {
   try {
     let { data: profile, error: profileError } = await supabase
       .from("users")
-      .select("credits")
+      .select("credits, tier, brand_voice, tg_channel_id")
       .eq("id", user.id)
       .maybeSingle()
 
@@ -29,8 +33,8 @@ export async function GET() {
     if (!profile) {
       const { data: created, error: insertError } = await supabase
         .from("users")
-        .insert({ id: user.id, credits: STARTER_CREDITS })
-        .select("credits")
+        .insert({ id: user.id, credits: DEFAULT_USER_CREDITS })
+        .select("credits, tier, brand_voice, tg_channel_id")
         .single()
 
       if (insertError) {
@@ -44,25 +48,20 @@ export async function GET() {
       profile = created
     }
 
-    const { data: history, error: historyError } = await supabase
-      .from("generations")
-      .select(
-        "id, video_url, created_at, output_x, output_linkedin, output_telegram"
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-
-    if (historyError) {
-      console.error("Error fetching generation history:", historyError)
-      return NextResponse.json(
-        { error: "Failed to fetch generation history" },
-        { status: 500 }
-      )
-    }
+    const generations = await getUserGenerations(supabase, user.id)
 
     return NextResponse.json({
       credits: profile.credits,
-      history: history ?? [],
+      tier: (profile.tier ?? "starter") as UserTier,
+      brandVoice: profile.brand_voice ?? null,
+      tgChannelId: profile.tg_channel_id ?? null,
+      profile: {
+        tier: (profile.tier ?? "starter") as UserTier,
+        brand_voice: profile.brand_voice ?? null,
+        tg_channel_id: profile.tg_channel_id ?? null,
+      },
+      generations,
+      history: generations.map(toGenerationHistoryItem),
     })
   } catch (error) {
     console.error("Error fetching user data:", error)

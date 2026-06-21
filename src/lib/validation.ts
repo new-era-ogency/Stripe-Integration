@@ -85,11 +85,39 @@ export const generateContentRequestSchema = z.object({
 })
 
 export const checkoutRequestSchema = z.object({
-  plan: z.enum(["starter", "pro"], {
-    errorMap: () => ({ message: "Plan must be starter or pro" }),
-  }),
+  plan: z.literal("starter").default("starter"),
+})
+
+export const telegramChannelIdSchema = z
+  .string()
+  .trim()
+  .min(3, "Channel ID is too short")
+  .max(100, "Channel ID is too long")
+  .refine(
+    (value) => value.startsWith("@") || /^-?\d+$/.test(value),
+    "Use @channelusername or a numeric channel ID (e.g. -1001234567890)"
+  )
+
+export const userSettingsSchema = z.object({
+  brandVoice: z
+    .string()
+    .trim()
+    .max(4000, "Brand voice must be 4000 characters or less")
+    .optional()
+    .nullable(),
+  tgChannelId: telegramChannelIdSchema.optional().nullable(),
+})
+
+export const telegramShareSchema = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(1, "Message text is required")
+    .max(4096, "Telegram messages cannot exceed 4096 characters"),
 })
 
 export type TranscriptRequest = z.infer<typeof transcriptRequestSchema>
 export type GenerateContentRequest = z.infer<typeof generateContentRequestSchema>
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>
+export type UserSettingsRequest = z.infer<typeof userSettingsSchema>
+export type TelegramShareRequest = z.infer<typeof telegramShareSchema>

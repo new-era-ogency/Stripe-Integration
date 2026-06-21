@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
-
-const STARTER_CREDITS = 3
+import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 
 export async function POST() {
   const auth = await requireAuthenticatedUser()
@@ -32,7 +31,7 @@ export async function POST() {
 
     const { data: created, error: insertError } = await supabase
       .from("users")
-      .insert({ id: user.id, credits: STARTER_CREDITS })
+      .insert({ id: user.id, credits: DEFAULT_USER_CREDITS })
       .select("credits")
       .single()
 

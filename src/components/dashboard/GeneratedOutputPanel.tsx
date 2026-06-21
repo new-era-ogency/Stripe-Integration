@@ -1,0 +1,380 @@
+"use client"
+
+import { useState } from "react"
+import Link from "next/link"
+import { CopyIcon, Lock, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  formatShortsScriptForCopy,
+  formatTwitterThreadForCopy,
+} from "@/lib/ai/content-pack"
+import type { GeneratedContent } from "@/lib/generations"
+import { isProTier, type UserTier } from "@/lib/profile"
+import TelegramPublishActions from "@/components/dashboard/TelegramPublishActions"
+
+type OutputTabId = "twitter" | "linkedin" | "telegram" | "shorts"
+
+type GeneratedOutputPanelProps = {
+  content: GeneratedContent
+  tier: UserTier
+  tgChannelId?: string | null
+  onTgChannelSaved?: (channelId: string) => void
+  styleTone?: string
+}
+
+const tabTriggerClass =
+  "rounded-none border-b-2 border-transparent bg-transparent px-2 py-2.5 text-[11px] uppercase tracking-wider text-zinc-500 shadow-none transition-colors data-[state=active]:border-violet-500 data-[state=active]:bg-transparent data-[state=active]:text-white sm:text-xs"
+
+const textareaClass =
+  "min-h-[220px] resize-none rounded-lg border-zinc-800 bg-[#020202] p-4 font-sans text-sm leading-relaxed tracking-wide text-zinc-200 shadow-inner focus-visible:ring-0"
+
+const PRO_LOCKED_TABS: OutputTabId[] = ["linkedin", "shorts"]
+
+function estimateTokens(...texts: string[]) {
+  const chars = texts.reduce((sum, text) => sum + text.length, 0)
+  return Math.max(1, Math.ceil(chars / 4))
+}
+
+function LockedTabPlaceholder({ variant }: { variant: "linkedin" | "shorts" }) {
+  if (variant === "shorts") {
+    return (
+      <div className="pointer-events-none select-none space-y-3 blur-sm opacity-40">
+        {["Hook", "Body", "CTA"].map((label) => (
+          <div
+            key={label}
+            className="rounded-xl border border-zinc-800/80 bg-[#020202] p-4"
+          >
+            <div className="mb-2 h-2 w-16 rounded bg-zinc-800" />
+            <div className="space-y-2">
+              <div className="h-2 w-full rounded bg-zinc-900" />
+              <div className="h-2 w-5/6 rounded bg-zinc-900" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="pointer-events-none select-none blur-sm opacity-40">
+      <div className="min-h-[280px] rounded-xl border border-zinc-800/80 bg-[#020202] p-4">
+        <div className="mb-4 h-3 w-40 rounded bg-zinc-800" />
+        <div className="space-y-2">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-2 rounded bg-zinc-900"
+              style={{ width: `${70 + (index % 3) * 10}%` }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProLockOverlay({ feature }: { feature: string }) {
+  return (
+    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl border border-violet-500/20 bg-black/60 backdrop-blur-md">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.18),transparent_70%)]" />
+      <div className="relative mx-4 max-w-sm animate-in fade-in zoom-in-95 text-center duration-300">
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/10 shadow-[0_0_30px_-8px_rgba(139,92,246,0.5)]">
+          <Lock className="size-5 animate-pulse text-violet-300" />
+        </div>
+        <p className="text-sm font-medium text-white">
+          {feature} is a Pro feature
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+          Upgrade to PRO for deep LinkedIn articles, Shorts scripts, and the
+          full 4-part Deep Content Pack.
+        </p>
+        <Button
+          asChild
+          className="mt-4 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-5 text-sm font-semibold text-white hover:from-violet-400 hover:to-indigo-400"
+        >
+          <Link href="/pricing">Upgrade to PRO</Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function CopyButton({ label, text }: { label: string; text: string }) {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text)
+    alert("Copied to clipboard!")
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-500 transition-colors hover:text-white"
+      aria-label={`Copy ${label}`}
+    >
+      <CopyIcon className="h-3.5 w-3.5" />
+      COPY
+    </button>
+  )
+}
+
+function TwitterThreadView({ tweets }: { tweets: string[] }) {
+  return (
+    <div className="space-y-3">
+      {tweets.map((tweet, index) => (
+        <div
+          key={`${index}-${tweet.slice(0, 24)}`}
+          className="rounded-xl border border-zinc-800/80 bg-[#020202] p-4"
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-violet-400/80">
+              Tweet {index + 1}/{tweets.length}
+            </span>
+            <span className="font-mono text-[10px] text-zinc-600">
+              {tweet.length}/280
+            </span>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-200">{tweet}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ShortsScriptView({
+  script,
+}: {
+  script: NonNullable<GeneratedContent["shortsScript"]>
+}) {
+  const sections = [
+    { label: "Hook", value: script.hook, accent: "text-amber-300/90" },
+    { label: "Body", value: script.body, accent: "text-sky-300/90" },
+    { label: "CTA", value: script.cta, accent: "text-emerald-300/90" },
+  ]
+
+  return (
+    <div className="space-y-3">
+      {sections.map((section) => (
+        <div
+          key={section.label}
+          className="rounded-xl border border-zinc-800/80 bg-[#020202] p-4"
+        >
+          <p
+            className={`mb-2 font-mono text-[10px] uppercase tracking-[0.25em] ${section.accent}`}
+          >
+            {section.label}
+          </p>
+          <p className="text-sm leading-relaxed text-zinc-200">
+            {section.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function GeneratedOutputPanel({
+  content,
+  tier,
+  tgChannelId = null,
+  onTgChannelSaved,
+  styleTone = "ENGAGING",
+}: GeneratedOutputPanelProps) {
+  const [activeTab, setActiveTab] = useState<OutputTabId>("twitter")
+  const isPro = isProTier(tier) || content.packTier === "pro"
+
+  const twitterTweets =
+    content.twitterThread && content.twitterThread.length > 0
+      ? content.twitterThread
+      : content.outputX
+        ? [content.outputX]
+        : []
+
+  const linkedinText = content.linkedinArticle ?? content.outputLinkedIn ?? ""
+  const telegramText = content.telegramPost ?? content.outputTelegram ?? ""
+  const shortsScript = content.shortsScript
+
+  const tabCopyText: Record<OutputTabId, string> = {
+    twitter: formatTwitterThreadForCopy(twitterTweets),
+    linkedin: linkedinText,
+    telegram: telegramText,
+    shorts: shortsScript ? formatShortsScriptForCopy(shortsScript) : "",
+  }
+
+  const tabs: { id: OutputTabId; label: string; locked: boolean }[] = [
+    { id: "twitter", label: "Twitter Thread", locked: false },
+    { id: "linkedin", label: "LinkedIn", locked: !isPro },
+    { id: "telegram", label: "Telegram", locked: false },
+    { id: "shorts", label: "Shorts Script", locked: !isPro },
+  ]
+
+  if (!content.outputX && twitterTweets.length === 0) {
+    return null
+  }
+
+  return (
+    <Card className="mb-6 gap-0 rounded-xl border-zinc-900 bg-[#050505] py-0 shadow-[0_0_40px_-12px_rgba(139,92,246,0.12)]">
+      <CardHeader className="border-b border-zinc-900 px-5 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
+            Generated Output · Deep Content Pack
+          </CardTitle>
+          {isPro ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-violet-200">
+              <Sparkles className="size-3" />
+              Pro Pack
+            </span>
+          ) : (
+            <span className="font-mono text-[10px] text-zinc-600">
+              STARTER · 2/4 UNLOCKED
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="px-5 py-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as OutputTabId)}
+        >
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-0 rounded-none border-b border-zinc-900 bg-transparent p-0 sm:grid-cols-4">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className={tabTriggerClass}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  {tab.label}
+                  {tab.locked ? (
+                    <Lock className="size-3 text-zinc-600" />
+                  ) : null}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {tabs.map((tab) => {
+            const charCount = tabCopyText[tab.id].length
+            const locked = !isPro && PRO_LOCKED_TABS.includes(tab.id)
+
+            return (
+              <TabsContent
+                key={tab.id}
+                value={tab.id}
+                className="relative mt-3 space-y-2"
+              >
+                {!locked ? (
+                  tab.id === "telegram" ? (
+                    <div className="space-y-3 px-0.5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] text-zinc-600">
+                          <span>CHARS: {charCount}</span>
+                          <span className="text-zinc-800">|</span>
+                          <span>TONE: {styleTone}</span>
+                          <span className="text-zinc-800">|</span>
+                          <span>
+                            TOKENS ≈ {estimateTokens(tabCopyText[tab.id])}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CopyButton
+                            label={tab.label}
+                            text={tabCopyText[tab.id]}
+                          />
+                          <TelegramPublishActions
+                            text={tabCopyText.telegram}
+                            tier={tier}
+                            tgChannelId={tgChannelId}
+                            onChannelSaved={onTgChannelSaved ?? (() => {})}
+                            compact
+                          />
+                        </div>
+                      </div>
+                      <TelegramPublishActions
+                        text={tabCopyText.telegram}
+                        tier={tier}
+                        tgChannelId={tgChannelId}
+                        onChannelSaved={onTgChannelSaved ?? (() => {})}
+                        showConnectOnly
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between px-0.5">
+                      <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] text-zinc-600">
+                        <span>CHARS: {charCount}</span>
+                        <span className="text-zinc-800">|</span>
+                        <span>TONE: {styleTone}</span>
+                        <span className="text-zinc-800">|</span>
+                        <span>
+                          TOKENS ≈ {estimateTokens(tabCopyText[tab.id])}
+                        </span>
+                      </div>
+                      <CopyButton label={tab.label} text={tabCopyText[tab.id]} />
+                    </div>
+                  )
+                ) : null}
+
+                <div className="relative min-h-[220px]">
+                  {tab.id === "twitter" ? (
+                    isPro && content.twitterThread?.length ? (
+                      <TwitterThreadView tweets={content.twitterThread} />
+                    ) : (
+                      <Textarea
+                        value={content.outputX}
+                        readOnly
+                        className={textareaClass}
+                      />
+                    )
+                  ) : null}
+
+                  {tab.id === "linkedin" && !locked ? (
+                    <Textarea
+                      value={linkedinText}
+                      readOnly
+                      className={`${textareaClass} min-h-[280px]`}
+                    />
+                  ) : null}
+
+                  {tab.id === "telegram" && !locked ? (
+                    <Textarea
+                      value={telegramText}
+                      readOnly
+                      className={textareaClass}
+                    />
+                  ) : null}
+
+                  {tab.id === "shorts" && !locked && shortsScript ? (
+                    <ShortsScriptView script={shortsScript} />
+                  ) : null}
+
+                  {locked ? (
+                    <>
+                      <LockedTabPlaceholder
+                        variant={tab.id === "linkedin" ? "linkedin" : "shorts"}
+                      />
+                      <ProLockOverlay
+                        feature={
+                          tab.id === "linkedin"
+                            ? "Deep LinkedIn Articles"
+                            : "Shorts Scripts"
+                        }
+                      />
+                    </>
+                  ) : null}
+                </div>
+              </TabsContent>
+            )
+          })}
+        </Tabs>
+      </CardContent>
+    </Card>
+  )
+}
