@@ -13,8 +13,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PulseFlow",
-  description: "Turn YouTube transcripts into viral-ready social content",
+  title: "PulseFlow | AI YouTube Content Generator (Threads, Articles, Scripts)",
+  description:
+    "Transform any YouTube video into viral Twitter threads, deep LinkedIn articles, and high-converting Shorts scripts in 30 seconds.",
+  openGraph: {
+    title: "PulseFlow | AI YouTube Content Generator (Threads, Articles, Scripts)",
+    description:
+      "Transform any YouTube video into viral Twitter threads, deep LinkedIn articles, and high-converting Shorts scripts in 30 seconds.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PulseFlow | AI YouTube Content Generator (Threads, Articles, Scripts)",
+    description:
+      "Transform any YouTube video into viral Twitter threads, deep LinkedIn articles, and high-converting Shorts scripts in 30 seconds.",
+  },
 };
 
 export default function RootLayout({
