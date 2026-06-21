@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import {
-  badRequestResponse,
   isErrorResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
@@ -10,6 +9,8 @@ import { sendTelegramChannelMessage } from "@/lib/telegram/publish"
 import { telegramShareSchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
+  // User identity and channel config come only from the authenticated session
+  // and database profile — never from client-supplied userId or email.
   const auth = await requireAuthenticatedUser()
   if (isErrorResponse(auth)) {
     return auth
@@ -41,14 +42,6 @@ export async function POST(request: Request) {
     if (!profile || !isProTier(profile.tier)) {
       return NextResponse.json(
         { error: "Pro tier required to publish to Telegram" },
-        { status: 403 }
-      )
-    }
-
-    const hasActiveAccess = profile.credits > 0 || isProTier(profile.tier)
-    if (!hasActiveAccess) {
-      return NextResponse.json(
-        { error: "No active credits or subscription. Upgrade to continue publishing." },
         { status: 403 }
       )
     }

@@ -197,7 +197,7 @@ export default function DashboardPage() {
 
       if (!generateResponse.ok) {
         const errorData = await generateResponse.json()
-        if (generateResponse.status === 403) {
+        if (generateResponse.status === 403 || generateResponse.status === 402) {
           setCredits(0)
           router.push("/pricing")
           return

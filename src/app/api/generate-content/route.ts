@@ -4,29 +4,27 @@ import { NextResponse } from "next/server"
 import {
   badRequestResponse,
   isErrorResponse,
+  paymentRequiredResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
 import {
   parseProContentPack,
   proPackToLegacyFields,
 } from "@/lib/ai/content-pack"
+import { getOpenRouterModel } from "@/lib/ai/openrouter"
 import { buildGenerationPrompts } from "@/lib/ai/prompts"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
 import type { GeneratedContent } from "@/lib/generations"
 import { saveUserGeneration } from "@/lib/generations"
+import { isProTier } from "@/lib/profile"
 import { parseJsonBody } from "@/lib/api/parse-body"
 import {
   extractYouTubeVideoId,
   generateContentRequestSchema,
 } from "@/lib/validation"
 
-const openrouter = createOpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-})
-
 async function generateStarterContent(
-  model: ReturnType<typeof openrouter>,
+  model: ReturnType<ReturnType<typeof createOpenAI>>,
   prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "starter" }>,
   rawTranscript: string
 ): Promise<GeneratedContent> {
@@ -60,7 +58,7 @@ async function generateStarterContent(
 }
 
 async function generateProContent(
-  model: ReturnType<typeof openrouter>,
+  model: ReturnType<ReturnType<typeof createOpenAI>>,
   prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "pro" }>,
   rawTranscript: string
 ): Promise<GeneratedContent> {
@@ -81,6 +79,8 @@ async function generateProContent(
 }
 
 export async function POST(request: Request) {
+  // Identity is resolved exclusively from the Supabase session cookie — never
+  // from request body fields such as userId or email.
   const auth = await requireAuthenticatedUser()
   if (isErrorResponse(auth)) {
     return auth
@@ -118,11 +118,38 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!profile || profile.credits <= 0) {
-      return NextResponse.json(
-        { error: INSUFFICIENT_CREDITS_MESSAGE },
-        { status: 403 }
-      )
+    if (!profile) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
+    }
+
+    const isPro = isProTier(profile.tier)
+
+    if (profile.credits <= 0 && !isPro) {
+      return paymentRequiredResponse(INSUFFICIENT_CREDITS_MESSAGE)
+    }
+
+    let newCredits = profile.credits
+
+    if (profile.credits > 0) {
+      const { data: deductData, error: deductError } =
+        await supabase.rpc("deduct_credit")
+
+      if (deductError) {
+        console.error("Error deducting credit before generation:", deductError)
+        return NextResponse.json(
+          { error: "Failed to deduct credit" },
+          { status: 500 }
+        )
+      }
+
+      const deductResult = deductData?.[0]
+      if (!deductResult?.success) {
+        return paymentRequiredResponse(
+          deductResult?.message ?? INSUFFICIENT_CREDITS_MESSAGE
+        )
+      }
+
+      newCredits = deductResult.new_credits
     }
 
     const prompts = buildGenerationPrompts({
@@ -130,32 +157,12 @@ export async function POST(request: Request) {
       brand_voice: profile.brand_voice,
     })
 
-    const model = openrouter("anthropic/claude-3.5-sonnet")
+    const model = getOpenRouterModel()
 
     const generatedContent =
       prompts.mode === "pro"
         ? await generateProContent(model, prompts, rawTranscript)
         : await generateStarterContent(model, prompts, rawTranscript)
-
-    const { data: deductData, error: deductError } =
-      await supabase.rpc("deduct_credit")
-
-    if (deductError) {
-      console.error("Error deducting credit after generation:", deductError)
-      return NextResponse.json(
-        { error: "Failed to deduct credit" },
-        { status: 500 }
-      )
-    }
-
-    const deductResult = deductData?.[0]
-    if (!deductResult?.success) {
-      console.error("Credit deduction rejected:", deductResult?.message)
-      return NextResponse.json(
-        { error: INSUFFICIENT_CREDITS_MESSAGE },
-        { status: 403 }
-      )
-    }
 
     let generation
     try {
@@ -177,7 +184,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ...generatedContent,
-      newCredits: deductResult.new_credits,
+      newCredits,
       generationId: generation.id,
     })
   } catch (error) {

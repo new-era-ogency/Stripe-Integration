@@ -33,131 +33,93 @@ export default function TermsPage() {
         <div className="mt-10 space-y-8 text-sm leading-relaxed text-zinc-400">
           <section>
             <h2 className="text-base font-medium text-zinc-200">
-              1. Acceptance of terms
+              Acceptance
             </h2>
             <p className="mt-3">
-              By accessing or using PulseFlow, you agree to these Terms of
-              Service. If you do not agree, do not use the service.
+              By using PulseFlow, you agree to these Terms of Service. If you do
+              not agree, please do not use the platform.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-medium text-zinc-200">The service</h2>
+            <p className="mt-3">
+              PulseFlow uses artificial intelligence to generate social content
+              from YouTube transcripts. You are responsible for reviewing output
+              before publishing.
             </p>
           </section>
 
           <section>
             <h2 className="text-base font-medium text-zinc-200">
-              2. Service description
-            </h2>
-            <p className="mt-3">
-              PulseFlow is a software-as-a-service platform that uses artificial
-              intelligence to generate social media content from YouTube video
-              transcripts. Output quality may vary and should be reviewed before
-              publishing.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-medium text-zinc-200">
-              3. Accounts and eligibility
-            </h2>
-            <p className="mt-3">
-              You must provide accurate account information and keep your
-              credentials secure. You are responsible for all activity under
-              your account. You must be at least 18 years old to use paid
-              features.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-medium text-zinc-200">
-              4. Credits and subscriptions
+              Credits and billing
             </h2>
             <ul className="mt-3 list-disc space-y-2 pl-5">
+              <li>One credit is consumed per successful AI generation.</li>
               <li>
-                Content generation consumes credits. One credit is deducted per
-                successful generation unless otherwise stated.
+                Subscriptions and credit packs are billed through Stripe.
               </li>
               <li>
-                Paid plans and credit packs are billed through Stripe on a
-                recurring or one-time basis as displayed at checkout.
-              </li>
-              <li>
-                Credits do not roll over unless explicitly stated in your plan.
-              </li>
-              <li>
-                We may modify pricing or plan features with reasonable notice.
+                Credits are checked and deducted server-side before any AI
+                request is processed.
               </li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-base font-medium text-zinc-200">
-              5. Refund policy
+              No-refund policy
             </h2>
             <p className="mt-3">
-              All sales are final. Because AI generations are delivered
-              instantly and consume compute resources, we do not offer refunds
-              for used or unused credits, partial billing periods, or
-              subscription charges once payment has been processed. Contact
-              support if you believe a charge was made in error.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-medium text-zinc-200">
-              6. Acceptable use
-            </h2>
-            <p className="mt-3">
-              You agree not to misuse the service, including by submitting
-              unlawful content, attempting to reverse-engineer the platform,
-              reselling access without authorization, or using automated systems
-              to abuse rate limits.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-medium text-zinc-200">
-              7. Intellectual property
-            </h2>
-            <p className="mt-3">
-              You retain ownership of content you input. Subject to these terms,
-              you may use AI-generated output for your own commercial or
-              personal purposes. PulseFlow retains all rights to the platform,
-              brand, and underlying technology.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-medium text-zinc-200">
-              8. Disclaimer and limitation of liability
-            </h2>
-            <p className="mt-3">
-              The service is provided &quot;as is&quot; without warranties of
-              any kind. PulseFlow is not liable for indirect, incidental, or
-              consequential damages arising from your use of generated content or
-              the platform.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-medium text-zinc-200">
-              9. Contact
-            </h2>
-            <p className="mt-3">
-              Questions about these terms? Email{" "}
+              All AI generation purchases are non-refundable. Each generation
+              instantly consumes third-party API compute costs (OpenRouter and
+              related providers). Once a credit is used or a billing period is
+              charged, we cannot reverse those costs. Contact{" "}
               <a
-                href="mailto:legal@pulseflow.app"
+                href="mailto:privacy@pulseflow.app"
                 className="text-violet-400 hover:text-violet-300"
               >
-                legal@pulseflow.app
+                privacy@pulseflow.app
+              </a>{" "}
+              only if you believe a charge was made in error.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-medium text-zinc-200">
+              Acceptable use
+            </h2>
+            <p className="mt-3">
+              Do not abuse the service, attempt to bypass credit limits, scrape
+              the platform, or submit unlawful content. We may suspend accounts
+              that violate these terms.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-medium text-zinc-200">
+              Data and security
+            </h2>
+            <p className="mt-3">
+              Account data is secured via Supabase authentication and
+              row-level security. You must keep your login credentials
+              confidential and notify us of unauthorized access.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-medium text-zinc-200">Contact</h2>
+            <p className="mt-3">
+              Questions about these terms:{" "}
+              <a
+                href="mailto:privacy@pulseflow.app"
+                className="text-violet-400 hover:text-violet-300"
+              >
+                privacy@pulseflow.app
               </a>
-              .
             </p>
           </section>
         </div>
-
-        <footer className="mt-12 border-t border-zinc-800 pt-8 text-sm text-zinc-500">
-          <Link href="/privacy" className="text-zinc-400 hover:text-white">
-            Privacy Policy
-          </Link>
-        </footer>
       </article>
     </div>
   )
