@@ -16,12 +16,13 @@ import {
   formatTwitterThreadForCopy,
 } from "@/lib/ai/content-pack"
 import { isProTier, type UserTier } from "@/lib/profile"
-import { Loader2 } from "lucide-react"
+import { Loader2, Sparkles, Zap } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -30,20 +31,36 @@ import { createClient } from "@/lib/supabase/client"
 
 type StylePreset = "viral-thread" | "deep-dive" | "punchy-short"
 
-const STYLE_PRESETS: { id: StylePreset; label: string }[] = [
-  { id: "viral-thread", label: "Viral Thread" },
-  { id: "deep-dive", label: "Deep Dive" },
-  { id: "punchy-short", label: "Punchy/Short" },
+const STYLE_PRESETS: {
+  id: StylePreset
+  label: string
+  description: string
+}[] = [
+  {
+    id: "viral-thread",
+    label: "Viral Thread",
+    description: "Hook-driven posts built for shares",
+  },
+  {
+    id: "deep-dive",
+    label: "Deep Dive",
+    description: "Thoughtful, authority-building content",
+  },
+  {
+    id: "punchy-short",
+    label: "Punchy/Short",
+    description: "Fast, high-impact snippets",
+  },
 ]
 
 const PRESET_TONES: Record<StylePreset, string> = {
-  "viral-thread": "ENGAGING",
-  "deep-dive": "PERSUASIVE",
-  "punchy-short": "PUNCHY",
+  "viral-thread": "Engaging",
+  "deep-dive": "Persuasive",
+  "punchy-short": "Punchy",
 }
 
-const metricCardClass =
-  "rounded-xl border border-zinc-900 bg-[#050505] p-4 shadow-[0_0_24px_-12px_rgba(139,92,246,0.08)]"
+const statCardClass =
+  "rounded-xl border border-zinc-800 bg-zinc-950 p-5 transition-colors hover:border-zinc-700/80"
 
 const emptyGeneratedContent = (): GeneratedContent => ({
   outputX: "",
@@ -51,12 +68,10 @@ const emptyGeneratedContent = (): GeneratedContent => ({
   outputTelegram: "",
 })
 
-function getAccountTier(tier: UserTier | null, isGuest: boolean) {
-  if (isGuest) return { label: "GUEST ACCESS", isPro: false }
-  if (tier === null) return { label: "—", isPro: false }
-  return isProTier(tier)
-    ? { label: "PRO PLAN", isPro: true }
-    : { label: "STARTER", isPro: false }
+function getPlanLabel(tier: UserTier | null, isGuest: boolean) {
+  if (isGuest) return "Guest"
+  if (tier === null) return "—"
+  return isProTier(tier) ? "Pro" : "Starter"
 }
 
 export default function DashboardPage() {
@@ -67,14 +82,15 @@ export default function DashboardPage() {
   const [brandVoice, setBrandVoice] = useState<string | null>(null)
   const [tgChannelId, setTgChannelId] = useState<string | null>(null)
   const [generations, setGenerations] = useState<GenerationRecord[]>([])
-  const [activeGenerationId, setActiveGenerationId] = useState<string | null>(null)
+  const [activeGenerationId, setActiveGenerationId] = useState<string | null>(
+    null
+  )
   const [generatedOutputs, setGeneratedOutputs] = useState<GeneratedContent>(
     emptyGeneratedContent
   )
   const [isGuest, setIsGuest] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
-  const [sessionClock, setSessionClock] = useState<string | null>(null)
   const router = useRouter()
 
   const handleCreditsUpdated = useCallback((updatedCredits: number) => {
@@ -83,16 +99,16 @@ export default function DashboardPage() {
     setAuthChecked(true)
   }, [])
 
-  const accountTier = getAccountTier(tier, isGuest)
+  const isPro = isProTier(tier) && !isGuest
   const outOfCredits =
     !isGuest && authChecked && credits !== null && credits <= 0
+
+  const planLabel = getPlanLabel(tier, isGuest)
 
   const usageStats = useMemo(() => {
     const used = generations.length
     const remaining = credits ?? 0
-    const total = used + remaining
-    const ratio = total > 0 ? (used / total) * 100 : 0
-    return { used, remaining, total, ratio }
+    return { used, remaining }
   }, [generations.length, credits])
 
   const fetchUserData = useCallback(async () => {
@@ -145,18 +161,6 @@ export default function DashboardPage() {
 
     return () => subscription.unsubscribe()
   }, [fetchUserData])
-
-  useEffect(() => {
-    const formatClock = () =>
-      `${new Date().toISOString().slice(0, 19).replace("T", " ")} UTC`
-
-    setSessionClock(formatClock())
-    const intervalId = window.setInterval(() => {
-      setSessionClock(formatClock())
-    }, 1000)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
 
   const handleGenerate = async () => {
     if (isGuest) {
@@ -263,29 +267,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#000000] text-white">
+    <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
       <Suspense fallback={null}>
         <DashboardCheckoutSync
           onCreditsUpdated={handleCreditsUpdated}
           onRefresh={fetchUserData}
         />
       </Suspense>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.05)_0%,transparent_50%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:72px_72px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
 
-      <header className="sticky top-0 z-30 border-b border-zinc-900 bg-[#000000]/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-sm font-black uppercase tracking-[0.35em] text-white"
-            >
-              PulseFlow
-            </Link>
-            <span className="hidden font-mono text-[10px] text-zinc-700 sm:inline">
-              v1.0 · CMD_TERMINAL
-            </span>
-          </div>
+      <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <Link
+            href="/"
+            className="text-sm font-semibold tracking-tight text-white"
+          >
+            PulseFlow
+          </Link>
           <div className="flex items-center gap-3">
             {!isGuest && authChecked ? (
               <CreditBalance
@@ -294,132 +292,103 @@ export default function DashboardPage() {
                 linkToPricing
               />
             ) : !authChecked ? (
-              <div className="h-7 w-28 animate-pulse rounded-full bg-zinc-900" />
+              <div className="h-8 w-24 animate-pulse rounded-full bg-zinc-900" />
             ) : null}
             <AuthNavButtons
-              signInClassName="rounded-full border border-zinc-800 bg-[#09090b] px-3 py-1.5 font-mono text-xs text-zinc-300 shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-colors hover:border-violet-500/30"
-              signedInClassName="rounded-full border border-zinc-800 bg-[#09090b] px-3 py-1.5 font-mono text-xs text-zinc-300 transition-colors hover:border-violet-500/30 hover:text-white"
+              signInClassName="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
+              signedInClassName="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
             />
           </div>
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 py-8">
-        <div className="mb-6 flex items-end justify-between border-b border-zinc-900 pb-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-600">
-              Content Terminal
-            </p>
-            <p className="mt-1 font-mono text-[11px] text-zinc-700">
-              SESSION_ID ·{" "}
-              {isGuest ? "ANON_GUEST" : "AUTH_ACTIVE"} · REGION_EU
-            </p>
-          </div>
-          <p className="font-mono text-[10px] text-zinc-700">
-            {sessionClock ?? "— UTC"}
+      <div className="relative z-10 mx-auto max-w-5xl px-6 py-10">
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-white">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-zinc-400">
+            Turn any YouTube video into ready-to-post content.
           </p>
         </div>
 
         {isGuest && (
-          <div className="mb-6 rounded-xl border border-zinc-900 bg-[#050505] px-4 py-3 text-center font-mono text-xs text-zinc-500">
-            [GUEST_MODE] —{" "}
-            <Link href="/" className="text-zinc-300 hover:text-white">
-              explore demo
+          <div className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-center text-sm text-zinc-400">
+            Sign in to generate content and save your history.{" "}
+            <Link href="/login" className="text-violet-400 hover:text-violet-300">
+              Sign in
             </Link>{" "}
-            ·{" "}
-            <Link href="/login" className="text-zinc-300 hover:text-white">
-              authenticate
+            or{" "}
+            <Link href="/" className="text-violet-400 hover:text-violet-300">
+              explore the homepage
             </Link>
+            .
           </div>
         )}
 
-        {/* Analytics Bar */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className={metricCardClass}>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-              Account Tier
-            </p>
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className={statCardClass}>
+            <p className="text-sm text-zinc-500">Plan</p>
             <div className="mt-2 flex items-center gap-2">
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full shadow-[0_0_6px_rgba(34,197,94,0.8)] ${
-                  isGuest ? "bg-zinc-600 shadow-none" : "bg-green-500"
-                }`}
-              />
-              <span className="bg-gradient-to-r from-zinc-200 to-zinc-500 bg-clip-text text-sm font-semibold uppercase tracking-widest text-transparent">
-                {accountTier.label}
-              </span>
+              {isPro ? (
+                <Sparkles className="size-4 text-violet-400" />
+              ) : (
+                <span className="size-2 rounded-full bg-zinc-600" />
+              )}
+              <p className="text-lg font-medium text-white">
+                {!authChecked ? "—" : isGuest ? "Guest" : `${planLabel} Plan`}
+              </p>
             </div>
-            <p className="mt-2 font-mono text-[10px] text-zinc-700">
-              UPTIME · 99.9% · NODE_ACTIVE
-            </p>
+            {!isGuest && authChecked && !isPro ? (
+              <Link
+                href="/pricing"
+                className="mt-2 inline-block text-xs text-violet-400 hover:text-violet-300"
+              >
+                Upgrade to Pro →
+              </Link>
+            ) : null}
           </div>
 
-          <div className={metricCardClass}>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-              Usage Analytics
+          <div className={statCardClass}>
+            <p className="text-sm text-zinc-500">Credits remaining</p>
+            <p className="mt-2 text-lg font-medium text-white">
+              {!authChecked || isGuest
+                ? "—"
+                : `${usageStats.remaining} remaining`}
             </p>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="font-mono text-sm text-zinc-300">
-                {isGuest ? "— / —" : `${usageStats.used} / ${usageStats.total}`}
-              </span>
-              <span className="font-mono text-[10px] text-zinc-600">
-                CREDITS
-              </span>
-            </div>
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-500"
-                style={{
-                  width: isGuest ? "0%" : `${Math.min(usageStats.ratio, 100)}%`,
-                }}
-              />
-            </div>
-            <p className="mt-2 font-mono text-[10px] text-zinc-700">
-              {isGuest
-                ? "AUTH REQUIRED FOR METRICS"
-                : `${usageStats.remaining} REMAINING · ${usageStats.used} CONSUMED`}
-            </p>
+            {!isGuest && authChecked ? (
+              <p className="mt-1 text-xs text-zinc-500">
+                1 credit per generation
+              </p>
+            ) : null}
           </div>
 
-          <div className={metricCardClass}>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-              Engine Status
+          <div className={statCardClass}>
+            <p className="text-sm text-zinc-500">Generations saved</p>
+            <p className="mt-2 text-lg font-medium text-white">
+              {!authChecked || isGuest ? "—" : usageStats.used}
             </p>
-            <p className="mt-2 text-xs leading-snug text-zinc-300">
-              Claude 3.5 Sonnet
-              <span className="text-zinc-600"> via </span>
-              OpenRouter
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="rounded border border-zinc-900 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
-                LATENCY: ~1.2s
-              </span>
-              <span className="rounded border border-green-900/50 bg-green-950/20 px-1.5 py-0.5 font-mono text-[10px] text-green-500/80">
-                STATUS: OPERATIONAL
-              </span>
-            </div>
+            {!isGuest && authChecked ? (
+              <p className="mt-1 text-xs text-zinc-500">
+                View history below
+              </p>
+            ) : null}
           </div>
         </div>
 
-        {/* Generation Card */}
-        <Card className="mb-6 gap-0 rounded-xl border-zinc-900 bg-[#050505] py-0 shadow-[0_0_40px_-12px_rgba(139,92,246,0.12)]">
-          <CardHeader className="border-b border-zinc-900 px-5 py-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-                Generate Content
-              </CardTitle>
-              <span className="font-mono text-[10px] text-zinc-700">
-                PRESET · {stylePreset.toUpperCase().replace("-", "_")}
-              </span>
-            </div>
+        <Card className="mb-8 gap-0 rounded-xl border-zinc-800 bg-zinc-950 py-0 shadow-none">
+          <CardHeader className="space-y-1 px-6 pt-6 pb-0">
+            <CardTitle className="text-base font-medium text-white">
+              Generate content
+            </CardTitle>
+            <CardDescription className="text-sm text-zinc-500">
+              Paste a YouTube link and choose how you want it written.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 px-5 py-4">
+          <CardContent className="space-y-6 px-6 py-6">
             <div className="space-y-2">
-              <Label
-                htmlFor="youtube-url"
-                className="font-mono text-[10px] uppercase tracking-widest text-zinc-600"
-              >
-                Input · YouTube URL
+              <Label htmlFor="youtube-url" className="text-sm text-zinc-300">
+                YouTube URL
               </Label>
               <Input
                 id="youtube-url"
@@ -427,49 +396,52 @@ export default function DashboardPage() {
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="h-11 rounded-lg border-zinc-800 bg-[#010101] font-mono text-sm text-white shadow-none placeholder:text-zinc-700 focus-visible:border-violet-500 focus-visible:ring-0"
+                className="h-11 rounded-lg border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20"
               />
             </div>
 
-            <div className="rounded-lg border border-zinc-900 bg-[#010101] p-3">
-              <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-                System Instructions
-              </p>
-              <p className="mb-3 font-mono text-[11px] leading-relaxed text-zinc-500">
-                Extract transcript → apply{" "}
-                <span className="text-zinc-400">
-                  {STYLE_PRESETS.find((p) => p.id === stylePreset)?.label}
-                </span>{" "}
-                tone → emit X / LinkedIn / Telegram payloads in parallel.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {STYLE_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setStylePreset(preset.id)}
-                    className={`rounded-md border px-2.5 py-1 font-mono text-[11px] transition-all ${
-                      stylePreset === preset.id
-                        ? "border-zinc-600 bg-zinc-900 text-zinc-200"
-                        : "border-zinc-900 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+            <div className="space-y-3">
+              <Label className="text-sm text-zinc-300">Tone / style preset</Label>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {STYLE_PRESETS.map((preset) => {
+                  const selected = stylePreset === preset.id
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setStylePreset(preset.id)}
+                      className={`rounded-xl border px-4 py-3 text-left transition-all ${
+                        selected
+                          ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/30"
+                          : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900"
+                      }`}
+                    >
+                      <p
+                        className={`text-sm font-medium ${
+                          selected ? "text-white" : "text-zinc-200"
+                        }`}
+                      >
+                        {preset.label}
+                      </p>
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {preset.description}
+                      </p>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
             {outOfCredits ? (
-              <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-4 py-3 text-center">
-                <p className="font-mono text-xs text-amber-200/90">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                <p className="text-sm text-amber-200/90">
                   {INSUFFICIENT_CREDITS_MESSAGE}
                 </p>
                 <Link
                   href="/pricing"
-                  className="mt-2 inline-block font-mono text-xs text-violet-400 underline-offset-4 hover:text-violet-300 hover:underline"
+                  className="mt-2 inline-block text-sm text-violet-400 hover:text-violet-300"
                 >
-                  View pricing plans →
+                  View pricing →
                 </Link>
               </div>
             ) : null}
@@ -477,19 +449,22 @@ export default function DashboardPage() {
             <Button
               onClick={handleGenerate}
               disabled={!youtubeUrl || isLoading || isGuest || outOfCredits}
-              className="h-11 w-full rounded-lg bg-white font-medium text-black transition-all hover:bg-zinc-200 disabled:opacity-30"
+              className="h-11 w-full rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-medium text-white shadow-[0_0_24px_-4px_rgba(139,92,246,0.5)] transition-all hover:from-violet-500 hover:to-indigo-500 hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6)] disabled:opacity-40 disabled:shadow-none"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
+                  Generating…
                 </span>
               ) : isGuest ? (
-                "Sign In to Generate"
+                "Sign in to generate"
               ) : outOfCredits ? (
-                "Upgrade to Generate"
+                "Upgrade to generate"
               ) : (
-                "Execute Generation"
+                <span className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Generate content
+                </span>
               )}
             </Button>
           </CardContent>

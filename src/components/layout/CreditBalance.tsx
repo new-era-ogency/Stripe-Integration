@@ -74,7 +74,7 @@ export default function CreditBalance({
     <span>Credits: {credits ?? "—"}</span>
   )
 
-  const baseClassName = `rounded-full border border-zinc-800 bg-[#09090b] px-3 py-1.5 font-mono text-xs text-zinc-300 shadow-[0_0_15px_rgba(139,92,246,0.1)] ${className}`
+  const baseClassName = `rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 ${className}`
 
   if (linkToPricing) {
     return (
