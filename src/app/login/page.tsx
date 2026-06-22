@@ -18,6 +18,17 @@ export default function LoginPage() {
         router.replace("/dashboard")
       }
     })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        router.push("/dashboard")
+        router.refresh()
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [router, supabase.auth])
 
   return (

@@ -29,9 +29,13 @@ export default function AuthNavButtons({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
+
+      if (event === "SIGNED_IN" && session) {
+        router.refresh()
+      }
     })
 
     return () => subscription.unsubscribe()
