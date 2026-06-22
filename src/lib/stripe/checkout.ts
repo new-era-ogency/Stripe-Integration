@@ -1,9 +1,17 @@
 import Stripe from "stripe"
 import { getStripe } from "@/lib/stripe/client"
-import type { PlanConfig } from "@/config/plans"
+import type { SubscriptionPlanConfig } from "@/config/plans"
+import type { SubscriptionTier } from "@/lib/subscription"
 
-export async function createStarterCheckoutSession(params: {
-  planConfig: PlanConfig
+export type CheckoutMetadata = {
+  supabase_user_id: string
+  tier: SubscriptionTier
+  plan: string
+  credits: string
+}
+
+export async function createSubscriptionCheckoutSession(params: {
+  planConfig: SubscriptionPlanConfig
   userId: string
   customerEmail?: string | null
   successUrl: string
@@ -14,19 +22,20 @@ export async function createStarterCheckoutSession(params: {
 
   if (!price.active) {
     throw new Error(
-      "This Stripe price is inactive. Activate it in the Stripe Dashboard or use a new price ID."
+      `Stripe price ${params.planConfig.priceId} is inactive. Activate it in the Stripe Dashboard.`
     )
   }
 
   if (price.type !== "recurring") {
     throw new Error(
-      "STRIPE_PRICE_STARTER must be a recurring subscription price. Create a monthly price in Stripe."
+      `${params.planConfig.envVar} must be a recurring subscription price.`
     )
   }
 
-  const metadata = {
+  const metadata: CheckoutMetadata = {
     supabase_user_id: params.userId,
-    plan: "starter",
+    tier: params.planConfig.tier,
+    plan: params.planConfig.id,
     credits: String(params.planConfig.credits),
   }
 
@@ -41,6 +50,30 @@ export async function createStarterCheckoutSession(params: {
     },
     success_url: params.successUrl,
     cancel_url: params.cancelUrl,
+  })
+}
+
+/** @deprecated Use createSubscriptionCheckoutSession */
+export async function createStarterCheckoutSession(params: {
+  planConfig: { priceId: string; credits: number }
+  userId: string
+  customerEmail?: string | null
+  successUrl: string
+  cancelUrl: string
+}) {
+  return createSubscriptionCheckoutSession({
+    planConfig: {
+      id: "pro",
+      tier: "pro",
+      name: "Pro",
+      envVar: "STRIPE_PRICE_STARTER",
+      priceId: params.planConfig.priceId,
+      credits: params.planConfig.credits,
+    },
+    userId: params.userId,
+    customerEmail: params.customerEmail,
+    successUrl: params.successUrl,
+    cancelUrl: params.cancelUrl,
   })
 }
 
@@ -73,9 +106,11 @@ export function checkoutSessionQualifiesForCredits(
 export function parseCreditsFromMetadata(
   metadata: Stripe.Metadata | null | undefined,
   sourceId: string
-): { userId: string; credits: number } {
-  const userId = metadata?.supabase_user_id
+): { userId: string; credits: number; tier: SubscriptionTier | null; plan: string | null } {
+  const userId = metadata?.supabase_user_id?.trim()
   const creditsRaw = metadata?.credits
+  const tier = metadata?.tier
+  const plan = metadata?.plan
 
   if (!userId || !creditsRaw) {
     throw new Error(`Missing credit metadata for ${sourceId}`)
@@ -86,5 +121,17 @@ export function parseCreditsFromMetadata(
     throw new Error(`Invalid credits metadata for ${sourceId}`)
   }
 
-  return { userId, credits }
+  const normalizedTier =
+    tier === "pro" || tier === "pro_max"
+      ? tier
+      : tier === "starter"
+        ? "starter"
+        : null
+
+  return {
+    userId,
+    credits,
+    tier: normalizedTier,
+    plan: plan ?? null,
+  }
 }

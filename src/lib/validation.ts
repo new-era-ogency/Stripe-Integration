@@ -84,9 +84,30 @@ export const generateContentRequestSchema = z.object({
     .max(500_000, "Transcript exceeds maximum length"),
 })
 
-export const checkoutRequestSchema = z.object({
-  plan: z.literal("starter").default("starter"),
-})
+export const checkoutRequestSchema = z
+  .object({
+    plan: z.enum(["pro", "pro_max", "starter"]).optional(),
+    tier: z.enum(["pro", "pro_max"]).optional(),
+    priceId: z
+      .string()
+      .trim()
+      .regex(/^price_/, "priceId must be a Stripe price_... ID")
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.plan && !value.tier && !value.priceId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide plan, tier, or priceId",
+        path: ["plan"],
+      })
+    }
+  })
+  .transform((value) => ({
+    plan: value.plan,
+    tier: value.tier,
+    priceId: value.priceId,
+  }))
 
 export const ensureProfileSchema = z.object({
   username: z

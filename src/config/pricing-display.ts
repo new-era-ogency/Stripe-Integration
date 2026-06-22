@@ -1,3 +1,43 @@
+export const PRO_PLAN = {
+  id: "pro" as const,
+  name: "Pro",
+  price: "€19",
+  period: "per month",
+  credits: "50 credits / month",
+  description:
+    "Deep Content Pack for creators who publish across X, LinkedIn, and Telegram.",
+  features: [
+    "50 generations per month",
+    "Deep 4-part Content Pack",
+    "LinkedIn articles + Shorts scripts",
+    "Custom brand voice",
+    "Generation history",
+    "Telegram auto-publish",
+  ],
+  buttonLabel: "Upgrade to Pro",
+  badge: "Most Popular",
+}
+
+export const PRO_MAX_PLAN = {
+  id: "pro_max" as const,
+  name: "Pro Max",
+  price: "€49",
+  period: "per month",
+  credits: "200 credits / month",
+  description:
+    "Everything in Pro plus our Viral Shorts Finder — timestamp-based hook extraction.",
+  features: [
+    "200 generations per month",
+    "Everything in Pro",
+    "🔥 Viral Shorts Hooks extractor",
+    "Timestamped clip windows + hook scores",
+    "Ready-to-speak scripts + shot lists",
+    "Premium AI model (Sonnet 4 class)",
+  ],
+  buttonLabel: "Go Pro Max",
+  badge: "AI Content Factory",
+}
+
 export const STARTER_PLAN = {
   id: "starter" as const,
   name: "Starter",

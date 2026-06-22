@@ -9,13 +9,14 @@ import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
 import GenerationHistory from "@/components/dashboard/GenerationHistory"
 import AuthNavButtons from "@/components/layout/AuthNavButtons"
 import CreditBalance from "@/components/layout/CreditBalance"
+import SubscriptionTierBadge from "@/components/layout/SubscriptionTierBadge"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
 import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
 import {
   formatShortsScriptForCopy,
   formatTwitterThreadForCopy,
 } from "@/lib/ai/content-pack"
-import { isProTier, type UserTier } from "@/lib/profile"
+import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
 import { Loader2, Sparkles, Zap } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -71,7 +72,9 @@ const emptyGeneratedContent = (): GeneratedContent => ({
 function getPlanLabel(tier: UserTier | null, isGuest: boolean) {
   if (isGuest) return "Guest"
   if (tier === null) return "—"
-  return isProTier(tier) ? "Pro" : "Starter"
+  if (isProMaxTier(tier)) return "Pro Max"
+  if (isProTier(tier)) return "Pro"
+  return "Starter"
 }
 
 export default function DashboardPage() {
@@ -100,6 +103,7 @@ export default function DashboardPage() {
   }, [])
 
   const isPro = isProTier(tier) && !isGuest
+  const isProMax = isProMaxTier(tier) && !isGuest
   const outOfCredits =
     !isGuest && authChecked && credits !== null && credits <= 0
 
@@ -277,14 +281,21 @@ export default function DashboardPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
 
       <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="text-sm font-semibold tracking-tight text-white"
-          >
-            PulseFlow
-          </Link>
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-6 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/"
+              className="shrink-0 text-sm font-semibold tracking-tight text-white"
+            >
+              PulseFlow
+            </Link>
+            {!isGuest && authChecked ? (
+              <SubscriptionTierBadge tier={tier} isGuest={false} />
+            ) : !authChecked ? (
+              <div className="h-9 w-[7.5rem] animate-pulse rounded-full bg-zinc-900" />
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
             {!isGuest && authChecked ? (
               <CreditBalance
                 credits={credits}
@@ -334,7 +345,9 @@ export default function DashboardPage() {
                 <div className="h-7 w-28 animate-pulse rounded bg-zinc-900" />
               ) : (
                 <>
-                  {isPro ? (
+                  {isProMax ? (
+                    <Zap className="size-4 text-orange-400" />
+                  ) : isPro ? (
                     <Sparkles className="size-4 text-violet-400" />
                   ) : (
                     <span className="size-2 rounded-full bg-zinc-600" />
@@ -351,6 +364,13 @@ export default function DashboardPage() {
                 className="mt-2 inline-block text-xs text-violet-400 hover:text-violet-300"
               >
                 Upgrade to Pro →
+              </Link>
+            ) : !isGuest && authChecked && isPro && !isProMax ? (
+              <Link
+                href="/pricing"
+                className="mt-2 inline-block text-xs text-orange-400 hover:text-orange-300"
+              >
+                Unlock Viral Shorts → Pro Max
               </Link>
             ) : null}
           </div>

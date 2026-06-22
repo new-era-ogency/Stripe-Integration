@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import type { ShortsScript } from "@/lib/ai/content-pack"
+import type { ShortsScript, ViralShortsHook } from "@/lib/ai/content-pack"
 
 export type GeneratedContent = {
-  packTier?: "starter" | "pro"
+  packTier?: "starter" | "pro" | "pro_max"
   outputX: string
   outputLinkedIn: string
   outputTelegram: string
@@ -10,6 +10,7 @@ export type GeneratedContent = {
   linkedinArticle?: string
   telegramPost?: string
   shortsScript?: ShortsScript
+  viralShortsHooks?: ViralShortsHook[]
   rawTranscript?: string
 }
 

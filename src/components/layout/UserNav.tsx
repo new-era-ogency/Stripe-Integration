@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import CreditBalance from "@/components/layout/CreditBalance"
+import SubscriptionTierBadge from "@/components/layout/SubscriptionTierBadge"
 import { Button } from "@/components/ui/button"
 import { redirect } from "next/navigation"
 
@@ -26,7 +27,8 @@ export default async function UserNav() {
         Home
       </Link>
       {user ? (
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <SubscriptionTierBadge />
           <CreditBalance />
           <span className="hidden text-sm text-zinc-300 sm:inline">{user.email}</span>
           <form action={signOut}>

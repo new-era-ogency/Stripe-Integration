@@ -201,7 +201,16 @@ export default function GenerationHistory({
                           Shorts
                         </span>
                       ) : null}
-                      {record.generated_content.packTier === "pro" ? (
+                      {record.generated_content.viralShortsHooks?.length ? (
+                        <span className="rounded-md border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-orange-300/80">
+                          Viral Hooks
+                        </span>
+                      ) : null}
+                      {record.generated_content.packTier === "pro_max" ? (
+                        <span className="rounded-md border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-orange-300/80">
+                          Pro Max
+                        </span>
+                      ) : record.generated_content.packTier === "pro" ? (
                         <span className="rounded-md border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-violet-300/80">
                           Pro Pack
                         </span>

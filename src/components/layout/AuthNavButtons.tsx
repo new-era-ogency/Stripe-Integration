@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
+import SubscriptionTierBadge from "@/components/layout/SubscriptionTierBadge"
 
 type AuthNavButtonsProps = {
   signInClassName?: string
@@ -55,8 +56,9 @@ export default function AuthNavButtons({
 
   if (user) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="hidden max-w-[140px] truncate font-mono text-[10px] text-zinc-500 sm:inline">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <SubscriptionTierBadge />
+        <span className="hidden max-w-[140px] truncate font-mono text-[10px] text-zinc-500 lg:inline">
           {user.email}
         </span>
         <button

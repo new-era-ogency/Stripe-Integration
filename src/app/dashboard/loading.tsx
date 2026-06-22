@@ -4,8 +4,11 @@ export default function DashboardLoading() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
 
       <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="h-5 w-24 animate-pulse rounded-md bg-zinc-900" />
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-5 w-24 animate-pulse rounded-md bg-zinc-900" />
+            <div className="h-9 w-[7.5rem] animate-pulse rounded-full bg-zinc-900" />
+          </div>
           <div className="flex items-center gap-3">
             <div className="h-8 w-24 animate-pulse rounded-lg bg-zinc-900" />
             <div className="h-8 w-20 animate-pulse rounded-lg bg-zinc-900" />

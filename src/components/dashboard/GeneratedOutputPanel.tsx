@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { CopyIcon, Lock, Sparkles } from "lucide-react"
+import { CopyIcon, Flame, Lock, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -15,12 +15,19 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   formatShortsScriptForCopy,
   formatTwitterThreadForCopy,
+  formatViralShortsHooksForCopy,
+  type ViralShortsHook,
 } from "@/lib/ai/content-pack"
 import type { GeneratedContent } from "@/lib/generations"
-import { isProTier, type UserTier } from "@/lib/profile"
+import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
 import TelegramPublishActions from "@/components/dashboard/TelegramPublishActions"
 
-type OutputTabId = "twitter" | "linkedin" | "telegram" | "shorts"
+type OutputTabId =
+  | "twitter"
+  | "linkedin"
+  | "telegram"
+  | "shorts"
+  | "viral-hooks"
 
 type GeneratedOutputPanelProps = {
   content: GeneratedContent
@@ -43,7 +50,33 @@ function estimateTokens(...texts: string[]) {
   return Math.max(1, Math.ceil(chars / 4))
 }
 
-function LockedTabPlaceholder({ variant }: { variant: "linkedin" | "shorts" }) {
+function LockedTabPlaceholder({
+  variant,
+}: {
+  variant: "linkedin" | "shorts" | "viral-hooks"
+}) {
+  if (variant === "viral-hooks") {
+    return (
+      <div className="pointer-events-none select-none space-y-3 blur-sm opacity-40">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-xl border border-orange-500/20 bg-[#020202] p-4"
+          >
+            <div className="mb-2 flex gap-2">
+              <div className="h-2 w-20 rounded bg-zinc-800" />
+              <div className="h-2 w-12 rounded bg-orange-900/40" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-2 w-full rounded bg-zinc-900" />
+              <div className="h-2 w-4/5 rounded bg-zinc-900" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (variant === "shorts") {
     return (
       <div className="pointer-events-none select-none space-y-3 blur-sm opacity-40">
@@ -93,14 +126,40 @@ function ProLockOverlay({ feature }: { feature: string }) {
           {feature} is a Pro feature
         </p>
         <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-          Upgrade to PRO for deep LinkedIn articles, Shorts scripts, and the
+          Upgrade to Pro for deep LinkedIn articles, Shorts scripts, and the
           full 4-part Deep Content Pack.
         </p>
         <Button
           asChild
           className="mt-4 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-5 text-sm font-semibold text-white hover:from-violet-400 hover:to-indigo-400"
         >
-          <Link href="/pricing">Upgrade to PRO</Link>
+          <Link href="/pricing">Upgrade to Pro</Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function ProMaxLockOverlay() {
+  return (
+    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl border border-orange-500/25 bg-black/60 backdrop-blur-md">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.2),transparent_70%)]" />
+      <div className="relative mx-4 max-w-sm animate-in fade-in zoom-in-95 text-center duration-300">
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl border border-orange-500/40 bg-orange-500/10 shadow-[0_0_30px_-8px_rgba(249,115,22,0.55)]">
+          <Flame className="size-5 text-orange-300" />
+        </div>
+        <p className="text-sm font-medium text-white">
+          Viral Shorts Hooks is a Pro Max feature
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+          Unlock timestamp-based viral clip windows, hook scores, ready-to-speak
+          scripts, and shot lists — our AI Content Factory killer feature.
+        </p>
+        <Button
+          asChild
+          className="mt-4 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 px-5 text-sm font-semibold text-white hover:from-orange-400 hover:to-rose-400"
+        >
+          <Link href="/pricing">Upgrade to Pro Max</Link>
         </Button>
       </div>
     </div>
@@ -181,6 +240,59 @@ function ShortsScriptView({
   )
 }
 
+function ViralShortsHooksView({ hooks }: { hooks: ViralShortsHook[] }) {
+  return (
+    <div className="space-y-4">
+      {hooks.map((hook, index) => (
+        <div
+          key={`${hook.timestampStart}-${index}`}
+          className="rounded-xl border border-orange-500/20 bg-[#020202] p-4"
+        >
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-orange-200">
+              Clip #{index + 1}
+            </span>
+            <span className="font-mono text-[10px] text-zinc-500">
+              {hook.timestampStart} → {hook.timestampEnd}
+            </span>
+            <span className="rounded-full bg-rose-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-rose-300">
+              Hook {hook.hookScore}/100
+            </span>
+          </div>
+
+          <p className="mb-3 text-sm font-medium text-white">{hook.hook}</p>
+
+          <div className="mb-3 rounded-lg border border-zinc-800/80 bg-black/40 p-3">
+            <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+              Script
+            </p>
+            <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
+              {hook.script}
+            </p>
+          </div>
+
+          <div>
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+              Shot list
+            </p>
+            <ul className="space-y-1.5">
+              {hook.shotList.map((shot) => (
+                <li
+                  key={shot}
+                  className="flex items-start gap-2 text-sm text-zinc-400"
+                >
+                  <span className="text-orange-400/80">•</span>
+                  <span>{shot}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function GeneratedOutputPanel({
   content,
   tier,
@@ -189,7 +301,11 @@ export default function GeneratedOutputPanel({
   styleTone = "ENGAGING",
 }: GeneratedOutputPanelProps) {
   const [activeTab, setActiveTab] = useState<OutputTabId>("twitter")
-  const isPro = isProTier(tier) || content.packTier === "pro"
+  const isPro =
+    isProTier(tier) ||
+    content.packTier === "pro" ||
+    content.packTier === "pro_max"
+  const isProMax = isProMaxTier(tier) || content.packTier === "pro_max"
 
   const twitterTweets =
     content.twitterThread && content.twitterThread.length > 0
@@ -201,12 +317,16 @@ export default function GeneratedOutputPanel({
   const linkedinText = content.linkedinArticle ?? content.outputLinkedIn ?? ""
   const telegramText = content.telegramPost ?? content.outputTelegram ?? ""
   const shortsScript = content.shortsScript
+  const viralHooks = content.viralShortsHooks ?? []
 
   const tabCopyText: Record<OutputTabId, string> = {
     twitter: formatTwitterThreadForCopy(twitterTweets),
     linkedin: linkedinText,
     telegram: telegramText,
     shorts: shortsScript ? formatShortsScriptForCopy(shortsScript) : "",
+    "viral-hooks": viralHooks.length
+      ? formatViralShortsHooksForCopy(viralHooks)
+      : "",
   }
 
   const tabs: { id: OutputTabId; label: string; locked: boolean }[] = [
@@ -214,11 +334,32 @@ export default function GeneratedOutputPanel({
     { id: "linkedin", label: "LinkedIn", locked: !isPro },
     { id: "telegram", label: "Telegram", locked: false },
     { id: "shorts", label: "Shorts Script", locked: !isPro },
+    {
+      id: "viral-hooks",
+      label: "🔥 Viral Shorts Hooks",
+      locked: !isProMax,
+    },
   ]
 
   if (!content.outputX && twitterTweets.length === 0) {
     return null
   }
+
+  const packBadge = isProMax ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-orange-200">
+      <Flame className="size-3" />
+      Pro Max Pack
+    </span>
+  ) : isPro ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-violet-200">
+      <Sparkles className="size-3" />
+      Pro Pack
+    </span>
+  ) : (
+    <span className="font-mono text-[10px] text-zinc-600">
+      STARTER · 2/5 UNLOCKED
+    </span>
+  )
 
   return (
     <Card className="mb-6 gap-0 rounded-xl border-zinc-900 bg-[#050505] py-0 shadow-[0_0_40px_-12px_rgba(139,92,246,0.12)]">
@@ -227,16 +368,7 @@ export default function GeneratedOutputPanel({
           <CardTitle className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
             Generated Output · Deep Content Pack
           </CardTitle>
-          {isPro ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-violet-200">
-              <Sparkles className="size-3" />
-              Pro Pack
-            </span>
-          ) : (
-            <span className="font-mono text-[10px] text-zinc-600">
-              STARTER · 2/4 UNLOCKED
-            </span>
-          )}
+          {packBadge}
         </div>
       </CardHeader>
       <CardContent className="px-5 py-4">
@@ -244,7 +376,7 @@ export default function GeneratedOutputPanel({
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as OutputTabId)}
         >
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-0 rounded-none border-b border-zinc-900 bg-transparent p-0 sm:grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-0 rounded-none border-b border-zinc-900 bg-transparent p-0 sm:grid-cols-3 lg:grid-cols-5">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
@@ -263,7 +395,9 @@ export default function GeneratedOutputPanel({
 
           {tabs.map((tab) => {
             const charCount = tabCopyText[tab.id].length
-            const locked = !isPro && PRO_LOCKED_TABS.includes(tab.id)
+            const proLocked = !isPro && PRO_LOCKED_TABS.includes(tab.id)
+            const proMaxLocked = tab.id === "viral-hooks" && !isProMax
+            const locked = proLocked || proMaxLocked
 
             return (
               <TabsContent
@@ -355,18 +489,38 @@ export default function GeneratedOutputPanel({
                     <ShortsScriptView script={shortsScript} />
                   ) : null}
 
+                  {tab.id === "viral-hooks" && !locked && viralHooks.length ? (
+                    <ViralShortsHooksView hooks={viralHooks} />
+                  ) : null}
+
+                  {tab.id === "viral-hooks" && !locked && !viralHooks.length ? (
+                    <p className="rounded-xl border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-500">
+                      No viral hooks were returned for this generation.
+                    </p>
+                  ) : null}
+
                   {locked ? (
                     <>
                       <LockedTabPlaceholder
-                        variant={tab.id === "linkedin" ? "linkedin" : "shorts"}
-                      />
-                      <ProLockOverlay
-                        feature={
+                        variant={
                           tab.id === "linkedin"
-                            ? "Deep LinkedIn Articles"
-                            : "Shorts Scripts"
+                            ? "linkedin"
+                            : tab.id === "viral-hooks"
+                              ? "viral-hooks"
+                              : "shorts"
                         }
                       />
+                      {proMaxLocked ? (
+                        <ProMaxLockOverlay />
+                      ) : (
+                        <ProLockOverlay
+                          feature={
+                            tab.id === "linkedin"
+                              ? "Deep LinkedIn Articles"
+                              : "Shorts Scripts"
+                          }
+                        />
+                      )}
                     </>
                   ) : null}
                 </div>

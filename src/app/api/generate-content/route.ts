@@ -3,12 +3,15 @@ import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import {
   badRequestResponse,
+  forbiddenResponse,
   isErrorResponse,
   paymentRequiredResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
 import {
   parseProContentPack,
+  parseProMaxContentPack,
+  proMaxPackToLegacyFields,
   proPackToLegacyFields,
 } from "@/lib/ai/content-pack"
 import { getOpenRouterModel } from "@/lib/ai/openrouter"
@@ -16,36 +19,45 @@ import { buildGenerationPrompts } from "@/lib/ai/prompts"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
 import type { GeneratedContent } from "@/lib/generations"
 import { saveUserGeneration } from "@/lib/generations"
-import { isProTier } from "@/lib/profile"
 import { parseJsonBody } from "@/lib/api/parse-body"
+import {
+  getGenerationLimitsForTier,
+  getSubscriptionFlags,
+  normalizeSubscriptionTier,
+  requireFeature,
+  toSubscriptionRecord,
+} from "@/lib/subscription"
 import {
   extractYouTubeVideoId,
   generateContentRequestSchema,
 } from "@/lib/validation"
 
+type OpenRouterModel = ReturnType<ReturnType<typeof createOpenAI>>
+
 async function generateStarterContent(
-  model: ReturnType<ReturnType<typeof createOpenAI>>,
+  model: OpenRouterModel,
   prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "starter" }>,
-  rawTranscript: string
+  rawTranscript: string,
+  maxOutputTokens: number
 ): Promise<GeneratedContent> {
   const [outputX, outputLinkedIn, outputTelegram] = await Promise.all([
     generateText({
       model,
       system: prompts.twitter,
       prompt: rawTranscript,
-      maxOutputTokens: 2000,
+      maxOutputTokens,
     }).then((result) => result.text),
     generateText({
       model,
       system: prompts.linkedin,
       prompt: rawTranscript,
-      maxOutputTokens: 2000,
+      maxOutputTokens,
     }).then((result) => result.text),
     generateText({
       model,
       system: prompts.telegram,
       prompt: rawTranscript,
-      maxOutputTokens: 2000,
+      maxOutputTokens,
     }).then((result) => result.text),
   ])
 
@@ -58,15 +70,16 @@ async function generateStarterContent(
 }
 
 async function generateProContent(
-  model: ReturnType<ReturnType<typeof createOpenAI>>,
+  model: OpenRouterModel,
   prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "pro" }>,
-  rawTranscript: string
+  rawTranscript: string,
+  maxOutputTokens: number
 ): Promise<GeneratedContent> {
   const { text } = await generateText({
     model,
     system: prompts.system,
     prompt: rawTranscript,
-    maxOutputTokens: 6000,
+    maxOutputTokens,
   })
 
   const pack = parseProContentPack(text)
@@ -78,9 +91,24 @@ async function generateProContent(
   }
 }
 
+async function generateProMaxContent(
+  model: OpenRouterModel,
+  prompts: Extract<ReturnType<typeof buildGenerationPrompts>, { mode: "pro_max" }>,
+  rawTranscript: string,
+  maxOutputTokens: number
+): Promise<GeneratedContent> {
+  const { text } = await generateText({
+    model,
+    system: prompts.system,
+    prompt: rawTranscript,
+    maxOutputTokens,
+  })
+
+  const pack = parseProMaxContentPack(text)
+  return proMaxPackToLegacyFields(pack)
+}
+
 export async function POST(request: Request) {
-  // Identity is resolved exclusively from the Supabase session cookie — never
-  // from request body fields such as userId or email.
   const auth = await requireAuthenticatedUser()
   if (isErrorResponse(auth)) {
     return auth
@@ -106,14 +134,16 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from("users")
-      .select("credits, tier, brand_voice")
+      .select(
+        "credits, tier, brand_voice, subscription_status, stripe_price_id, stripe_subscription_id, subscription_period_end"
+      )
       .eq("id", user.id)
       .maybeSingle()
 
     if (profileError) {
-      console.error("Error fetching user credits:", profileError)
+      console.error("Error fetching user profile:", profileError)
       return NextResponse.json(
-        { error: "Failed to verify credit balance" },
+        { error: "Failed to verify subscription and credits" },
         { status: 500 }
       )
     }
@@ -122,9 +152,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User profile not found" }, { status: 404 })
     }
 
-    const isPro = isProTier(profile.tier)
+    const subscription = toSubscriptionRecord(profile)
+    const flags = getSubscriptionFlags(
+      subscription.tier,
+      subscription.subscriptionStatus
+    )
+    const limits = getGenerationLimitsForTier(flags.tier)
+    const deepPackAccess = requireFeature(flags, "deep_pack")
+    const viralHooksAccess = requireFeature(flags, "viral_shorts_finder")
 
-    if (profile.credits <= 0 && !isPro) {
+    if (profile.credits <= 0 && flags.isStarter) {
       return paymentRequiredResponse(INSUFFICIENT_CREDITS_MESSAGE)
     }
 
@@ -153,16 +190,45 @@ export async function POST(request: Request) {
     }
 
     const prompts = buildGenerationPrompts({
-      tier: profile.tier,
+      tier: normalizeSubscriptionTier(profile.tier),
       brand_voice: profile.brand_voice,
     })
 
-    const model = getOpenRouterModel()
+    if (prompts.mode !== "starter" && !deepPackAccess.allowed) {
+      return forbiddenResponse(
+        "Deep Content Pack requires a Pro or Pro Max subscription."
+      )
+    }
+
+    if (prompts.mode === "pro_max" && !viralHooksAccess.allowed) {
+      return forbiddenResponse(
+        "Viral Shorts Finder requires a Pro Max subscription."
+      )
+    }
+
+    const model = getOpenRouterModel(limits.modelId)
 
     const generatedContent =
-      prompts.mode === "pro"
-        ? await generateProContent(model, prompts, rawTranscript)
-        : await generateStarterContent(model, prompts, rawTranscript)
+      prompts.mode === "pro_max"
+        ? await generateProMaxContent(
+            model,
+            prompts,
+            rawTranscript,
+            limits.maxOutputTokens
+          )
+        : prompts.mode === "pro"
+          ? await generateProContent(
+              model,
+              prompts,
+              rawTranscript,
+              limits.maxOutputTokens
+            )
+          : await generateStarterContent(
+              model,
+              prompts,
+              rawTranscript,
+              limits.starterMaxOutputTokens
+            )
 
     let generation
     try {
@@ -186,6 +252,7 @@ export async function POST(request: Request) {
       ...generatedContent,
       newCredits,
       generationId: generation.id,
+      tier: flags.tier,
     })
   } catch (error) {
     console.error("Error generating content:", error)

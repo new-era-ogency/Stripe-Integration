@@ -14,6 +14,10 @@ export function paymentRequiredResponse(message: string) {
   return NextResponse.json({ error: message }, { status: 402 })
 }
 
+export function forbiddenResponse(message: string) {
+  return NextResponse.json({ error: message }, { status: 403 })
+}
+
 export async function requireAuthenticatedUser(): Promise<
   { user: User; supabase: Awaited<ReturnType<typeof createServerSupabaseClient>> } | NextResponse
 > {
