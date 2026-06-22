@@ -25,7 +25,11 @@ export default function AuthSessionSync() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        if (pathname === "/login" || pathname === "/") {
+        if (
+          pathname === "/login" ||
+          pathname === "/signup" ||
+          pathname === "/"
+        ) {
           router.push("/dashboard")
         }
         router.refresh()

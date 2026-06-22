@@ -56,5 +56,32 @@ export async function GET(request: NextRequest) {
 
   await supabase.auth.refreshSession()
 
+  const userId = data.user?.id
+  let redirectTarget = dashboardUrl
+
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("username")
+      .eq("id", userId)
+      .maybeSingle()
+
+    const metadataUsername = data.user?.user_metadata?.username
+    const hasMetadataUsername =
+      typeof metadataUsername === "string" && metadataUsername.length > 0
+
+    if (!profile?.username && !hasMetadataUsername) {
+      redirectTarget = new URL("/signup/complete", origin)
+    }
+  }
+
+  if (redirectTarget.pathname !== dashboardUrl.pathname) {
+    const redirectResponse = NextResponse.redirect(redirectTarget)
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie)
+    })
+    return redirectResponse
+  }
+
   return response
 }

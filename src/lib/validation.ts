@@ -88,6 +88,18 @@ export const checkoutRequestSchema = z.object({
   plan: z.literal("starter").default("starter"),
 })
 
+export const ensureProfileSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(
+      /^[a-z][a-z0-9_]{2,19}$/,
+      "Username must be 3–20 characters: start with a letter, then letters, numbers, or underscores."
+    )
+    .optional(),
+})
+
 export const telegramChannelIdSchema = z
   .string()
   .trim()

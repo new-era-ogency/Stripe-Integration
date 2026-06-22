@@ -4,15 +4,15 @@ import { Suspense, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import AuthPageShell from "@/components/auth/AuthPageShell"
-import LoginForm from "@/components/auth/LoginForm"
+import SignupForm from "@/components/auth/SignupForm"
 
-function LoginPageContent() {
+function SignupPageContent() {
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
+    router.prefetch("/login")
     router.prefetch("/dashboard")
-    router.prefetch("/signup")
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -24,17 +24,19 @@ function LoginPageContent() {
   return (
     <AuthPageShell
       title="PulseFlow"
-      subtitle="Sign in when you're ready to generate"
+      subtitle="Create your account to get started"
+      backHref="/login"
+      backLabel="← Back to sign in"
     >
-      <LoginForm />
+      <SignupForm />
     </AuthPageShell>
   )
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <Suspense fallback={null}>
-      <LoginPageContent />
+      <SignupPageContent />
     </Suspense>
   )
 }
