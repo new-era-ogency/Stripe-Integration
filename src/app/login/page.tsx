@@ -1,17 +1,23 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import AuthForm from "@/components/auth/AuthForm"
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+  const hasAuthError = searchParams.has("error")
 
   useEffect(() => {
     router.prefetch("/dashboard")
+
+    if (hasAuthError) {
+      return
+    }
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -29,7 +35,7 @@ export default function LoginPage() {
     })
 
     return () => subscription.unsubscribe()
-  }, [router, supabase.auth])
+  }, [hasAuthError, router, supabase.auth])
 
   return (
     <div className="relative min-h-screen w-full bg-[#000000] px-4 py-12">
@@ -59,5 +65,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   )
 }

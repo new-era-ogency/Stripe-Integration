@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { validateEmailDomain } from "@/lib/auth/validate-email"
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -39,10 +40,18 @@ export async function GET(request: NextRequest) {
     }
   )
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=oauth`)
+  }
+
+  const email = data.user?.email
+
+  if (!email || !validateEmailDomain(email)) {
+    response = NextResponse.redirect(`${origin}/login?error=untrusted_email`)
+    await supabase.auth.signOut()
+    return response
   }
 
   await supabase.auth.refreshSession()

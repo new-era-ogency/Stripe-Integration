@@ -33,6 +33,9 @@ const DISPOSABLE_EMAIL_DOMAINS = new Set([
 export const UNTRUSTED_EMAIL_MESSAGE =
   "Please use a valid, trusted email address (e.g., Gmail, Outlook) to prevent abuse."
 
+export const OAUTH_UNTRUSTED_EMAIL_MESSAGE =
+  "This email domain is not allowed. Please use a trusted account."
+
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }

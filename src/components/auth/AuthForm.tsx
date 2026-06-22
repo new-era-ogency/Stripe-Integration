@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import type { AuthError } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 import {
   normalizeEmail,
+  OAUTH_UNTRUSTED_EMAIL_MESSAGE,
   UNTRUSTED_EMAIL_MESSAGE,
   validateEmailDomain,
 } from "@/lib/auth/validate-email"
@@ -88,7 +89,14 @@ export default function AuthForm() {
   const [manualMode, setManualMode] = useState<ManualAuthMode | null>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (searchParams.get("error") === "untrusted_email") {
+      setError(OAUTH_UNTRUSTED_EMAIL_MESSAGE)
+    }
+  }, [searchParams])
 
   const isManualLoading = manualMode !== null
   const isFormDisabled = isGoogleLoading || isManualLoading
