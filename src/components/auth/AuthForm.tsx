@@ -3,10 +3,18 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
+import type { AuthError } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
+import {
+  normalizeEmail,
+  UNTRUSTED_EMAIL_MESSAGE,
+  validateEmailDomain,
+} from "@/lib/auth/validate-email"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
+type ManualAuthMode = "signin" | "signup"
 
 function GoogleIcon() {
   return (
@@ -37,42 +45,131 @@ function GoogleIcon() {
   )
 }
 
+function getAuthErrorMessage(error: AuthError): string {
+  const message = error.message.toLowerCase()
+
+  if (
+    message.includes("invalid login credentials") ||
+    message.includes("invalid email or password")
+  ) {
+    return "Invalid login credentials. Check your email and password."
+  }
+
+  if (
+    message.includes("user already registered") ||
+    message.includes("already been registered") ||
+    message.includes("already exists")
+  ) {
+    return "An account with this email already exists. Try signing in instead."
+  }
+
+  if (
+    message.includes("password") &&
+    (message.includes("at least") || message.includes("6"))
+  ) {
+    return "Password should be at least 6 characters."
+  }
+
+  if (message.includes("valid email")) {
+    return "Please enter a valid email address."
+  }
+
+  if (message.includes("email not confirmed")) {
+    return "Please confirm your email before signing in."
+  }
+
+  return error.message
+}
+
 export default function AuthForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [manualMode, setManualMode] = useState<ManualAuthMode | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return
+  const isManualLoading = manualMode !== null
+  const isFormDisabled = isGoogleLoading || isManualLoading
 
+  const completeAuthAndRedirect = async () => {
     await fetch("/api/ensure-profile", { method: "POST" })
-    router.push("/dashboard")
     router.refresh()
+    window.location.assign("/dashboard")
+  }
+
+  const handleSignIn = async () => {
+    setError(null)
+    setManualMode("signin")
+
+    const normalizedEmail = normalizeEmail(email)
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      })
+
+      if (signInError) {
+        setError(getAuthErrorMessage(signInError))
+        setManualMode(null)
+        return
+      }
+
+      await completeAuthAndRedirect()
+    } catch {
+      setError("Something went wrong while signing in. Please try again.")
+      setManualMode(null)
+    }
   }
 
   const handleSignUp = async () => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
-    })
-    if (error) return
+    setError(null)
+    setManualMode("signup")
 
-    if (data.session) {
-      await fetch("/api/ensure-profile", { method: "POST" })
-      router.push("/dashboard")
-      router.refresh()
+    const normalizedEmail = normalizeEmail(email)
+
+    if (!validateEmailDomain(normalizedEmail)) {
+      setError(UNTRUSTED_EMAIL_MESSAGE)
+      setManualMode(null)
+      return
+    }
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
+
+      if (signUpError) {
+        setError(getAuthErrorMessage(signUpError))
+        setManualMode(null)
+        return
+      }
+
+      if (data.session) {
+        await completeAuthAndRedirect()
+        return
+      }
+
+      setError(
+        "Account created. Check your email to confirm your address, then sign in."
+      )
+      setManualMode(null)
+    } catch {
+      setError("Something went wrong while creating your account. Please try again.")
+      setManualMode(null)
     }
   }
 
   const handleGoogleSignIn = async () => {
+    setError(null)
     setIsGoogleLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -80,7 +177,8 @@ export default function AuthForm() {
         },
       })
 
-      if (error) {
+      if (oauthError) {
+        setError(getAuthErrorMessage(oauthError))
         setIsGoogleLoading(false)
         return
       }
@@ -91,14 +189,19 @@ export default function AuthForm() {
         setIsGoogleLoading(false)
       }
     } catch {
+      setError("Could not start Google sign-in. Please try again.")
       setIsGoogleLoading(false)
     }
   }
 
-  const isFormDisabled = isGoogleLoading
+  const clearErrorOnChange =
+    (setter: (value: string) => void) => (value: string) => {
+      if (error) setError(null)
+      setter(value)
+    }
 
   const inputClassName =
-    "h-11 rounded-lg border-zinc-800 bg-[#020202] text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500 focus-visible:ring-0"
+    "h-11 rounded-lg border-zinc-800 bg-[#020202] text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500 focus-visible:ring-0 disabled:opacity-60"
   const labelClassName = "text-xs uppercase tracking-wide text-zinc-500"
 
   return (
@@ -112,8 +215,9 @@ export default function AuthForm() {
           type="email"
           placeholder="you@domain.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => clearErrorOnChange(setEmail)(normalizeEmail(e.target.value))}
           disabled={isFormDisabled}
+          autoComplete="email"
           className={inputClassName}
         />
       </div>
@@ -126,27 +230,50 @@ export default function AuthForm() {
           type="password"
           placeholder="••••••••"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => clearErrorOnChange(setPassword)(e.target.value)}
           disabled={isFormDisabled}
+          autoComplete="current-password"
           className={inputClassName}
         />
       </div>
 
+      {error ? (
+        <p className="text-sm leading-relaxed text-amber-300/90" role="alert">
+          {error}
+        </p>
+      ) : null}
+
       <div className="space-y-3 pt-1">
         <Button
+          type="button"
           onClick={handleSignIn}
-          disabled={isFormDisabled}
+          disabled={isFormDisabled || !email.trim() || !password}
           className="h-11 w-full rounded-lg bg-white font-medium text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all duration-300 hover:bg-zinc-200 focus-visible:ring-0 disabled:opacity-50"
         >
-          Sign In
+          {manualMode === "signin" ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="size-4 animate-spin" />
+              Authenticating…
+            </span>
+          ) : (
+            "Sign In"
+          )}
         </Button>
         <Button
+          type="button"
           onClick={handleSignUp}
-          disabled={isFormDisabled}
+          disabled={isFormDisabled || !email.trim() || !password}
           variant="outline"
           className="h-11 w-full rounded-lg border-zinc-800 bg-[#09090b] text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:ring-0 disabled:opacity-50"
         >
-          Create Account
+          {manualMode === "signup" ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="size-4 animate-spin" />
+              Creating account…
+            </span>
+          ) : (
+            "Create Account"
+          )}
         </Button>
       </div>
 
@@ -162,8 +289,9 @@ export default function AuthForm() {
       </div>
 
       <Button
+        type="button"
         onClick={handleGoogleSignIn}
-        disabled={isGoogleLoading}
+        disabled={isFormDisabled}
         variant="outline"
         className="h-11 w-full gap-2.5 rounded-lg border-zinc-800 bg-[#09090b] text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:ring-0 disabled:opacity-80"
       >
