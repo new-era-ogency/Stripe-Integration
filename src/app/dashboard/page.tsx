@@ -330,14 +330,20 @@ export default function DashboardPage() {
           <div className={statCardClass}>
             <p className="text-sm text-zinc-500">Plan</p>
             <div className="mt-2 flex items-center gap-2">
-              {isPro ? (
-                <Sparkles className="size-4 text-violet-400" />
+              {!authChecked ? (
+                <div className="h-7 w-28 animate-pulse rounded bg-zinc-900" />
               ) : (
-                <span className="size-2 rounded-full bg-zinc-600" />
+                <>
+                  {isPro ? (
+                    <Sparkles className="size-4 text-violet-400" />
+                  ) : (
+                    <span className="size-2 rounded-full bg-zinc-600" />
+                  )}
+                  <p className="text-lg font-medium text-white">
+                    {isGuest ? "Guest" : `${planLabel} Plan`}
+                  </p>
+                </>
               )}
-              <p className="text-lg font-medium text-white">
-                {!authChecked ? "—" : isGuest ? "Guest" : `${planLabel} Plan`}
-              </p>
             </div>
             {!isGuest && authChecked && !isPro ? (
               <Link
@@ -351,11 +357,13 @@ export default function DashboardPage() {
 
           <div className={statCardClass}>
             <p className="text-sm text-zinc-500">Credits remaining</p>
-            <p className="mt-2 text-lg font-medium text-white">
-              {!authChecked || isGuest
-                ? "—"
-                : `${usageStats.remaining} remaining`}
-            </p>
+            {!authChecked ? (
+              <div className="mt-2 h-7 w-36 animate-pulse rounded bg-zinc-900" />
+            ) : (
+              <p className="mt-2 text-lg font-medium text-white">
+                {isGuest ? "—" : `${usageStats.remaining} remaining`}
+              </p>
+            )}
             {!isGuest && authChecked ? (
               <p className="mt-1 text-xs text-zinc-500">
                 1 credit per generation
@@ -365,9 +373,13 @@ export default function DashboardPage() {
 
           <div className={statCardClass}>
             <p className="text-sm text-zinc-500">Generations saved</p>
-            <p className="mt-2 text-lg font-medium text-white">
-              {!authChecked || isGuest ? "—" : usageStats.used}
-            </p>
+            {!authChecked ? (
+              <div className="mt-2 h-7 w-16 animate-pulse rounded bg-zinc-900" />
+            ) : (
+              <p className="mt-2 text-lg font-medium text-white">
+                {isGuest ? "—" : usageStats.used}
+              </p>
+            )}
             {!isGuest && authChecked ? (
               <p className="mt-1 text-xs text-zinc-500">
                 View history below

@@ -11,6 +11,8 @@ export default function LoginPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    router.prefetch("/dashboard")
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         router.replace("/dashboard")

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +40,7 @@ function GoogleIcon() {
 export default function AuthForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -67,13 +69,33 @@ export default function AuthForm() {
   }
 
   const handleGoogleSignIn = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
-    })
+    setIsGoogleLoading(true)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true,
+        },
+      })
+
+      if (error) {
+        setIsGoogleLoading(false)
+        return
+      }
+
+      if (data.url) {
+        window.location.assign(data.url)
+      } else {
+        setIsGoogleLoading(false)
+      }
+    } catch {
+      setIsGoogleLoading(false)
+    }
   }
+
+  const isFormDisabled = isGoogleLoading
 
   const inputClassName =
     "h-11 rounded-lg border-zinc-800 bg-[#020202] text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500 focus-visible:ring-0"
@@ -91,6 +113,7 @@ export default function AuthForm() {
           placeholder="you@domain.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={isFormDisabled}
           className={inputClassName}
         />
       </div>
@@ -104,6 +127,7 @@ export default function AuthForm() {
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={isFormDisabled}
           className={inputClassName}
         />
       </div>
@@ -111,14 +135,16 @@ export default function AuthForm() {
       <div className="space-y-3 pt-1">
         <Button
           onClick={handleSignIn}
-          className="h-11 w-full rounded-lg bg-white font-medium text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all duration-300 hover:bg-zinc-200 focus-visible:ring-0"
+          disabled={isFormDisabled}
+          className="h-11 w-full rounded-lg bg-white font-medium text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all duration-300 hover:bg-zinc-200 focus-visible:ring-0 disabled:opacity-50"
         >
           Sign In
         </Button>
         <Button
           onClick={handleSignUp}
+          disabled={isFormDisabled}
           variant="outline"
-          className="h-11 w-full rounded-lg border-zinc-800 bg-[#09090b] text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:ring-0"
+          className="h-11 w-full rounded-lg border-zinc-800 bg-[#09090b] text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:ring-0 disabled:opacity-50"
         >
           Create Account
         </Button>
@@ -137,11 +163,21 @@ export default function AuthForm() {
 
       <Button
         onClick={handleGoogleSignIn}
+        disabled={isGoogleLoading}
         variant="outline"
-        className="h-11 w-full gap-2.5 rounded-lg border-zinc-800 bg-[#09090b] text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:ring-0"
+        className="h-11 w-full gap-2.5 rounded-lg border-zinc-800 bg-[#09090b] text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:ring-0 disabled:opacity-80"
       >
-        <GoogleIcon />
-        Sign In with Google
+        {isGoogleLoading ? (
+          <>
+            <Loader2 className="size-4 animate-spin text-violet-400" />
+            Connecting to Google…
+          </>
+        ) : (
+          <>
+            <GoogleIcon />
+            Continue with Google
+          </>
+        )}
       </Button>
     </div>
   )
