@@ -8,18 +8,18 @@ import LoginForm from "@/components/auth/LoginForm"
 
 function LoginPageContent() {
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     router.prefetch("/dashboard")
     router.prefetch("/signup")
 
+    const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         router.replace("/dashboard")
       }
     })
-  }, [router, supabase.auth])
+  }, [router])
 
   return (
     <AuthPageShell

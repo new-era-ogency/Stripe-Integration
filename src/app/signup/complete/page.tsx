@@ -8,10 +8,11 @@ import CompleteProfileForm from "@/components/auth/CompleteProfileForm"
 
 function CompleteProfilePageContent() {
   const router = useRouter()
-  const supabase = createClient()
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
+    const supabase = createClient()
+
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/login")
@@ -31,7 +32,7 @@ function CompleteProfilePageContent() {
 
       setIsChecking(false)
     })
-  }, [router, supabase])
+  }, [router])
 
   if (isChecking) {
     return null
