@@ -32,8 +32,8 @@ function FooterLink({
 
 export default function AppFooter() {
   return (
-    <footer className="border-t border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
-      <div className="mx-auto max-w-6xl px-6 py-12">
+    <footer className="border-t border-zinc-900 bg-zinc-950">
+      <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <p className="flex items-center gap-2 text-sm font-bold text-white">
@@ -43,14 +43,14 @@ export default function AppFooter() {
               PulseFlow
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
-              Automate Stripe payments, onboarding, and API workflows — without
-              writing backend glue code.
+              Workflow automation for indie devs — Stripe events, API chains, and
+              cross-tool sync without backend glue.
             </p>
             <a
-              href={footerLinks.developers[0].href}
+              href={footerLinks.developers[1].href}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex size-10 items-center justify-center rounded-xl border border-zinc-800 text-zinc-400 transition-colors hover:border-violet-500/30 hover:text-white"
+              className="mt-5 inline-flex size-10 items-center justify-center rounded-xl border border-zinc-800 text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white"
               aria-label="View on GitHub"
             >
               <Code2 className="size-4" />
@@ -58,10 +58,10 @@ export default function AppFooter() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Product
             </p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 space-y-2.5">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
                   <FooterLink href={link.href} label={link.label} />
@@ -71,10 +71,10 @@ export default function AppFooter() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Developers
             </p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 space-y-2.5">
               {footerLinks.developers.map((link) => (
                 <li key={link.href}>
                   <FooterLink
@@ -88,11 +88,8 @@ export default function AppFooter() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-zinc-800/80 pt-8">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Resources
-          </p>
-          <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+        <div className="mt-10 border-t border-zinc-900 pt-8">
+          <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {footerLinks.resources.map((link) => (
               <li key={link.href}>
                 <FooterLink href={link.href} label={link.label} />
@@ -101,13 +98,13 @@ export default function AppFooter() {
           </ul>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-zinc-800/80 pt-6 sm:flex-row">
-          <p className="text-sm text-zinc-500">
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-zinc-900 pt-6 sm:flex-row">
+          <p className="text-sm text-zinc-600">
             © {new Date().getFullYear()} PulseFlow. Built by an indie developer.
           </p>
           <a
             href="mailto:privacy@pulseflow.app"
-            className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+            className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
           >
             privacy@pulseflow.app
           </a>

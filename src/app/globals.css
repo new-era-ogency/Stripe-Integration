@@ -361,6 +361,48 @@
   }
 }
 
+[data-perf="lite"] .workflow-node-pulse,
+[data-perf="lite"] .workflow-arrow-flow {
+  animation: none !important;
+}
+
+@keyframes workflow-node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15);
+  }
+}
+
+@keyframes workflow-arrow-flow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2px);
+  }
+}
+
+.workflow-node-pulse {
+  animation: workflow-node-pulse 2.4s ease-in-out infinite;
+}
+
+.workflow-arrow-flow {
+  animation: workflow-arrow-flow 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-node-pulse,
+  .workflow-arrow-flow {
+    animation: none !important;
+  }
+}
+
 [data-perf="lite"] .landing-section {
   content-visibility: auto;
   contain-intrinsic-size: auto 520px;

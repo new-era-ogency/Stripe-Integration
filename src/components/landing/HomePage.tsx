@@ -20,8 +20,9 @@ import UseCaseStrip from "@/components/landing/UseCaseStrip"
 import {
   BTN_PRIMARY,
   BTN_SECONDARY,
+  CARD_INTERACTIVE,
 } from "@/lib/landing-styles"
-import { finalCta } from "@/lib/landing-content"
+import { finalCta, positioning } from "@/lib/landing-content"
 
 export default function HomePage() {
   return (
@@ -39,25 +40,48 @@ export default function HomePage() {
         <ChangelogSection />
         <FaqAccordion />
 
-        <SectionShell divider={false} className="pb-28 pt-8 md:pb-36">
+        <SectionShell divider={false} className="pb-28 pt-4 md:pb-36">
           <AnimatedSection>
-            <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-600/15 via-zinc-950 to-zinc-950 p-8 md:p-14">
-              <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-violet-600/20 blur-3xl" />
-              <div className="relative max-w-2xl">
-                <SectionHeader
-                  label={finalCta.label}
-                  title={finalCta.title}
-                  description={finalCta.description}
-                />
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link href="/signup" className={`group inline-flex ${BTN_PRIMARY}`}>
-                    {finalCta.primaryCta}
-                    <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                  <Link href="/pricing" className={BTN_SECONDARY}>
-                    {finalCta.secondaryCta}
-                  </Link>
+            <div className={`${CARD_INTERACTIVE} border-violet-500/15 p-8 md:p-12`}>
+              <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div className="max-w-xl">
+                  <SectionHeader
+                    label={finalCta.label}
+                    title={finalCta.title}
+                    description={finalCta.description}
+                  />
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      href="/signup"
+                      className={`group inline-flex ${BTN_PRIMARY}`}
+                    >
+                      {finalCta.primaryCta}
+                      <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
+                    </Link>
+                    <Link href="/pricing" className={BTN_SECONDARY}>
+                      {finalCta.secondaryCta}
+                    </Link>
+                  </div>
                 </div>
+
+                <dl className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm lg:grid-cols-1 lg:text-right">
+                  <div>
+                    <dt className="text-zinc-600">What is it?</dt>
+                    <dd className="font-medium text-zinc-300">{positioning.what}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-zinc-600">What can I do?</dt>
+                    <dd className="font-medium text-zinc-300">{positioning.canDo}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-zinc-600">Why use it?</dt>
+                    <dd className="font-medium text-zinc-300">{positioning.why}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-zinc-600">Who is it for?</dt>
+                    <dd className="font-medium text-zinc-300">{positioning.who}</dd>
+                  </div>
+                </dl>
               </div>
             </div>
           </AnimatedSection>

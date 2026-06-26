@@ -9,7 +9,7 @@ import SectionShell from "@/components/landing/SectionShell"
 import {
   BTN_PRIMARY,
   BTN_SECONDARY,
-  CARD_BASE,
+  CARD_INTERACTIVE,
   SECTION_CONTENT_GAP,
 } from "@/lib/landing-styles"
 import { faqs } from "@/lib/landing-content"
@@ -21,8 +21,8 @@ export default function FaqAccordion() {
     <SectionShell id="faq" tone="elevated">
       <AnimatedSection>
         <SectionHeader
-          label="Questions"
-          title="Things people ask before they paste a link"
+          label="FAQ"
+          title="Removing doubt — not explaining the product"
         />
       </AnimatedSection>
 
@@ -33,8 +33,8 @@ export default function FaqAccordion() {
           return (
             <div
               key={faq.q}
-              className={`${CARD_BASE} overflow-hidden transition-colors ${
-                isOpen ? "border-violet-500/30" : ""
+              className={`${CARD_INTERACTIVE} overflow-hidden ${
+                isOpen ? "border-violet-500/25" : ""
               }`}
             >
               <button
@@ -45,26 +45,32 @@ export default function FaqAccordion() {
               >
                 <span className="text-sm font-semibold text-zinc-200">{faq.q}</span>
                 <ChevronDown
-                  className={`size-4 shrink-0 text-violet-400 transition-transform duration-200 ${
+                  className={`size-4 shrink-0 text-violet-400 transition-transform duration-300 ease-out ${
                     isOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
-              {isOpen ? (
-                <p className="border-t border-zinc-800/80 px-5 py-4 text-sm leading-relaxed text-zinc-400 md:px-6">
-                  {faq.a}
-                </p>
-              ) : null}
+              <div
+                className={`grid transition-all duration-300 ease-out ${
+                  isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <p className="border-t border-zinc-800/80 px-5 pb-4 pt-3 text-sm leading-relaxed text-zinc-400 md:px-6">
+                    {faq.a}
+                  </p>
+                </div>
+              </div>
             </div>
           )
         })}
       </div>
 
       <AnimatedSection className={`max-w-2xl ${SECTION_CONTENT_GAP}`}>
-        <p className="text-sm text-zinc-500">Still stuck?</p>
+        <p className="text-sm text-zinc-500">Still have doubts?</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <Link href="/login" className={BTN_PRIMARY}>
-            Contact us
+          <Link href="/signup" className={BTN_PRIMARY}>
+            Try it free
           </Link>
           <Link href="/pricing" className={BTN_SECONDARY}>
             See pricing

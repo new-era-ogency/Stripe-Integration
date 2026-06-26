@@ -33,6 +33,12 @@ export default function SectionHeader({
   )
 }
 
-export function SectionHeaderSpacer({ children }: { children: ReactNode }) {
-  return <div className="mt-16 md:mt-20">{children}</div>
+export function SectionHeaderSpacer({
+  children,
+  className = "",
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <div className={`mt-12 md:mt-16 ${className}`}>{children}</div>
 }
