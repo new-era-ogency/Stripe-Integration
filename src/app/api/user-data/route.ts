@@ -6,6 +6,8 @@ import {
   toGenerationHistoryItem,
 } from "@/lib/generations"
 import type { UserTier } from "@/lib/profile"
+import { checkTrialStatus } from "@/lib/trial"
+import { computeTotalTrialDays } from "@/lib/trial/ui"
 
 export async function GET() {
   const auth = await requireAuthenticatedUser()
@@ -49,6 +51,14 @@ export async function GET() {
     }
 
     const generations = await getUserGenerations(supabase, user.id)
+    const trialStatus = await checkTrialStatus(user.id, { supabase })
+
+    const { data: claimedRows } = await supabase
+      .from("viral_actions")
+      .select("action_type")
+      .eq("user_id", user.id)
+
+    const claimedActions = (claimedRows ?? []).map((row) => row.action_type)
 
     return NextResponse.json({
       credits: profile.credits,
@@ -59,6 +69,19 @@ export async function GET() {
         tier: (profile.tier ?? "starter") as UserTier,
         brand_voice: profile.brand_voice ?? null,
         tg_channel_id: profile.tg_channel_id ?? null,
+      },
+      trial: {
+        isValid: trialStatus.isValid,
+        daysRemaining: trialStatus.daysRemaining,
+        totalTrialDays: computeTotalTrialDays(
+          trialStatus.trialStartAt,
+          trialStatus.trialEndAt
+        ),
+        accountStatus: trialStatus.accountStatus,
+        trialStartAt: trialStatus.trialStartAt,
+        trialEndAt: trialStatus.trialEndAt,
+        trialExtendedDays: trialStatus.trialExtendedDays,
+        claimedActions,
       },
       generations,
       history: generations.map(toGenerationHistoryItem),

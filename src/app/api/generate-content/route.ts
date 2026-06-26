@@ -8,6 +8,7 @@ import {
   paymentRequiredResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
+import { parseJsonBody } from "@/lib/api/parse-body"
 import {
   parseProContentPack,
   parseProMaxContentPack,
@@ -19,7 +20,6 @@ import { buildGenerationPrompts } from "@/lib/ai/prompts"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
 import type { GeneratedContent } from "@/lib/generations"
 import { saveUserGeneration } from "@/lib/generations"
-import { parseJsonBody } from "@/lib/api/parse-body"
 import {
   getGenerationLimitsForTier,
   getSubscriptionFlags,
@@ -27,6 +27,7 @@ import {
   requireFeature,
   toSubscriptionRecord,
 } from "@/lib/subscription"
+import { checkTrialStatus } from "@/lib/trial"
 import {
   extractYouTubeVideoId,
   generateContentRequestSchema,
@@ -117,6 +118,15 @@ export async function POST(request: Request) {
   const { user, supabase } = auth
 
   try {
+    const trial = await checkTrialStatus(user.id, { supabase })
+
+    if (!trial.isValid && trial.accountStatus === "trial") {
+      return NextResponse.json(
+        { error: "Trial expired", code: "TRIAL_EXPIRED" },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const parsed = parseJsonBody(body, generateContentRequestSchema)
     if (parsed instanceof NextResponse) {

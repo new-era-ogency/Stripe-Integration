@@ -10,6 +10,7 @@ import GenerationHistory from "@/components/dashboard/GenerationHistory"
 import AuthNavButtons from "@/components/layout/AuthNavButtons"
 import CreditBalance from "@/components/layout/CreditBalance"
 import SubscriptionTierBadge from "@/components/layout/SubscriptionTierBadge"
+import TrialStatusWidget from "@/components/trial/TrialStatusWidget"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
 import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
 import {
@@ -17,6 +18,7 @@ import {
   formatTwitterThreadForCopy,
 } from "@/lib/ai/content-pack"
 import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
+import type { TrialUiState } from "@/lib/trial/ui"
 import { Loader2, Sparkles, Zap } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -94,6 +96,8 @@ export default function DashboardPage() {
   const [isGuest, setIsGuest] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
+  const [trial, setTrial] = useState<TrialUiState | null>(null)
+  const [trialModalOpen, setTrialModalOpen] = useState(false)
   const router = useRouter()
 
   const handleCreditsUpdated = useCallback((updatedCredits: number) => {
@@ -125,6 +129,7 @@ export default function DashboardPage() {
         setBrandVoice(null)
         setTgChannelId(null)
         setGenerations([])
+        setTrial(null)
         setAuthChecked(true)
         return
       }
@@ -135,6 +140,7 @@ export default function DashboardPage() {
         setBrandVoice(null)
         setTgChannelId(null)
         setGenerations([])
+        setTrial(null)
         setAuthChecked(true)
         return
       }
@@ -145,6 +151,7 @@ export default function DashboardPage() {
       setBrandVoice(data.brandVoice ?? data.profile?.brand_voice ?? null)
       setTgChannelId(data.tgChannelId ?? data.profile?.tg_channel_id ?? null)
       setGenerations(data.generations ?? [])
+      setTrial(data.trial ?? null)
       setAuthChecked(true)
     } catch (error) {
       console.error("Error fetching user data:", error)
@@ -201,6 +208,25 @@ export default function DashboardPage() {
 
       if (!generateResponse.ok) {
         const errorData = await generateResponse.json()
+        if (
+          generateResponse.status === 403 &&
+          errorData.code === "TRIAL_EXPIRED"
+        ) {
+          setTrial((current) => ({
+            ...(current ?? {
+              totalTrialDays: 7,
+              trialStartAt: null,
+              trialEndAt: null,
+              trialExtendedDays: 0,
+              claimedActions: [],
+            }),
+            isValid: false,
+            daysRemaining: 0,
+            accountStatus: "trial",
+          }))
+          setTrialModalOpen(true)
+          return
+        }
         if (generateResponse.status === 403 || generateResponse.status === 402) {
           setCredits(0)
           router.push("/pricing")
@@ -296,6 +322,14 @@ export default function DashboardPage() {
             ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-3">
+            {!isGuest && authChecked ? (
+              <TrialStatusWidget
+                trial={trial}
+                onTrialUpdated={setTrial}
+                modalOpen={trialModalOpen}
+                onModalOpenChange={setTrialModalOpen}
+              />
+            ) : null}
             {!isGuest && authChecked ? (
               <CreditBalance
                 credits={credits}
