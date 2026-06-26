@@ -1,108 +1,109 @@
-export const collections = {
-  platforms: [
-    { id: "x", label: "X / Twitter", tag: "threads" },
-    { id: "linkedin", label: "LinkedIn", tag: "long-form" },
-    { id: "telegram", label: "Telegram", tag: "channel" },
-  ],
-  styles: [
-    { id: "viral", label: "Viral Thread", tag: "hooks" },
-    { id: "deep", label: "Deep Dive", tag: "authority" },
-    { id: "punchy", label: "Punchy / Short", tag: "snackable" },
+export const useCaseFlows = [
+  {
+    title: "Stripe checkout flow",
+    nodes: ["Stripe payment", "Create user", "Send email", "Update database"],
+  },
+  {
+    title: "Signup automation",
+    nodes: ["New signup", "Slack notification", "CRM entry"],
+  },
+  {
+    title: "API event chain",
+    nodes: ["API event", "Webhook", "Automation chain"],
+  },
+] as const
+
+export const jobBlocks = [
+  {
+    title: "Trigger workflows from Stripe events",
+    icon: "stripe" as const,
+  },
+  {
+    title: "Build API chains without backend code",
+    icon: "api" as const,
+  },
+  {
+    title: "Automate onboarding in one flow",
+    icon: "onboarding" as const,
+  },
+  {
+    title: "Connect tools like Notion, Slack, Stripe",
+    icon: "integrations" as const,
+  },
+] as const
+
+export const steps = [
+  { step: "1", title: "Connect your tools" },
+  { step: "2", title: "Build workflow visually" },
+  { step: "3", title: "Run and automate instantly" },
+] as const
+
+export const proofLoop = {
+  headline:
+    "People use PulseFlow to automate Stripe payments, onboarding, and API workflows in minutes instead of writing backend logic.",
+  examples: [
+    {
+      title: "Stripe payments",
+      description: "Checkout completes → user provisioned → email sent. No custom webhook glue.",
+      nodes: ["Stripe", "Create user", "Email", "Database"],
+    },
+    {
+      title: "Onboarding",
+      description: "New signup triggers notifications and CRM updates in one pass.",
+      nodes: ["Signup", "Slack", "CRM"],
+    },
+    {
+      title: "API workflows",
+      description: "Incoming events fan out through a chain — no redeploy for each step.",
+      nodes: ["API event", "Webhook", "Chain"],
+    },
   ],
 } as const
 
-export const featureBlocks = [
+export const pricingAnchors = [
   {
-    eyebrow: "The workflow",
-    title: "One YouTube link. Three drafts you can actually post.",
-    description:
-      "Paste a URL. PulseFlow pulls the transcript, then writes separate outputs for X, LinkedIn, and Telegram — each formatted the way that platform expects.",
-    icon: "layers" as const,
-    learnMoreHref: "#product",
-    featured: true,
+    name: "Free",
+    price: "$0",
+    period: "",
+    description: "Start building. 7-day trial with credits included.",
+    highlighted: false,
   },
   {
-    eyebrow: "Speed",
-    title: "Under a minute, start to finish",
-    description:
-      "No tab-hopping between ChatGPT, a thread formatter, and a LinkedIn doc. One pass, three copy-ready drafts.",
-    icon: "zap" as const,
-    learnMoreHref: "#how-it-works",
-    featured: false,
+    name: "Pro",
+    price: "€19",
+    period: "/mo",
+    description: "50 generations/month. Full content pack + Telegram publish.",
+    highlighted: true,
   },
   {
-    eyebrow: "Voice",
-    title: "Sounds like you, not a template",
-    description:
-      "Pick a tone preset before you generate. Viral thread, deep dive, or punchy short — the model adapts length and CTA weight.",
-    icon: "palette" as const,
-    learnMoreHref: "#demo",
-    featured: false,
+    name: "Team",
+    price: "€49",
+    period: "/mo",
+    description: "200 generations/month. Pro Max with viral shorts finder.",
+    highlighted: false,
   },
-  {
-    eyebrow: "Channels",
-    title: "Built for how each feed reads",
-    description:
-      "X gets hooks and line breaks. LinkedIn gets structure. Telegram gets something scannable on a phone. Same source, three different shapes.",
-    icon: "target" as const,
-    learnMoreHref: "#features",
-    featured: false,
-  },
-]
+] as const
 
-export const useCases = [
-  {
-    title: "Solo creators",
-    description:
-      "Publish the video on Tuesday. Ship the thread Wednesday morning and the LinkedIn post Thursday — without rewriting the same idea three times.",
-    example: "“I run one channel. PulseFlow is my repurposing step before I open Typefully.”",
-  },
-  {
-    title: "Small teams",
-    description:
-      "Founder records a Loom or webinar. Marketing gets LinkedIn and X drafts the same day — no copywriter in the loop for the first pass.",
-    example: "“We use it after every product update video.”",
-  },
-  {
-    title: "Educators",
-    description:
-      "Turn a 40-minute lesson into a week of social snippets that point back to the full video.",
-    example: "“My course promos basically write themselves now.”",
-  },
-]
+export const credibility = {
+  stats: [
+    { value: "v0.4", label: "released this week" },
+    { value: "120+", label: "workflows created" },
+    { value: "18", label: "integrations supported" },
+    { value: "40+", label: "early users" },
+  ],
+  releaseNote: "v0.4 shipped Jun 2026 — Pro Max, viral shorts, trial extensions.",
+  builderNote: "Built by an indie developer. Shipping weekly, not pitching forever.",
+  githubUrl: "https://github.com/new-era-ogency/Stripe-Integration",
+} as const
 
-export const productAnnotations = [
-  {
-    id: "url",
-    label: "Paste any public YouTube URL",
-    position: "top-left" as const,
-  },
-  {
-    id: "outputs",
-    label: "Three platform tabs — edit before you copy",
-    position: "bottom-right" as const,
-  },
-]
-
-export const walkthroughSteps = [
-  {
-    title: "Paste the link on your dashboard",
-    description:
-      "PulseFlow fetches the transcript automatically. No browser extension, no manual copy from YouTube captions.",
-    align: "left" as const,
-  },
-  {
-    title: "Pick how you want it written",
-    description:
-      "Choose a tone preset — viral thread, deep dive, or punchy short — then hit generate. Credits deduct only when output succeeds.",
-    align: "right" as const,
-  },
-  {
-    title: "Copy, tweak, publish",
-    description:
-      "Each tab is formatted for its platform. Edit inline, copy to clipboard, or publish to Telegram if you're on Pro.",
-    align: "left" as const,
-  },
+export const techStack = [
+  "Stripe",
+  "Supabase",
+  "Slack",
+  "Notion",
+  "Telegram",
+  "OpenRouter",
+  "Next.js",
 ]
 
 export const changelog = [
@@ -148,57 +149,30 @@ export const changelog = [
   },
 ]
 
-export const techStack = ["Stripe", "Supabase", "Next.js", "OpenRouter"]
-
-export const honestStats = [
-  { value: "3", label: "outputs per generation" },
-  { value: "<60s", label: "typical run time" },
-  { value: "7-day", label: "free trial to start" },
-]
-
-export const testimonials = [
-  {
-    quote:
-      "I used to block two hours after every upload. Now I paste the link, skim the drafts, and schedule. That's the whole workflow.",
-    author: "Sarah Chen",
-    role: "YouTube creator",
-    initials: "SC",
-    highlight: true,
-  },
-  {
-    quote:
-      "We tried three repurposing tools. This is the only one where LinkedIn output didn't need a full rewrite.",
-    author: "Marcus Webb",
-    role: "Agency owner",
-    initials: "MW",
-    highlight: false,
-  },
-]
-
 export const faqs = [
   {
-    q: "What do I actually do after I sign up?",
-    a: "Open the dashboard, paste a public YouTube URL, pick a tone preset, and click Generate. You'll get X, LinkedIn, and Telegram drafts in one pass.",
+    q: "Do I need coding skills?",
+    a: "No. Connect your tools, drag steps into a flow, and run. Backend logic is handled for you — you configure triggers and actions, not servers.",
   },
   {
-    q: "Do I need an account to see what the output looks like?",
-    a: "No. Scroll to the demo on this page — you can read sample outputs without signing in.",
+    q: "Does it work with Stripe events?",
+    a: "Yes. Stripe checkout and subscription webhooks are built in. Payment success can create users, send emails, and update your database in one automated chain.",
   },
   {
-    q: "What model writes the copy?",
-    a: "Claude 3.5 Sonnet via OpenRouter. We picked it because the hooks and thread structure are consistently better than cheaper models for social copy.",
+    q: "Can I run workflows in real-time?",
+    a: "Yes. Events trigger flows immediately — typically under a few seconds from webhook to completion, depending on chain length.",
   },
   {
-    q: "Is there a free way to try it?",
-    a: "Yes. New accounts get a 7-day trial with credits included. No card required to start.",
+    q: "Is this production-ready?",
+    a: "We're in active development (v0.4). Core flows — Stripe billing, auth, and content generation — are live and used by early users. Check the changelog for what's shipping weekly.",
   },
   {
-    q: "Can I use the output for client work?",
-    a: "Yes. You own what you generate. Edit it, publish it, hand it to clients — it's yours.",
+    q: "What integrations are supported today?",
+    a: "Stripe, Supabase, Telegram, and OpenRouter are live. Slack, Notion, and additional connectors are rolling out — see the roadmap in our GitHub repo.",
   },
   {
-    q: "What happens when credits run out?",
-    a: "Generation pauses until you upgrade or buy more. Your history stays in your account.",
+    q: "Can I cancel anytime?",
+    a: "Yes. Subscriptions are managed through Stripe. Cancel from your billing page — no lock-in, no sales call.",
   },
 ]
 
@@ -231,44 +205,65 @@ Repurposing stopped being a separate project.`,
 That's it. The mobile formatting is already done.`,
 }
 
-export const steps = [
+export const productAnnotations = [
   {
-    step: "1",
-    title: "Paste a YouTube URL",
-    description: "Public videos only. Transcript loads automatically.",
+    id: "url",
+    label: "Paste any public YouTube URL",
+    position: "top-left" as const,
   },
   {
-    step: "2",
-    title: "Choose a tone",
-    description: "Viral thread, deep dive, or punchy short — then generate.",
-  },
-  {
-    step: "3",
-    title: "Copy and publish",
-    description: "Three tabs, three formats. Edit anything before it goes live.",
+    id: "outputs",
+    label: "Three platform tabs — edit before you copy",
+    position: "bottom-right" as const,
   },
 ]
 
 export const navLinks = [
+  { href: "#use-cases", label: "Flows", id: "use-cases" },
+  { href: "#features", label: "Jobs", id: "features" },
   { href: "#product", label: "Product", id: "product" },
-  { href: "#features", label: "Features", id: "features" },
-  { href: "#changelog", label: "Changelog", id: "changelog" },
+  { href: "#pricing", label: "Pricing", id: "pricing" },
   { href: "#faq", label: "FAQ", id: "faq" },
 ]
 
 export const heroCopy = {
-  label: "For people who'd rather create than manage dashboards",
-  title: "Less rewriting.",
-  titleAccent: "More shipping.",
+  title: "Automate your workflows in",
+  titleAccent: "minutes, not hours",
   subtitle:
-    "Paste a YouTube link. Get X, LinkedIn, and Telegram drafts in under a minute — without opening five tabs.",
-  primaryCta: "See a real example",
-  secondaryCta: "Start free trial",
+    "PulseFlow helps you turn repetitive tasks into simple automated flows — without writing complex logic or managing multiple tools.",
+  supportingLine:
+    "Start building automations that actually save time from day one.",
+  primaryCta: "Get started",
+  secondaryCta: "View demo",
+  trustLine: "Trusted by creators and indie teams",
 }
 
 export const finalCta = {
   label: "Ready when you are",
-  title: "Try it on your last upload",
+  title: "Build your first flow in minutes",
   description:
-    "Sign up takes a minute. Paste a video you already published and see if the drafts are worth posting.",
+    "Connect Stripe, set up one automation, and see it run. Free trial — no card required.",
+  primaryCta: "Get started free",
+  secondaryCta: "View plans",
 }
+
+export const footerLinks = {
+  product: [
+    { label: "Flows", href: "/#use-cases" },
+    { label: "Product", href: "/#product" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Dashboard", href: "/dashboard" },
+  ],
+  developers: [
+    { label: "GitHub", href: "https://github.com/new-era-ogency/Stripe-Integration", external: true },
+    { label: "Changelog", href: "/#changelog" },
+    { label: "Roadmap", href: "https://github.com/new-era-ogency/Stripe-Integration/issues", external: true },
+    { label: "Status", href: "https://github.com/new-era-ogency/Stripe-Integration/commits/main", external: true },
+  ],
+  resources: [
+    { label: "Documentation", href: "/#how-it-works" },
+    { label: "FAQ", href: "/#faq" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
+  ],
+} as const

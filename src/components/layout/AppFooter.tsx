@@ -1,19 +1,33 @@
 import Link from "next/link"
-import { Code2, Share2 } from "lucide-react"
+import { Code2, ExternalLink } from "lucide-react"
+import { footerLinks } from "@/lib/landing-content"
 
-const footerLinks = {
-  product: [
-    { label: "Features", href: "/#features" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Demo", href: "/#demo" },
-  ],
-  resources: [
-    { label: "Documentation", href: "/#how-it-works" },
-    { label: "FAQ", href: "/#faq" },
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Terms of Service", href: "/terms" },
-  ],
+function FooterLink({
+  href,
+  label,
+  external,
+}: {
+  href: string
+  label: string
+  external?: boolean
+}) {
+  const className =
+    "inline-flex items-center gap-1 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {label}
+        <ExternalLink className="size-3 opacity-60" />
+      </a>
+    )
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {label}
+    </Link>
+  )
 }
 
 export default function AppFooter() {
@@ -22,33 +36,25 @@ export default function AppFooter() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
-            <p className="text-sm font-bold uppercase tracking-[0.3em] text-white">
+            <p className="flex items-center gap-2 text-sm font-bold text-white">
+              <span className="flex size-6 items-center justify-center rounded-md bg-violet-600 text-[10px]">
+                P
+              </span>
               PulseFlow
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
-              Turn YouTube videos into platform-native social content with
-              secure Stripe billing and AI-powered generation.
+              Automate Stripe payments, onboarding, and API workflows — without
+              writing backend glue code.
             </p>
-            <div className="mt-5 flex items-center gap-3">
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex size-10 items-center justify-center rounded-xl border border-zinc-800 text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white"
-                aria-label="Share on social"
-              >
-                <Share2 className="size-4" />
-              </a>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex size-10 items-center justify-center rounded-xl border border-zinc-800 text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white"
-                aria-label="View source code"
-              >
-                <Code2 className="size-4" />
-              </a>
-            </div>
+            <a
+              href={footerLinks.developers[0].href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex size-10 items-center justify-center rounded-xl border border-zinc-800 text-zinc-400 transition-colors hover:border-violet-500/30 hover:text-white"
+              aria-label="View on GitHub"
+            >
+              <Code2 className="size-4" />
+            </a>
           </div>
 
           <div>
@@ -58,12 +64,7 @@ export default function AppFooter() {
             <ul className="mt-4 space-y-2">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
-                  >
-                    {link.label}
-                  </Link>
+                  <FooterLink href={link.href} label={link.label} />
                 </li>
               ))}
             </ul>
@@ -71,26 +72,38 @@ export default function AppFooter() {
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Resources
+              Developers
             </p>
             <ul className="mt-4 space-y-2">
-              {footerLinks.resources.map((link) => (
+              {footerLinks.developers.map((link) => (
                 <li key={link.href}>
-                  <Link
+                  <FooterLink
                     href={link.href}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
-                  >
-                    {link.label}
-                  </Link>
+                    label={link.label}
+                    external={"external" in link ? link.external : false}
+                  />
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
+        <div className="mt-8 border-t border-zinc-800/80 pt-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Resources
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+            {footerLinks.resources.map((link) => (
+              <li key={link.href}>
+                <FooterLink href={link.href} label={link.label} />
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-zinc-800/80 pt-6 sm:flex-row">
           <p className="text-sm text-zinc-500">
-            © {new Date().getFullYear()} PulseFlow. All rights reserved.
+            © {new Date().getFullYear()} PulseFlow. Built by an indie developer.
           </p>
           <a
             href="mailto:privacy@pulseflow.app"
