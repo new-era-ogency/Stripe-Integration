@@ -89,7 +89,7 @@
   }
 
   html {
-    @apply font-sans antialiased;
+    @apply scroll-smooth font-sans antialiased;
   }
 
   body {
@@ -100,6 +100,12 @@
 
   a {
     @apply no-underline;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 

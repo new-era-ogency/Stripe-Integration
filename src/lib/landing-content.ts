@@ -20,24 +20,32 @@ export const featureBlocks = [
     title: "YouTube to multi-platform content",
     description:
       "Your video transcript, our engine. Paste a link and receive platform-native drafts for X, LinkedIn, and Telegram — each tuned for how that audience actually reads.",
+    icon: "layers" as const,
+    learnMoreHref: "#demo",
   },
   {
     eyebrow: "Speed",
     title: "From link to posts in under 60 seconds",
     description:
       "Transcript extraction, parallel AI generation, and formatted output — all in one pass. No copy-paste chaos between tools.",
+    icon: "zap" as const,
+    learnMoreHref: "#how-it-works",
   },
   {
     eyebrow: "Precision",
     title: "Tailored outputs for every channel",
     description:
       "X threads with hooks and line breaks. LinkedIn posts with structure and authority. Telegram drops that scan fast on mobile. One source, three distinct voices.",
+    icon: "target" as const,
+    learnMoreHref: "#features",
   },
   {
     eyebrow: "Flexibility",
     title: "Explore tone presets that match your brand",
     description:
       "Viral thread, deep dive, punchy short — pick a style preset and let the model adapt tone, length, and CTA intensity before you publish.",
+    icon: "palette" as const,
+    learnMoreHref: "#styles",
   },
 ]
 
@@ -233,4 +241,35 @@ export const steps = [
     description:
       "Copy, refine, and publish. Every output is formatted for engagement — hooks, structure, and CTAs included.",
   },
+]
+
+export const trustBadges = [
+  { label: "Stripe Secure Checkout", icon: "credit-card" as const },
+  { label: "256-bit Encryption", icon: "shield" as const },
+  { label: "OpenRouter AI", icon: "cpu" as const },
+  { label: "99.9% Uptime", icon: "activity" as const },
+]
+
+export const companyLogos = [
+  "Stackline",
+  "CreatorOS",
+  "GrowthLab",
+  "VidScale",
+  "LaunchPad",
+  "RepurposeHQ",
+]
+
+export const socialProofStats = [
+  { value: "12K+", label: "Posts generated" },
+  { value: "2.4K+", label: "Active creators" },
+  { value: "3", label: "Platform outputs" },
+  { value: "99.9%", label: "Uptime SLA" },
+]
+
+export const navLinks = [
+  { href: "#features", label: "Features", id: "features" },
+  { href: "#how-it-works", label: "How It Works", id: "how-it-works" },
+  { href: "#demo", label: "Demo", id: "demo" },
+  { href: "#testimonials", label: "Reviews", id: "testimonials" },
+  { href: "#faq", label: "FAQ", id: "faq" },
 ]
