@@ -1,110 +1,128 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { Star } from "lucide-react"
 import AnimatedSection, { StaggerItem } from "@/components/landing/AnimatedSection"
+import CountUp from "@/components/landing/CountUp"
+import InteractiveCard from "@/components/landing/InteractiveCard"
+import SectionHeader from "@/components/landing/SectionHeader"
+import SectionShell from "@/components/landing/SectionShell"
 import {
-  BODY_TEXT,
   CARD_BASE,
   CARD_HOVER,
-  LANDING_CONTAINER,
-  LANDING_SECTION,
-  SECTION_LABEL,
-  SECTION_TITLE,
+  SECTION_CONTENT_GAP,
+  SECTION_HEADER_CENTERED,
 } from "@/lib/landing-styles"
-import { companyLogos, socialProofStats } from "@/lib/landing-content"
+import { companyLogos, socialProofStats, testimonials } from "@/lib/landing-content"
 
-function AnimatedStat({ value, label }: { value: string; label: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const node = ref.current
-    if (!node) {
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.4 }
-    )
-
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
+function StarRating({ count }: { count: number }) {
   return (
-    <div
-      ref={ref}
-      className={`text-center transition-all duration-700 ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-      }`}
-    >
-      <p className="bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-3xl font-semibold text-transparent md:text-4xl">
-        {value}
-      </p>
-      <p className="mt-1 text-xs uppercase tracking-wider text-zinc-500">
-        {label}
-      </p>
+    <div className="flex items-center gap-0.5" aria-label={`${count} out of 5 stars`}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Star
+          key={index}
+          className="size-3.5 fill-amber-400 text-amber-400"
+        />
+      ))}
     </div>
   )
 }
 
 export default function SocialProofSection() {
+  const featured = testimonials.find((item) => item.highlight) ?? testimonials[0]
+  const supporting = testimonials.filter((item) => !item.highlight)
+
   return (
-    <section id="testimonials" className={LANDING_SECTION}>
-      <div className={LANDING_CONTAINER}>
-        <AnimatedSection className="text-center">
-          <p className={SECTION_LABEL}>Social Proof</p>
-          <h2 className={`mt-3 ${SECTION_TITLE}`}>
-            Trusted by creators and growth teams
-          </h2>
-          <p className={`mx-auto mt-4 ${BODY_TEXT}`}>
-            PulseFlow powers daily publishing workflows with secure Stripe
-            billing, reliable infrastructure, and multi-platform output.
-          </p>
-        </AnimatedSection>
+    <SectionShell id="testimonials" tone="accent">
+      <AnimatedSection className={SECTION_HEADER_CENTERED}>
+        <SectionHeader
+          centered
+          label="Social Proof"
+          title="Loved by creators shipping daily"
+          description={
+            <>
+              <span className="font-semibold text-white">4.9/5</span> average from
+              240+ reviews · secure Stripe billing · 99.9% uptime
+            </>
+          }
+        />
+      </AnimatedSection>
 
-        <div className="mt-12 grid grid-cols-2 gap-6 md:grid-cols-4">
-          {socialProofStats.map((stat) => (
-            <AnimatedStat key={stat.label} value={stat.value} label={stat.label} />
-          ))}
-        </div>
+      <div className={`grid grid-cols-2 gap-8 md:grid-cols-4 ${SECTION_CONTENT_GAP}`}>
+        {socialProofStats.map((stat, index) => (
+          <StaggerItem key={stat.label} index={index} className="text-center">
+            <p className="bg-gradient-to-br from-white via-zinc-200 to-zinc-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
+              <CountUp value={stat.value} />
+            </p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
+              {stat.label}
+            </p>
+          </StaggerItem>
+        ))}
+      </div>
 
-        <AnimatedSection className="mt-14">
-          <p className="mb-5 text-center text-xs uppercase tracking-[0.3em] text-zinc-600">
-            Used by teams at
+      <AnimatedSection className={`${SECTION_CONTENT_GAP} max-w-4xl md:mx-auto`} delay={0.08}>
+        <blockquote
+          className={`relative ${CARD_BASE} border-violet-500/20 p-8 md:p-10`}
+        >
+          <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-violet-500/10 blur-3xl" />
+          <StarRating count={featured.rating} />
+          <p className="mt-5 text-lg leading-relaxed text-zinc-200 md:text-xl md:leading-8">
+            &ldquo;{featured.quote}&rdquo;
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            {companyLogos.map((logo, index) => (
-              <StaggerItem key={logo} index={index}>
-                <span className="inline-flex rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-4 py-2 text-sm font-medium text-zinc-500 backdrop-blur-sm">
-                  {logo}
+          <footer className="mt-6 flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-indigo-500/20 text-sm font-semibold text-violet-100">
+              {featured.initials}
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-white">{featured.author}</p>
+              <p className="text-xs text-zinc-500">{featured.role}</p>
+            </div>
+          </footer>
+        </blockquote>
+      </AnimatedSection>
+
+      <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+        {supporting.map((item, index) => (
+          <StaggerItem key={item.author} index={index}>
+            <InteractiveCard
+              as="blockquote"
+              className={`h-full ${CARD_BASE} ${CARD_HOVER} p-6 md:p-7`}
+            >
+              <StarRating count={item.rating} />
+              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+                &ldquo;{item.quote}&rdquo;
+              </p>
+              <footer className="mt-5 flex items-center gap-3 border-t border-zinc-800/80 pt-4">
+                <span className="flex size-9 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-zinc-300">
+                  {item.initials}
                 </span>
-              </StaggerItem>
+                <div>
+                  <p className="text-sm font-medium text-white">{item.author}</p>
+                  <p className="text-xs text-zinc-500">{item.role}</p>
+                </div>
+              </footer>
+            </InteractiveCard>
+          </StaggerItem>
+        ))}
+      </div>
+
+      <AnimatedSection className={SECTION_CONTENT_GAP} delay={0.1}>
+        <p className="mb-6 text-center text-xs font-medium uppercase tracking-[0.35em] text-zinc-600">
+          Trusted by teams at
+        </p>
+        <div className="logo-marquee relative overflow-hidden">
+          <div className="logo-marquee-track flex w-max items-center gap-4">
+            {[...companyLogos, ...companyLogos].map((logo, index) => (
+              <span
+                key={`${logo}-${index}`}
+                className="inline-flex rounded-xl border border-zinc-800/70 bg-zinc-950/60 px-5 py-2.5 text-sm font-medium text-zinc-500 backdrop-blur-sm transition-colors hover:border-zinc-700 hover:text-zinc-300"
+              >
+                {logo}
+              </span>
             ))}
           </div>
-        </AnimatedSection>
-
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          {[
-            "4.9/5 creator rating",
-            "Stripe-powered billing",
-            "SOC2-ready infrastructure",
-          ].map((badge) => (
-            <span
-              key={badge}
-              className={`${CARD_BASE} px-4 py-2 text-xs text-zinc-400 ${CARD_HOVER}`}
-            >
-              {badge}
-            </span>
-          ))}
         </div>
-      </div>
-    </section>
+      </AnimatedSection>
+    </SectionShell>
   )
 }

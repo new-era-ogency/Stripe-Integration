@@ -131,12 +131,27 @@ export const testimonials = [
       "PulseFlow cut my repurposing time from 2 hours to 5 minutes. I paste the YouTube link and ship to three platforms the same day.",
     author: "Sarah Chen",
     role: "Content Creator, 120K subs",
+    initials: "SC",
+    rating: 5,
+    highlight: true,
   },
   {
     quote:
       "Our agency uses it for every client webinar. LinkedIn posts are consistently on-brand without a copywriter in the loop.",
     author: "Marcus Webb",
     role: "Head of Growth, Stackline Agency",
+    initials: "MW",
+    rating: 5,
+    highlight: false,
+  },
+  {
+    quote:
+      "The Stripe checkout and credit system just works. We upgraded the whole team to Pro in one afternoon.",
+    author: "Elena Ruiz",
+    role: "Ops Lead, CreatorOS",
+    initials: "ER",
+    rating: 5,
+    highlight: false,
   },
 ]
 

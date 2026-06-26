@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { usePerfMode } from "@/hooks/usePerfMode"
 
 type Particle = {
   x: number
@@ -13,63 +14,88 @@ type Particle = {
 
 export default function HeroVideoBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { isLite } = usePerfMode()
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    if (isLite) {
+      return
+    }
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const canvas = canvasRef.current
+    if (!canvas) {
+      return
+    }
+
+    const ctx = canvas.getContext("2d", { alpha: true })
+    if (!ctx) {
+      return
+    }
 
     let animationId = 0
+    let isVisible = true
+    let lastFrame = 0
     let particles: Particle[] = []
     let width = 0
     let height = 0
 
-    const particleCount = 48
-    const connectionDistance = 140
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches
+    const particleCount = 22
+    const connectionDistance = 120
+    const frameInterval = 1000 / 30
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
 
     const createParticles = () => {
       particles = Array.from({ length: particleCount }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        radius: Math.random() * 1.5 + 0.5,
-        opacity: Math.random() * 0.5 + 0.2,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: Math.random() * 1.2 + 0.5,
+        opacity: Math.random() * 0.45 + 0.2,
       }))
     }
 
     const resize = () => {
       const parent = canvas.parentElement
-      if (!parent) return
+      if (!parent) {
+        return
+      }
 
       width = parent.clientWidth
       height = parent.clientHeight
-      canvas.width = width * window.devicePixelRatio
-      canvas.height = height * window.devicePixelRatio
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
       if (particles.length === 0) {
         createParticles()
       }
     }
 
-    const draw = () => {
+    const draw = (timestamp: number) => {
+      animationId = window.requestAnimationFrame(draw)
+
+      if (!isVisible || document.hidden) {
+        return
+      }
+
+      if (timestamp - lastFrame < frameInterval) {
+        return
+      }
+
+      lastFrame = timestamp
       ctx.clearRect(0, 0, width, height)
 
       for (const particle of particles) {
-        if (!prefersReducedMotion) {
-          particle.x += particle.vx
-          particle.y += particle.vy
+        particle.x += particle.vx
+        particle.y += particle.vy
 
-          if (particle.x < 0 || particle.x > width) particle.vx *= -1
-          if (particle.y < 0 || particle.y > height) particle.vy *= -1
+        if (particle.x < 0 || particle.x > width) {
+          particle.vx *= -1
+        }
+        if (particle.y < 0 || particle.y > height) {
+          particle.vy *= -1
         }
 
         ctx.beginPath()
@@ -82,34 +108,54 @@ export default function HeroVideoBackground() {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
-          const distance = Math.sqrt(dx * dx + dy * dy)
+          const distanceSq = dx * dx + dy * dy
+          const maxDistSq = connectionDistance * connectionDistance
 
-          if (distance < connectionDistance) {
-            const opacity = (1 - distance / connectionDistance) * 0.18
+          if (distanceSq < maxDistSq) {
+            const distance = Math.sqrt(distanceSq)
+            const opacity = (1 - distance / connectionDistance) * 0.14
             ctx.beginPath()
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
             ctx.strokeStyle = `rgba(139, 92, 246, ${opacity})`
-            ctx.lineWidth = 0.6
+            ctx.lineWidth = 0.5
             ctx.stroke()
           }
         }
       }
+    }
 
-      animationId = window.requestAnimationFrame(draw)
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting
+      },
+      { threshold: 0 }
+    )
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && isVisible && !animationId) {
+        animationId = window.requestAnimationFrame(draw)
+      }
     }
 
     resize()
-    draw()
+    animationId = window.requestAnimationFrame(draw)
 
-    const observer = new ResizeObserver(resize)
-    observer.observe(canvas.parentElement!)
+    const resizeObserver = new ResizeObserver(resize)
+    if (canvas.parentElement) {
+      resizeObserver.observe(canvas.parentElement)
+      visibilityObserver.observe(canvas.parentElement)
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange)
 
     return () => {
-      observer.disconnect()
+      resizeObserver.disconnect()
+      visibilityObserver.disconnect()
+      document.removeEventListener("visibilitychange", onVisibilityChange)
       window.cancelAnimationFrame(animationId)
     }
-  }, [])
+  }, [isLite])
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -120,11 +166,13 @@ export default function HeroVideoBackground() {
       <div className="hero-orb hero-orb-b absolute -right-16 top-1/3 h-80 w-80 rounded-full bg-indigo-500/15 blur-3xl" />
       <div className="hero-orb hero-orb-c absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
 
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 h-full w-full opacity-70"
-        aria-hidden="true"
-      />
+      {!isLite ? (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full opacity-60"
+          aria-hidden="true"
+        />
+      ) : null}
 
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_75%)]" />
 
