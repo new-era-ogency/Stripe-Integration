@@ -1,290 +1,274 @@
 export const collections = {
   platforms: [
-    { id: "x", label: "X / Twitter", tag: "THREADS" },
-    { id: "linkedin", label: "LinkedIn", tag: "LONG-FORM" },
-    { id: "telegram", label: "Telegram", tag: "CHANNEL" },
+    { id: "x", label: "X / Twitter", tag: "threads" },
+    { id: "linkedin", label: "LinkedIn", tag: "long-form" },
+    { id: "telegram", label: "Telegram", tag: "channel" },
   ],
   styles: [
-    { id: "viral", label: "Viral Thread", tag: "HOOKS" },
-    { id: "deep", label: "Deep Dive", tag: "AUTHORITY" },
-    { id: "punchy", label: "Punchy / Short", tag: "SNACKABLE" },
-    { id: "thought", label: "Thought Leader", tag: "INSIGHT" },
-    { id: "cta", label: "CTA-Heavy", tag: "CONVERT" },
-    { id: "newsletter", label: "Newsletter Drop", tag: "EMAIL" },
+    { id: "viral", label: "Viral Thread", tag: "hooks" },
+    { id: "deep", label: "Deep Dive", tag: "authority" },
+    { id: "punchy", label: "Punchy / Short", tag: "snackable" },
   ],
 } as const
 
 export const featureBlocks = [
   {
-    eyebrow: "Introducing",
-    title: "YouTube to multi-platform content",
+    eyebrow: "The workflow",
+    title: "One YouTube link. Three drafts you can actually post.",
     description:
-      "Your video transcript, our engine. Paste a link and receive platform-native drafts for X, LinkedIn, and Telegram — each tuned for how that audience actually reads.",
+      "Paste a URL. PulseFlow pulls the transcript, then writes separate outputs for X, LinkedIn, and Telegram — each formatted the way that platform expects.",
     icon: "layers" as const,
-    learnMoreHref: "#demo",
+    learnMoreHref: "#product",
+    featured: true,
   },
   {
     eyebrow: "Speed",
-    title: "From link to posts in under 60 seconds",
+    title: "Under a minute, start to finish",
     description:
-      "Transcript extraction, parallel AI generation, and formatted output — all in one pass. No copy-paste chaos between tools.",
+      "No tab-hopping between ChatGPT, a thread formatter, and a LinkedIn doc. One pass, three copy-ready drafts.",
     icon: "zap" as const,
     learnMoreHref: "#how-it-works",
+    featured: false,
   },
   {
-    eyebrow: "Precision",
-    title: "Tailored outputs for every channel",
+    eyebrow: "Voice",
+    title: "Sounds like you, not a template",
     description:
-      "X threads with hooks and line breaks. LinkedIn posts with structure and authority. Telegram drops that scan fast on mobile. One source, three distinct voices.",
+      "Pick a tone preset before you generate. Viral thread, deep dive, or punchy short — the model adapts length and CTA weight.",
+    icon: "palette" as const,
+    learnMoreHref: "#demo",
+    featured: false,
+  },
+  {
+    eyebrow: "Channels",
+    title: "Built for how each feed reads",
+    description:
+      "X gets hooks and line breaks. LinkedIn gets structure. Telegram gets something scannable on a phone. Same source, three different shapes.",
     icon: "target" as const,
     learnMoreHref: "#features",
-  },
-  {
-    eyebrow: "Flexibility",
-    title: "Explore tone presets that match your brand",
-    description:
-      "Viral thread, deep dive, punchy short — pick a style preset and let the model adapt tone, length, and CTA intensity before you publish.",
-    icon: "palette" as const,
-    learnMoreHref: "#styles",
+    featured: false,
   },
 ]
 
 export const useCases = [
   {
-    title: "Creators",
+    title: "Solo creators",
     description:
-      "Turn every YouTube upload into a week of social content. Threads, posts, and channel drops — without rewriting from scratch.",
-    tags: ["YOUTUBERS", "PODCASTERS", "STREAMERS"],
+      "Publish the video on Tuesday. Ship the thread Wednesday morning and the LinkedIn post Thursday — without rewriting the same idea three times.",
+    example: "“I run one channel. PulseFlow is my repurposing step before I open Typefully.”",
   },
   {
-    title: "Businesses",
+    title: "Small teams",
     description:
-      "Repurpose webinars, demos, and founder updates into LinkedIn thought leadership and X distribution at scale.",
-    tags: ["B2B", "SAAS", "AGENCIES"],
+      "Founder records a Loom or webinar. Marketing gets LinkedIn and X drafts the same day — no copywriter in the loop for the first pass.",
+    example: "“We use it after every product update video.”",
   },
   {
     title: "Educators",
     description:
-      "Convert lectures and tutorials into digestible social snippets that drive students back to the full video.",
-    tags: ["COACHES", "COURSES", "TEACHERS"],
+      "Turn a 40-minute lesson into a week of social snippets that point back to the full video.",
+    example: "“My course promos basically write themselves now.”",
   },
 ]
 
-export const benefits = [
+export const productAnnotations = [
   {
-    title: "3 platforms, one pass",
-    description: "X, LinkedIn, and Telegram outputs generated in parallel from a single transcript.",
+    id: "url",
+    label: "Paste any public YouTube URL",
+    position: "top-left" as const,
   },
   {
-    title: "Claude 3.5 Sonnet quality",
-    description: "Powered by OpenRouter for sharp hooks, clean structure, and platform-native tone.",
-  },
-  {
-    title: "Under 60 seconds",
-    description: "Most generations complete in under a minute — from URL paste to copy-ready drafts.",
-  },
-  {
-    title: "Any device, anytime",
-    description: "Works in the browser on desktop, tablet, or mobile. Credits sync to your account.",
+    id: "outputs",
+    label: "Three platform tabs — edit before you copy",
+    position: "bottom-right" as const,
   },
 ]
 
-export const platformCategories = [
+export const walkthroughSteps = [
   {
-    id: "x",
-    title: "X / Twitter",
+    title: "Paste the link on your dashboard",
     description:
-      "Thread-ready hooks, punchy lines, and reply-bait structure. Optimized for scroll-stopping openers and viral cadence.",
-    cta: "Preview X output",
+      "PulseFlow fetches the transcript automatically. No browser extension, no manual copy from YouTube captions.",
+    align: "left" as const,
   },
   {
-    id: "linkedin",
-    title: "LinkedIn",
+    title: "Pick how you want it written",
     description:
-      "Long-form posts with authority tone, scannable paragraphs, and professional CTAs that fit the feed.",
-    cta: "Preview LinkedIn output",
+      "Choose a tone preset — viral thread, deep dive, or punchy short — then hit generate. Credits deduct only when output succeeds.",
+    align: "right" as const,
   },
   {
-    id: "telegram",
-    title: "Telegram",
+    title: "Copy, tweak, publish",
     description:
-      "Channel-native articles — conversational, high-energy, and formatted for mobile readers who skim fast.",
-    cta: "Preview Telegram output",
+      "Each tab is formatted for its platform. Edit inline, copy to clipboard, or publish to Telegram if you're on Pro.",
+    align: "left" as const,
   },
 ]
 
-export const styleShowcase = [
-  { category: "Tone", name: "Viral Thread", preset: "viral-thread" },
-  { category: "Tone", name: "Deep Dive", preset: "deep-dive" },
-  { category: "Tone", name: "Punchy / Short", preset: "punchy-short" },
-  { category: "Format", name: "Hook-First", preset: "hook-first" },
-  { category: "Format", name: "Thread Breakdown", preset: "thread" },
-  { category: "Format", name: "CTA-Heavy", preset: "cta-heavy" },
-  { category: "Audience", name: "Thought Leader", preset: "thought-leader" },
-  { category: "Audience", name: "Community Drop", preset: "community" },
-  { category: "Audience", name: "Newsletter Tease", preset: "newsletter" },
+export const changelog = [
+  {
+    date: "Jun 2026",
+    version: "0.4",
+    title: "Pro Max + Viral Shorts Finder",
+    items: [
+      "Pro Max tier with timestamped hook extraction",
+      "Stripe checkout for Pro and Pro Max",
+      "Trial extensions via share actions",
+    ],
+  },
+  {
+    date: "Jun 2026",
+    version: "0.3",
+    title: "Auth & usernames",
+    items: [
+      "Separate signup and login flows",
+      "Required username for new accounts",
+      "OAuth profile completion",
+    ],
+  },
+  {
+    date: "May 2026",
+    version: "0.2",
+    title: "Multi-platform output",
+    items: [
+      "Parallel X, LinkedIn, and Telegram generation",
+      "Generation history saved per account",
+      "Brand voice setting for Pro users",
+    ],
+  },
+  {
+    date: "Apr 2026",
+    version: "0.1",
+    title: "First public build",
+    items: [
+      "YouTube transcript → social drafts",
+      "Credit-based free tier",
+      "Dashboard with copy-to-clipboard",
+    ],
+  },
+]
+
+export const techStack = ["Stripe", "Supabase", "Next.js", "OpenRouter"]
+
+export const honestStats = [
+  { value: "3", label: "outputs per generation" },
+  { value: "<60s", label: "typical run time" },
+  { value: "7-day", label: "free trial to start" },
 ]
 
 export const testimonials = [
   {
     quote:
-      "PulseFlow cut my repurposing time from 2 hours to 5 minutes. I paste the YouTube link and ship to three platforms the same day.",
+      "I used to block two hours after every upload. Now I paste the link, skim the drafts, and schedule. That's the whole workflow.",
     author: "Sarah Chen",
-    role: "Content Creator, 120K subs",
+    role: "YouTube creator",
     initials: "SC",
-    rating: 5,
     highlight: true,
   },
   {
     quote:
-      "Our agency uses it for every client webinar. LinkedIn posts are consistently on-brand without a copywriter in the loop.",
+      "We tried three repurposing tools. This is the only one where LinkedIn output didn't need a full rewrite.",
     author: "Marcus Webb",
-    role: "Head of Growth, Stackline Agency",
+    role: "Agency owner",
     initials: "MW",
-    rating: 5,
-    highlight: false,
-  },
-  {
-    quote:
-      "The Stripe checkout and credit system just works. We upgraded the whole team to Pro in one afternoon.",
-    author: "Elena Ruiz",
-    role: "Ops Lead, CreatorOS",
-    initials: "ER",
-    rating: 5,
     highlight: false,
   },
 ]
 
 export const faqs = [
   {
-    q: "How do I generate content with PulseFlow?",
-    a: "Sign in, paste a public YouTube URL on the dashboard, pick a style preset, and click Generate. You'll receive X, LinkedIn, and Telegram drafts in seconds.",
+    q: "What do I actually do after I sign up?",
+    a: "Open the dashboard, paste a public YouTube URL, pick a tone preset, and click Generate. You'll get X, LinkedIn, and Telegram drafts in one pass.",
   },
   {
-    q: "Do I need to sign in to explore the product?",
-    a: "No. The landing page demo lets you preview sample outputs across all three platforms without an account. Sign in only when you're ready to generate your own.",
+    q: "Do I need an account to see what the output looks like?",
+    a: "No. Scroll to the demo on this page — you can read sample outputs without signing in.",
   },
   {
-    q: "What AI model powers the generation?",
-    a: "PulseFlow uses Claude 3.5 Sonnet via OpenRouter for high-quality, platform-native copy with strong hooks and structure.",
+    q: "What model writes the copy?",
+    a: "Claude 3.5 Sonnet via OpenRouter. We picked it because the hooks and thread structure are consistently better than cheaper models for social copy.",
   },
   {
-    q: "Is there a free tier?",
-    a: "Yes. New accounts start with free trial credits so you can test the full pipeline before upgrading.",
+    q: "Is there a free way to try it?",
+    a: "Yes. New accounts get a 7-day trial with credits included. No card required to start.",
   },
   {
-    q: "Can I use outputs commercially?",
-    a: "Yes. Generated content is yours to publish, edit, and use across your channels and client work.",
+    q: "Can I use the output for client work?",
+    a: "Yes. You own what you generate. Edit it, publish it, hand it to clients — it's yours.",
   },
   {
-    q: "What happens when I run out of credits?",
-    a: "You'll be redirected to pricing where you can purchase more credits. Your generation history stays saved to your account.",
-  },
-]
-
-export const exploreLinks = [
-  {
-    title: "Dashboard",
-    description: "Paste a link, pick a preset, and generate all three platform outputs.",
-    href: "/dashboard",
-  },
-  {
-    title: "Pricing",
-    description: "Starter and Pro plans with credit packs for consistent publishing.",
-    href: "/pricing",
-  },
-  {
-    title: "Sign In",
-    description: "Create a free account and start generating in under a minute.",
-    href: "/login",
+    q: "What happens when credits run out?",
+    a: "Generation pauses until you upgrade or buy more. Your history stays in your account.",
   },
 ]
 
 export const demoContent = {
-  x: `🚨 Stop letting your YouTube videos die after upload.
+  x: `Stop letting good videos die on YouTube.
 
-I fed one 18-minute video into PulseFlow and got:
+I pasted one 18-min upload into PulseFlow.
 
-→ A punchy X thread with a killer hook
-→ A LinkedIn thought-leadership post
-→ A Telegram drop ready to publish
+Got back:
+→ a thread with a proper hook
+→ a LinkedIn post I'd actually publish
+→ a Telegram drop for my channel
 
-The transcript became 3 platform-native drafts in under 60 seconds.
+Same transcript. Three formats. About 45 seconds.`,
+  linkedin: `Your best ideas shouldn't stay buried in a watch page.
 
-Creators who repurpose win. Creators who don't get forgotten.`,
-  linkedin: `Your best content shouldn't live in one place.
+I published a deep-dive last week. Decent watch time. Then nothing on LinkedIn.
 
-Last week I published a deep-dive on YouTube. Strong watch time. Solid comments. Then… silence.
+Ran the transcript through PulseFlow once.
 
-So I ran the transcript through PulseFlow.
+One structured post with a clear opener — ready to edit and ship.
 
-In one pass, I had:
-• A structured LinkedIn post with a scroll-stopping opener
-• A Telegram article formatted for mobile readers
-• An X thread engineered for replies and reposts
+Repurposing stopped being a separate project.`,
+  telegram: `New workflow:
 
-Repurposing isn't extra work anymore — it's the multiplier.`,
-  telegram: `⚡️ NEW DROP: From one YouTube link to three channels
+1. Upload to YouTube
+2. Paste link in PulseFlow
+3. Copy the Telegram tab
 
-PulseFlow just turned a single transcript into:
-
-— X thread (hook + CTA locked in)
-— LinkedIn long-form (authority tone)
-— Telegram post (fast, scannable, high energy)
-
-Paste link → AI processes → publish everywhere.
-
-This is how modern creators scale output without scaling hours.`,
+That's it. The mobile formatting is already done.`,
 }
 
 export const steps = [
   {
-    step: "01",
-    title: "Paste Link",
-    description:
-      "Drop any public YouTube URL. PulseFlow pulls the transcript instantly — no manual copying.",
+    step: "1",
+    title: "Paste a YouTube URL",
+    description: "Public videos only. Transcript loads automatically.",
   },
   {
-    step: "02",
-    title: "AI Processing",
-    description:
-      "Our models rewrite your transcript into platform-native drafts tuned for X, LinkedIn, and Telegram.",
+    step: "2",
+    title: "Choose a tone",
+    description: "Viral thread, deep dive, or punchy short — then generate.",
   },
   {
-    step: "03",
-    title: "Get Viral Content",
-    description:
-      "Copy, refine, and publish. Every output is formatted for engagement — hooks, structure, and CTAs included.",
+    step: "3",
+    title: "Copy and publish",
+    description: "Three tabs, three formats. Edit anything before it goes live.",
   },
-]
-
-export const trustBadges = [
-  { label: "Stripe Secure Checkout", icon: "credit-card" as const },
-  { label: "256-bit Encryption", icon: "shield" as const },
-  { label: "OpenRouter AI", icon: "cpu" as const },
-  { label: "99.9% Uptime", icon: "activity" as const },
-]
-
-export const companyLogos = [
-  "Stackline",
-  "CreatorOS",
-  "GrowthLab",
-  "VidScale",
-  "LaunchPad",
-  "RepurposeHQ",
-]
-
-export const socialProofStats = [
-  { value: "12K+", label: "Posts generated" },
-  { value: "2.4K+", label: "Active creators" },
-  { value: "3", label: "Platform outputs" },
-  { value: "99.9%", label: "Uptime SLA" },
 ]
 
 export const navLinks = [
+  { href: "#product", label: "Product", id: "product" },
   { href: "#features", label: "Features", id: "features" },
-  { href: "#how-it-works", label: "How It Works", id: "how-it-works" },
-  { href: "#demo", label: "Demo", id: "demo" },
-  { href: "#testimonials", label: "Reviews", id: "testimonials" },
+  { href: "#changelog", label: "Changelog", id: "changelog" },
   { href: "#faq", label: "FAQ", id: "faq" },
 ]
+
+export const heroCopy = {
+  label: "For people who'd rather create than manage dashboards",
+  title: "Less rewriting.",
+  titleAccent: "More shipping.",
+  subtitle:
+    "Paste a YouTube link. Get X, LinkedIn, and Telegram drafts in under a minute — without opening five tabs.",
+  primaryCta: "See a real example",
+  secondaryCta: "Start free trial",
+}
+
+export const finalCta = {
+  label: "Ready when you are",
+  title: "Try it on your last upload",
+  description:
+    "Sign up takes a minute. Paste a video you already published and see if the drafts are worth posting.",
+}

@@ -1,128 +1,87 @@
 "use client"
 
-import { Star } from "lucide-react"
 import AnimatedSection, { StaggerItem } from "@/components/landing/AnimatedSection"
-import CountUp from "@/components/landing/CountUp"
-import InteractiveCard from "@/components/landing/InteractiveCard"
-import SectionHeader from "@/components/landing/SectionHeader"
+import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
-import {
-  CARD_BASE,
-  CARD_HOVER,
-  SECTION_CONTENT_GAP,
-  SECTION_HEADER_CENTERED,
-} from "@/lib/landing-styles"
-import { companyLogos, socialProofStats, testimonials } from "@/lib/landing-content"
-
-function StarRating({ count }: { count: number }) {
-  return (
-    <div className="flex items-center gap-0.5" aria-label={`${count} out of 5 stars`}>
-      {Array.from({ length: count }).map((_, index) => (
-        <Star
-          key={index}
-          className="size-3.5 fill-amber-400 text-amber-400"
-        />
-      ))}
-    </div>
-  )
-}
+import { ACCENT_TEXT, CARD_BASE, SECTION_CONTENT_GAP } from "@/lib/landing-styles"
+import { honestStats, techStack, testimonials } from "@/lib/landing-content"
 
 export default function SocialProofSection() {
-  const featured = testimonials.find((item) => item.highlight) ?? testimonials[0]
-  const supporting = testimonials.filter((item) => !item.highlight)
+  const [featured, supporting] = [
+    testimonials.find((t) => t.highlight) ?? testimonials[0],
+    testimonials.find((t) => !t.highlight) ?? testimonials[1],
+  ]
 
   return (
-    <SectionShell id="testimonials" tone="accent">
-      <AnimatedSection className={SECTION_HEADER_CENTERED}>
+    <SectionShell id="testimonials" tone="spotlight">
+      <AnimatedSection>
         <SectionHeader
-          centered
-          label="Social Proof"
-          title="Loved by creators shipping daily"
-          description={
-            <>
-              <span className="font-semibold text-white">4.9/5</span> average from
-              240+ reviews · secure Stripe billing · 99.9% uptime
-            </>
-          }
+          label="From early users"
+          title="People who actually ship with it"
+          description="We're still early. These are real workflows, not vanity metrics."
         />
       </AnimatedSection>
 
-      <div className={`grid grid-cols-2 gap-8 md:grid-cols-4 ${SECTION_CONTENT_GAP}`}>
-        {socialProofStats.map((stat, index) => (
-          <StaggerItem key={stat.label} index={index} className="text-center">
-            <p className="bg-gradient-to-br from-white via-zinc-200 to-zinc-500 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
-              <CountUp value={stat.value} />
-            </p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-              {stat.label}
-            </p>
-          </StaggerItem>
-        ))}
-      </div>
-
-      <AnimatedSection className={`${SECTION_CONTENT_GAP} max-w-4xl md:mx-auto`} delay={0.08}>
-        <blockquote
-          className={`relative ${CARD_BASE} border-violet-500/20 p-8 md:p-10`}
-        >
-          <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-violet-500/10 blur-3xl" />
-          <StarRating count={featured.rating} />
-          <p className="mt-5 text-lg leading-relaxed text-zinc-200 md:text-xl md:leading-8">
-            &ldquo;{featured.quote}&rdquo;
-          </p>
-          <footer className="mt-6 flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-indigo-500/20 text-sm font-semibold text-violet-100">
-              {featured.initials}
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-white">{featured.author}</p>
-              <p className="text-xs text-zinc-500">{featured.role}</p>
-            </div>
-          </footer>
-        </blockquote>
-      </AnimatedSection>
-
-      <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-        {supporting.map((item, index) => (
-          <StaggerItem key={item.author} index={index}>
-            <InteractiveCard
-              as="blockquote"
-              className={`h-full ${CARD_BASE} ${CARD_HOVER} p-6 md:p-7`}
+      <SectionHeaderSpacer>
+        <div className="grid gap-8 sm:grid-cols-3">
+          {honestStats.map((stat, index) => (
+            <div
+              key={stat.label}
+              className={`${index === 0 ? "sm:col-span-1" : ""}`}
             >
-              <StarRating count={item.rating} />
-              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
-                &ldquo;{item.quote}&rdquo;
+              <p className={`text-3xl font-bold md:text-4xl ${ACCENT_TEXT}`}>
+                {stat.value}
               </p>
-              <footer className="mt-5 flex items-center gap-3 border-t border-zinc-800/80 pt-4">
-                <span className="flex size-9 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-zinc-300">
-                  {item.initials}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-white">{item.author}</p>
-                  <p className="text-xs text-zinc-500">{item.role}</p>
-                </div>
-              </footer>
-            </InteractiveCard>
-          </StaggerItem>
-        ))}
-      </div>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
 
-      <AnimatedSection className={SECTION_CONTENT_GAP} delay={0.1}>
-        <p className="mb-6 text-center text-xs font-medium uppercase tracking-[0.35em] text-zinc-600">
-          Trusted by teams at
-        </p>
-        <div className="logo-marquee relative overflow-hidden">
-          <div className="logo-marquee-track flex w-max items-center gap-4">
-            {[...companyLogos, ...companyLogos].map((logo, index) => (
-              <span
-                key={`${logo}-${index}`}
-                className="inline-flex rounded-xl border border-zinc-800/70 bg-zinc-950/60 px-5 py-2.5 text-sm font-medium text-zinc-500 backdrop-blur-sm transition-colors hover:border-zinc-700 hover:text-zinc-300"
+        <div className={`mt-12 grid gap-6 md:grid-cols-2 ${SECTION_CONTENT_GAP}`}>
+          {[featured, supporting].map((item, index) => (
+            <StaggerItem key={item.author} index={index}>
+              <blockquote
+                className={`h-full ${CARD_BASE} border-violet-500/10 p-6 md:p-8 ${
+                  index === 0
+                    ? "bg-gradient-to-br from-violet-500/[0.06] to-zinc-950"
+                    : ""
+                }`}
               >
-                {logo}
+                <p className="text-lg leading-relaxed text-zinc-200">
+                  &ldquo;{item.quote}&rdquo;
+                </p>
+                <footer className="mt-6 flex items-center gap-3 text-sm">
+                  <span className="flex size-8 items-center justify-center rounded-full bg-violet-600/20 text-xs font-bold text-violet-300">
+                    {item.author.charAt(0)}
+                  </span>
+                  <div>
+                    <span className="font-semibold text-white">{item.author}</span>
+                    <p className="text-zinc-500">{item.role}</p>
+                  </div>
+                </footer>
+              </blockquote>
+            </StaggerItem>
+          ))}
+        </div>
+
+        <AnimatedSection className="mt-14">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+            Built with
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {techStack.map((name) => (
+              <span
+                key={name}
+                className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+              >
+                {name}
               </span>
             ))}
           </div>
-        </div>
-      </AnimatedSection>
+        </AnimatedSection>
+      </SectionHeaderSpacer>
     </SectionShell>
   )
 }
