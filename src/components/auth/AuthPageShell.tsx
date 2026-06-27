@@ -1,4 +1,5 @@
 import Link from "next/link"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 
 type AuthPageShellProps = {
   title: string
@@ -33,6 +34,7 @@ export default function AuthPageShell({
         <div className="flex flex-1 flex-col justify-center">
           <div className="w-full rounded-2xl border border-violet-500/10 bg-[#050505]/80 p-8 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)] backdrop-blur-xl">
             <div className="mb-8 text-center">
+              <PulseFlowLogo size="md" className="mx-auto mb-4" />
               <h1 className="bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-xl font-black uppercase tracking-widest text-transparent">
                 {title}
               </h1>

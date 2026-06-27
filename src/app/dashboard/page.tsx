@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import DashboardCheckoutSync from "@/components/dashboard/DashboardCheckoutSync"
 import BrandVoiceSettings from "@/components/dashboard/BrandVoiceSettings"
 import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
@@ -311,9 +312,9 @@ export default function DashboardPage() {
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
-              className="shrink-0 text-sm font-semibold tracking-tight text-white"
+              className="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight text-white"
             >
-              PulseFlow
+              <PulseFlowLogo size="xs" showWordmark />
             </Link>
             {!isGuest && authChecked ? (
               <SubscriptionTierBadge tier={tier} isGuest={false} />

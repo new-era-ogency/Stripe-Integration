@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="PulseFlow">
+  <defs>
+    <linearGradient id="pf-logo-grad" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D28D9"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="9" fill="url(#pf-logo-grad)"/>
+  <path d="M8 21C8 14 12.5 10 16 16C19.5 22 24 18 24 11" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+  <circle cx="9" cy="19" r="2.75" fill="#34D399"/>
+  <circle cx="16" cy="14.5" r="2.25" fill="#fff"/>
+  <circle cx="23" cy="19" r="2.75" fill="#DDD6FE"/>
+  <path d="M20.5 17.5L23 19L20.5 20.5" stroke="#DDD6FE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 
 export const metadata: Metadata = {
   title: "Privacy Policy | PulseFlow",
@@ -12,8 +13,8 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <header className="border-b border-zinc-800">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
-          <Link href="/" className="text-sm font-semibold text-white">
-            PulseFlow
+          <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-white">
+            <PulseFlowLogo size="xs" showWordmark />
           </Link>
           <Link
             href="/"

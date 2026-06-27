@@ -231,8 +231,8 @@ export const faqs = [
     a: "Paste a public YouTube URL and get publish-ready copy for X, LinkedIn, and Telegram in one run. Pick a style preset, edit, copy — that's the core product in beta.",
   },
   {
-    q: "Is this just marketing mockups on the landing page?",
-    a: "No. The interactive demo uses the same dashboard UI you get after signup. Workflows listed on this page match the exact steps in the app.",
+    q: "Is the homepage demo real?",
+    a: "Yes — you connect nodes and run a workflow on the landing page without signing up. The same chain maps to the dashboard: paste URL, fetch transcript, generate outputs.",
   },
   {
     q: "Do I need coding skills?",
@@ -304,8 +304,8 @@ export const heroCopy = {
   titleAccent: "Three posts. One minute.",
   subtitle: corePromise.subline,
   primaryCta: "Start free beta",
-  secondaryCta: "Try interactive demo",
-  microTrust: "38 beta testers · 847 packs generated · No card to start",
+  secondaryCta: "Build a workflow below",
+  microTrust: "38 beta testers · Add 2 nodes + Run · No signup to try",
 }
 
 export const positioning = {

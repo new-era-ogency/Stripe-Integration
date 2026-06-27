@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import HeroVideoBackground from "@/components/landing/HeroVideoBackground"
-import DashboardScreenshot from "@/components/landing/DashboardScreenshot"
+import WorkflowBuilderDemo from "@/components/landing/WorkflowBuilderDemo"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import {
   ACCENT_TEXT,
@@ -21,12 +21,12 @@ import { heroCopy } from "@/lib/landing-content"
 
 export default function LandingHero() {
   return (
-    <section className={HERO_SECTION}>
+    <section id="demo" className={HERO_SECTION}>
       <HeroVideoBackground />
 
       <div className={`${LANDING_CONTAINER} relative z-10 w-full`}>
-        <div className={`${LANDING_GRID} items-center`}>
-          <AnimatedSection className="col-span-12 flex flex-col lg:col-span-6">
+        <div className={`${LANDING_GRID} items-center gap-y-10`}>
+          <AnimatedSection className="col-span-12 flex flex-col lg:col-span-5">
             <span className={HERO_BADGE_PILL}>{heroCopy.badge}</span>
 
             <h1 className={`mt-6 ${HERO_TITLE}`}>
@@ -42,7 +42,7 @@ export default function LandingHero() {
                 {heroCopy.primaryCta}
                 <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
-              <a href="#demo" className={BTN_SECONDARY}>
+              <a href="#demo-canvas" className={BTN_SECONDARY}>
                 {heroCopy.secondaryCta}
               </a>
             </div>
@@ -51,11 +51,14 @@ export default function LandingHero() {
           </AnimatedSection>
 
           <AnimatedSection
-            delay={0.1}
-            className="col-span-12 lg:col-span-6"
+            delay={0.08}
+            className="col-span-12 lg:col-span-7"
           >
-            <div className="landing-product-glow relative lg:pl-4">
-              <DashboardScreenshot highlight showAnnotations={false} />
+            <div className="landing-product-glow relative">
+              <WorkflowBuilderDemo
+                id="demo-canvas"
+                showSignupCta
+              />
             </div>
           </AnimatedSection>
         </div>

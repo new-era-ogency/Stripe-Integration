@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AuthNavButtons from "@/components/layout/AuthNavButtons"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import { LANDING_CONTAINER } from "@/lib/landing-styles"
 import { navLinks } from "@/lib/landing-content"
 
@@ -60,10 +61,7 @@ export default function LandingNav() {
           href="/"
           className="flex items-center gap-2 text-sm font-bold tracking-tight text-white"
         >
-          <span className="flex size-6 items-center justify-center rounded-md bg-violet-600 text-[10px] font-bold">
-            P
-          </span>
-          PulseFlow
+          <PulseFlowLogo size="sm" showWordmark />
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">

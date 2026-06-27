@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Code2, ExternalLink } from "lucide-react"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import { footerLinks } from "@/lib/landing-content"
 
 function FooterLink({
@@ -37,10 +38,7 @@ export default function AppFooter() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <p className="flex items-center gap-2 text-sm font-bold text-white">
-              <span className="flex size-6 items-center justify-center rounded-md bg-violet-600 text-[10px]">
-                P
-              </span>
-              PulseFlow
+              <PulseFlowLogo size="sm" showWordmark />
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
               Workflow automation for indie devs — Stripe events, API chains, and

@@ -1,8 +1,8 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import { demoContent, productAnnotations } from "@/lib/landing-content"
-import { Sparkles } from "lucide-react"
 
 type Platform = "x" | "linkedin" | "telegram"
 
@@ -60,9 +60,7 @@ export default function DashboardScreenshot({
       >
         <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/80 px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-violet-600/20 text-violet-300">
-              <Sparkles className="size-3.5" />
-            </span>
+            <PulseFlowLogo size={28} />
             <div>
               <p className="text-xs font-semibold text-white">PulseFlow</p>
               <p className="text-[10px] text-zinc-500">Dashboard</p>

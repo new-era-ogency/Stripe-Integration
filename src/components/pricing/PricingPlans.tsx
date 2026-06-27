@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
-import { Check, Flame, Loader2, Sparkles, Zap } from "lucide-react"
+import { Check, Flame, Loader2, Zap } from "lucide-react"
+import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import { PRO_MAX_PLAN, PRO_PLAN } from "@/config/pricing-display"
 import type { PaidPlanId } from "@/lib/subscription"
 
@@ -186,7 +187,7 @@ export default function PricingPlans() {
           className="mb-12 text-center"
         >
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-slate-400 backdrop-blur-md">
-            <Sparkles className="size-3.5 text-blue-400" />
+            <PulseFlowLogo size={18} />
             PulseFlow Pricing
           </div>
           <h1 className="bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-4xl font-bold tracking-tight text-transparent md:text-5xl">
