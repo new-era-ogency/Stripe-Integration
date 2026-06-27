@@ -3,14 +3,14 @@ import {
   isErrorResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
 import { isProTier, normalizeTelegramChannelId } from "@/lib/profile"
 import { sendTelegramChannelMessage } from "@/lib/telegram/publish"
 import { telegramShareSchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
-  // User identity and channel config come only from the authenticated session
-  // and database profile — never from client-supplied userId or email.
   const auth = await requireAuthenticatedUser()
   if (isErrorResponse(auth)) {
     return auth
@@ -18,9 +18,19 @@ export async function POST(request: Request) {
 
   const { user, supabase } = auth
 
+  const rateLimited = enforceRateLimit(
+    `telegram-share:${user.id}`,
+    RATE_LIMITS.telegramShare,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
-    const body = await request.json()
-    const parsed = parseJsonBody(body, telegramShareSchema)
+    const parsed = await parseRequestJsonBody(request, telegramShareSchema)
+
     if (parsed instanceof NextResponse) {
       return parsed
     }
@@ -32,11 +42,9 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (profileError) {
-      console.error("Error fetching profile for Telegram share:", profileError)
-      return NextResponse.json(
-        { error: "Failed to load profile" },
-        { status: 500 }
-      )
+      return internalErrorResponse("telegram-share", profileError, {
+        userId: user.id,
+      })
     }
 
     if (!profile || !isProTier(profile.tier)) {
@@ -69,15 +77,6 @@ export async function POST(request: Request) {
       chatId: result.chatId,
     })
   } catch (error) {
-    console.error("Telegram publish error:", error)
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to publish to Telegram",
-      },
-      { status: 500 }
-    )
+    return internalErrorResponse("telegram-share", error, { userId: user.id })
   }
 }

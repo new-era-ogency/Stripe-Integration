@@ -7,9 +7,17 @@ export type {
 } from "@/lib/trial/types"
 
 export {
+  computeDaysRemaining,
+  formatTrialDaysLabel,
+  isTrialPeriodActive,
+  validateClientTrialExpiresAt,
+} from "@/lib/trial/period"
+
+export {
   BASE_TRIAL_DAYS,
   MAX_DAYS_PER_VIRAL_ACTION,
   MAX_TRIAL_EXTENSION_DAYS,
+  TRIAL_PRO_PERIOD_DAYS,
   VIRAL_ACTION_REWARDS,
 } from "@/lib/trial/types"
 

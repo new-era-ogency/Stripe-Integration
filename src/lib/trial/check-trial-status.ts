@@ -103,7 +103,14 @@ async function fetchTrialRow(
 async function fetchTrialStatusViaRpc(
   userId: string
 ): Promise<TrialCheckResult | null> {
-  const supabase = createAdminSupabaseClient()
+  let supabase: ReturnType<typeof createAdminSupabaseClient>
+
+  try {
+    supabase = createAdminSupabaseClient()
+  } catch (error) {
+    console.warn("Admin Supabase client unavailable for trial RPC:", error)
+    return null
+  }
 
   const { data, error } = await supabase.rpc("get_trial_status", {
     p_user_id: userId,
@@ -112,13 +119,15 @@ async function fetchTrialStatusViaRpc(
   if (error) {
     const rpcMissing =
       error.message.includes("Could not find the function") ||
-      error.message.includes("get_trial_status")
+      error.message.includes("get_trial_status") ||
+      error.message.includes("does not exist")
 
     if (rpcMissing) {
       return null
     }
 
-    throw error
+    console.error("get_trial_status RPC error:", error)
+    return null
   }
 
   const row = (Array.isArray(data) ? data[0] : data) as

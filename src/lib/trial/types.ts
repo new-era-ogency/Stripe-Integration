@@ -32,8 +32,9 @@ export type ViralActionRecord = {
   createdAt: string
 }
 
-/** Default product trial length (must match SQL backfill / trigger). */
-export const BASE_TRIAL_DAYS = 7
+/** Default Pro trial length (must match SQL trigger / migration). */
+export const BASE_TRIAL_DAYS = 30
+export const TRIAL_PRO_PERIOD_DAYS = BASE_TRIAL_DAYS
 
 /** Max total bonus days a user can earn via viral_actions. */
 export const MAX_TRIAL_EXTENSION_DAYS = 30

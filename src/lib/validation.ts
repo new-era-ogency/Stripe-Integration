@@ -18,7 +18,7 @@ export const youtubeUrlSchema = z
     (value) => {
       try {
         const url = new URL(value)
-        return url.protocol === "https:" || url.protocol === "http:"
+        return url.protocol === "https:"
       } catch {
         return false
       }
@@ -77,6 +77,13 @@ export const transcriptRequestSchema = z.object({
 
 export const trialPreviewRequestSchema = z.object({
   videoUrl: youtubeUrlSchema,
+  trialExpiresAt: z
+    .string()
+    .trim()
+    .min(1, "Trial expiration is required")
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: "Invalid trial expiration timestamp",
+    }),
 })
 
 export const feedbackRequestSchema = z.object({

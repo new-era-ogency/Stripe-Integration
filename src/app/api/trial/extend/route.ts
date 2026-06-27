@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
-import { checkRateLimit } from "@/lib/api/rate-limit"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
+import { checkTrialStatus } from "@/lib/trial"
 import { extendUserTrial } from "@/lib/trial/extend-trial"
 import { trialExtendSchema } from "@/lib/trial/validation"
 
-const TRIAL_EXTEND_RATE_LIMIT = {
-  limit: 10,
-  windowMs: 15 * 60 * 1000,
-} as const
+const TRIAL_EXTEND_RATE_LIMIT = RATE_LIMITS.trialExtend
 
 function isRpcBusinessError(message: string): boolean {
   return (
@@ -43,24 +42,27 @@ export async function POST(request: Request) {
 
   const { user } = auth
 
-  const rateLimit = checkRateLimit(
-    `trial-extend:${user.id}`,
-    TRIAL_EXTEND_RATE_LIMIT
-  )
+  const trial = await checkTrialStatus(user.id, { supabase: auth.supabase })
 
-  if (!rateLimit.allowed) {
+  if (trial.accountStatus === "active") {
     return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      }
+      { error: "Paid users cannot extend trial" },
+      { status: 400 }
     )
   }
 
+  const rateLimited = enforceRateLimit(
+    `trial-extend:${user.id}`,
+    TRIAL_EXTEND_RATE_LIMIT,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
-    const body = await request.json()
-    const parsed = parseJsonBody(body, trialExtendSchema)
+    const parsed = await parseRequestJsonBody(request, trialExtendSchema)
 
     if (parsed instanceof NextResponse) {
       return parsed
@@ -85,13 +87,9 @@ export async function POST(request: Request) {
       }
 
       console.error("Trial extend RPC error:", error)
-      return NextResponse.json({ error: message }, { status: 400 })
+      return internalErrorResponse("trial-extend", error, { userId: user.id })
     }
 
-    console.error("Trial extend error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return internalErrorResponse("trial-extend", error, { userId: user.id })
   }
 }

@@ -5,7 +5,9 @@ import {
   isErrorResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
 import {
   extractYouTubeVideoId,
   transcriptRequestSchema,
@@ -17,9 +19,21 @@ export async function POST(request: Request) {
     return auth
   }
 
+  const { user } = auth
+
+  const rateLimited = enforceRateLimit(
+    `transcript:${user.id}`,
+    RATE_LIMITS.transcript,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
-    const body = await request.json()
-    const parsed = parseJsonBody(body, transcriptRequestSchema)
+    const parsed = await parseRequestJsonBody(request, transcriptRequestSchema)
+
     if (parsed instanceof NextResponse) {
       return parsed
     }
@@ -40,10 +54,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ rawTranscript })
   } catch (error) {
-    console.error("Error fetching transcript:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch transcript" },
-      { status: 500 }
-    )
+    return internalErrorResponse("transcript", error, { userId: user.id })
   }
 }

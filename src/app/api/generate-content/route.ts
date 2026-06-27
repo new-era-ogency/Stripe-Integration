@@ -8,7 +8,9 @@ import {
   paymentRequiredResponse,
   requireAuthenticatedUser,
 } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
 import {
   parseProContentPack,
   parseProMaxContentPack,
@@ -117,6 +119,16 @@ export async function POST(request: Request) {
 
   const { user, supabase } = auth
 
+  const rateLimited = enforceRateLimit(
+    `generate-content:${user.id}`,
+    RATE_LIMITS.generateContent,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
     const trial = await checkTrialStatus(user.id, { supabase })
 
@@ -127,8 +139,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const body = await request.json()
-    const parsed = parseJsonBody(body, generateContentRequestSchema)
+    const parsed = await parseRequestJsonBody(
+      request,
+      generateContentRequestSchema,
+      { maxBytes: 600_000 }
+    )
     if (parsed instanceof NextResponse) {
       return parsed
     }
@@ -171,7 +186,9 @@ export async function POST(request: Request) {
     const deepPackAccess = requireFeature(flags, "deep_pack")
     const viralHooksAccess = requireFeature(flags, "viral_shorts_finder")
 
-    if (profile.credits <= 0 && flags.isStarter) {
+    const hasTrialAccess = trial.isValid
+
+    if (profile.credits <= 0 && flags.isStarter && !hasTrialAccess) {
       return paymentRequiredResponse(INSUFFICIENT_CREDITS_MESSAGE)
     }
 
@@ -265,10 +282,6 @@ export async function POST(request: Request) {
       tier: flags.tier,
     })
   } catch (error) {
-    console.error("Error generating content:", error)
-    return NextResponse.json(
-      { error: "Failed to generate content" },
-      { status: 500 }
-    )
+    return internalErrorResponse("generate-content", error, { userId: user.id })
   }
 }

@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Check,
   Copy,
+  Crown,
   Loader2,
   MessageSquarePlus,
   Sparkles,
@@ -16,10 +17,11 @@ import FeedbackForm, {
 } from "@/components/sections/feedback-form"
 import { BTN_PRIMARY } from "@/lib/landing-styles"
 import {
-  DEFAULT_TRIAL_PREVIEWS,
-  initTrialPreviewCount,
-  writeTrialPreviewCount,
+  getTrialDaysRemaining,
+  initTrialExpiresAt,
+  TRIAL_PRO_PERIOD_DAYS,
 } from "@/lib/trial/demo-storage"
+import { formatTrialDaysLabel } from "@/lib/trial/period"
 
 type DemoPreviewProps = {
   id?: string
@@ -30,6 +32,8 @@ type PreviewResponse = {
   success?: boolean
   thread?: string[]
   error?: string
+  code?: string
+  daysRemaining?: number
 }
 
 function ThreadTweetCard({
@@ -104,7 +108,8 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
   const [inputUrl, setInputUrl] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedThread, setGeneratedThread] = useState<string[]>([])
-  const [trialCount, setTrialCount] = useState(DEFAULT_TRIAL_PREVIEWS)
+  const [trialExpiresAt, setTrialExpiresAt] = useState<string>("")
+  const [daysRemaining, setDaysRemaining] = useState(TRIAL_PRO_PERIOD_DAYS)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [showFeedbackForm, setShowFeedbackForm] = useState(false)
@@ -113,7 +118,9 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
   const [lastGeneratedUrl, setLastGeneratedUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    setTrialCount(initTrialPreviewCount())
+    const expiresAt = initTrialExpiresAt()
+    setTrialExpiresAt(expiresAt)
+    setDaysRemaining(getTrialDaysRemaining())
     setReady(true)
   }, [])
 
@@ -121,6 +128,11 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
     setFeedbackTrigger(trigger)
     setShowFeedbackForm(true)
   }, [])
+
+  const trialActive = daysRemaining > 0
+  const trialBadgeLabel = ready
+    ? formatTrialDaysLabel(daysRemaining)
+    : formatTrialDaysLabel(TRIAL_PRO_PERIOD_DAYS)
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
@@ -134,7 +146,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
         return
       }
 
-      if (trialCount <= 0) {
+      if (!trialActive) {
         openFeedback("trial_exhausted")
         return
       }
@@ -146,12 +158,21 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
         const response = await fetch("/api/trial/preview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videoUrl: url }),
+          body: JSON.stringify({
+            videoUrl: url,
+            trialExpiresAt,
+          }),
         })
 
         const data = (await response.json()) as PreviewResponse
 
         if (!response.ok) {
+          if (response.status === 403 && data.code === "TRIAL_EXPIRED") {
+            setDaysRemaining(0)
+            openFeedback("trial_exhausted")
+            return
+          }
+
           setError(data.error ?? "Generation failed. Try another link.")
           return
         }
@@ -165,9 +186,12 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
           return
         }
 
-        const nextCount = trialCount - 1
-        writeTrialPreviewCount(nextCount)
-        setTrialCount(nextCount)
+        if (typeof data.daysRemaining === "number") {
+          setDaysRemaining(data.daysRemaining)
+        } else {
+          setDaysRemaining(getTrialDaysRemaining())
+        }
+
         setGeneratedThread(thread)
         setLastGeneratedUrl(url)
       } catch {
@@ -176,14 +200,14 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
         setIsGenerating(false)
       }
     },
-    [inputUrl, trialCount, openFeedback]
+    [inputUrl, trialActive, trialExpiresAt, openFeedback]
   )
 
   const hasThread = generatedThread.length > 0
-  const trialsRemaining = ready ? trialCount : DEFAULT_TRIAL_PREVIEWS
 
   const feedbackMetadata = {
-    trialCountRemaining: trialsRemaining,
+    trialDaysRemaining: daysRemaining,
+    trialExpiresAt,
     videoUrl: inputUrl.trim() || lastGeneratedUrl,
     threadLength: generatedThread.length,
     source: "demo_preview",
@@ -199,22 +223,36 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
           <div className="flex items-center gap-3">
             <PulseFlowLogo size={32} />
             <div>
-              <p className="text-sm font-semibold text-white">Live trial preview</p>
+              <p className="text-sm font-semibold text-white">Live Pro trial</p>
               <p className="text-[10px] text-zinc-500">
-                Clip → thread · no account required
+                Full generation workflow · no account required
               </p>
             </div>
           </div>
           <span
-            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-              trialsRemaining > 0
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+            className={`inline-flex max-w-[min(100%,14rem)] items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+              trialActive
+                ? "border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-200"
                 : "border-amber-500/30 bg-amber-500/10 text-amber-400"
             }`}
           >
-            {trialsRemaining} free left
+            {trialActive ? (
+              <Crown className="size-3 shrink-0 text-violet-300" />
+            ) : null}
+            <span className="truncate normal-case tracking-normal">
+              {trialBadgeLabel}
+            </span>
           </span>
         </div>
+
+        {trialActive ? (
+          <div className="border-b border-violet-500/20 bg-gradient-to-r from-violet-600/10 via-fuchsia-600/5 to-transparent px-4 py-2.5">
+            <p className="text-xs text-violet-200/90">
+              {TRIAL_PRO_PERIOD_DAYS}-day Pro access on this device — generate
+              unlimited previews until your trial ends.
+            </p>
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-4 p-4 md:p-5">
           <div>
@@ -232,7 +270,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
               placeholder="https://youtube.com/watch?v=… or /shorts/…"
               value={inputUrl}
               onChange={(event) => setInputUrl(event.target.value)}
-              disabled={isGenerating}
+              disabled={isGenerating || !trialActive}
               className="demo-input-glow w-full rounded-xl border border-zinc-800 bg-black/60 px-4 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 transition-all focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/25 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="mt-2 text-[11px] text-zinc-600">
@@ -248,7 +286,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
 
           <button
             type="submit"
-            disabled={isGenerating || !inputUrl.trim()}
+            disabled={isGenerating || !inputUrl.trim() || !trialActive}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_4px_24px_-4px_rgba(139,92,246,0.55)] transition-all hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600 disabled:shadow-none"
           >
             {isGenerating ? (
@@ -256,10 +294,10 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
                 <Loader2 className="size-4 animate-spin" />
                 Generating thread…
               </>
-            ) : trialsRemaining <= 0 ? (
+            ) : !trialActive ? (
               <>
                 <MessageSquarePlus className="size-4" />
-                Generate Thread
+                Trial period expired
               </>
             ) : (
               <>
@@ -307,10 +345,14 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
           </div>
         )}
 
-        {trialsRemaining <= 0 && !isGenerating ? (
+        {!trialActive && !isGenerating ? (
           <div className="border-t border-zinc-800 bg-violet-500/5 px-4 py-4 md:px-5">
-            <p className="text-sm text-zinc-400">
-              You&apos;ve used all free previews on this device.
+            <p className="text-sm font-medium text-zinc-300">
+              Trial period expired.
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              Your {TRIAL_PRO_PERIOD_DAYS}-day Pro trial on this device has
+              ended. Share feedback or sign up to keep generating.
             </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
@@ -321,10 +363,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
                 <MessageSquarePlus className="size-4" />
                 Share feedback for early access
               </button>
-              <Link
-                href="/signup"
-                className={`inline-flex ${BTN_PRIMARY}`}
-              >
+              <Link href="/signup" className={`inline-flex ${BTN_PRIMARY}`}>
                 Start free beta
                 <ArrowRight className="ml-2 size-4" />
               </Link>

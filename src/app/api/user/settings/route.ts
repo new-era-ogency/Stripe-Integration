@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
 import { isProTier, normalizeTelegramChannelId } from "@/lib/profile"
 import { userSettingsSchema } from "@/lib/validation"
 
@@ -12,9 +14,19 @@ export async function POST(request: Request) {
 
   const { user, supabase } = auth
 
+  const rateLimited = enforceRateLimit(
+    `user-settings:${user.id}`,
+    RATE_LIMITS.userSettings,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
-    const body = await request.json()
-    const parsed = parseJsonBody(body, userSettingsSchema)
+    const parsed = await parseRequestJsonBody(request, userSettingsSchema)
+
     if (parsed instanceof NextResponse) {
       return parsed
     }
@@ -26,11 +38,9 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (profileError) {
-      console.error("Error fetching profile tier:", profileError)
-      return NextResponse.json(
-        { error: "Failed to load profile" },
-        { status: 500 }
-      )
+      return internalErrorResponse("user-settings", profileError, {
+        userId: user.id,
+      })
     }
 
     if (!isProTier(profile?.tier)) {
@@ -50,11 +60,10 @@ export async function POST(request: Request) {
       )
 
       if (voiceError) {
-        console.error("Error saving brand voice:", voiceError)
-        return NextResponse.json(
-          { error: voiceError.message || "Failed to save brand voice" },
-          { status: 500 }
-        )
+        return internalErrorResponse("user-settings", voiceError, {
+          userId: user.id,
+          field: "brandVoice",
+        })
       }
 
       brandVoice = savedVoice || null
@@ -67,11 +76,10 @@ export async function POST(request: Request) {
       )
 
       if (channelError) {
-        console.error("Error saving Telegram channel:", channelError)
-        return NextResponse.json(
-          { error: channelError.message || "Failed to save Telegram channel" },
-          { status: 500 }
-        )
+        return internalErrorResponse("user-settings", channelError, {
+          userId: user.id,
+          field: "tgChannelId",
+        })
       }
 
       tgChannelId = normalizeTelegramChannelId(savedChannel || null)
@@ -83,10 +91,6 @@ export async function POST(request: Request) {
       tier: profile.tier,
     })
   } catch (error) {
-    console.error("Settings update error:", error)
-    return NextResponse.json(
-      { error: "Failed to save settings" },
-      { status: 500 }
-    )
+    return internalErrorResponse("user-settings", error, { userId: user.id })
   }
 }

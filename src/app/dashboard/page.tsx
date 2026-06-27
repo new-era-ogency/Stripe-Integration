@@ -3,68 +3,39 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import DashboardCheckoutSync from "@/components/dashboard/DashboardCheckoutSync"
+import DashboardCreateWorkspace, {
+  type StylePreset,
+} from "@/components/dashboard/DashboardCreateWorkspace"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
+import DashboardQuickTryCard from "@/components/dashboard/DashboardQuickTryCard"
+import DashboardStatsPanel from "@/components/dashboard/DashboardStatsPanel"
 import BrandVoiceSettings from "@/components/dashboard/BrandVoiceSettings"
 import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
 import GenerationHistory from "@/components/dashboard/GenerationHistory"
-import AuthNavButtons from "@/components/layout/AuthNavButtons"
-import CreditBalance from "@/components/layout/CreditBalance"
-import SubscriptionTierBadge from "@/components/layout/SubscriptionTierBadge"
-import TrialStatusWidget from "@/components/trial/TrialStatusWidget"
-import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
-import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
+import GuestProTrialBanner from "@/components/marketing/GuestProTrialBanner"
 import {
   formatShortsScriptForCopy,
   formatTwitterThreadForCopy,
 } from "@/lib/ai/content-pack"
+import {
+  buildDashboardUserData,
+  ensureServerProfile,
+  fetchDashboardDataViaApi,
+  fetchDashboardDataViaClient,
+} from "@/lib/dashboard/load-user-data"
+import { formatSupabaseError } from "@/lib/dashboard/user-data-loader"
+import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
 import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
 import type { TrialUiState } from "@/lib/trial/ui"
-import { Loader2, Sparkles, Zap } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { BASE_TRIAL_DAYS } from "@/lib/trial/types"
 import { createClient } from "@/lib/supabase/client"
-
-type StylePreset = "viral-thread" | "deep-dive" | "punchy-short"
-
-const STYLE_PRESETS: {
-  id: StylePreset
-  label: string
-  description: string
-}[] = [
-  {
-    id: "viral-thread",
-    label: "Viral Thread",
-    description: "Hook-driven posts built for shares",
-  },
-  {
-    id: "deep-dive",
-    label: "Deep Dive",
-    description: "Thoughtful, authority-building content",
-  },
-  {
-    id: "punchy-short",
-    label: "Punchy/Short",
-    description: "Fast, high-impact snippets",
-  },
-]
 
 const PRESET_TONES: Record<StylePreset, string> = {
   "viral-thread": "Engaging",
   "deep-dive": "Persuasive",
   "punchy-short": "Punchy",
 }
-
-const statCardClass =
-  "rounded-xl border border-zinc-800 bg-zinc-950 p-5 transition-colors hover:border-zinc-700/80"
 
 const emptyGeneratedContent = (): GeneratedContent => ({
   outputX: "",
@@ -107,10 +78,13 @@ export default function DashboardPage() {
     setAuthChecked(true)
   }, [])
 
-  const isPro = isProTier(tier) && !isGuest
-  const isProMax = isProMaxTier(tier) && !isGuest
+  const hasTrialAccess = Boolean(trial?.isValid)
   const outOfCredits =
-    !isGuest && authChecked && credits !== null && credits <= 0
+    !isGuest &&
+    authChecked &&
+    credits !== null &&
+    credits <= 0 &&
+    !hasTrialAccess
 
   const planLabel = getPlanLabel(tier, isGuest)
 
@@ -121,45 +95,67 @@ export default function DashboardPage() {
   }, [generations.length, credits])
 
   const fetchUserData = useCallback(async () => {
-    try {
-      const response = await fetch("/api/user-data")
-      if (response.status === 401) {
-        setIsGuest(true)
-        setCredits(null)
-        setTier("starter")
-        setBrandVoice(null)
-        setTgChannelId(null)
-        setGenerations([])
-        setTrial(null)
-        setAuthChecked(true)
-        return
-      }
-      if (!response.ok) {
-        setIsGuest(true)
-        setCredits(null)
-        setTier("starter")
-        setBrandVoice(null)
-        setTgChannelId(null)
-        setGenerations([])
-        setTrial(null)
-        setAuthChecked(true)
-        return
-      }
-      const data = await response.json()
-      setIsGuest(false)
-      setCredits(data.credits)
-      setTier(data.tier ?? data.profile?.tier ?? "starter")
-      setBrandVoice(data.brandVoice ?? data.profile?.brand_voice ?? null)
-      setTgChannelId(data.tgChannelId ?? data.profile?.tg_channel_id ?? null)
-      setGenerations(data.generations ?? [])
-      setTrial(data.trial ?? null)
-      setAuthChecked(true)
-    } catch (error) {
-      console.error("Error fetching user data:", error)
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
       setIsGuest(true)
+      setCredits(null)
+      setTier("starter")
+      setBrandVoice(null)
+      setTgChannelId(null)
+      setGenerations([])
+      setTrial(null)
+      setAuthChecked(true)
+      return
+    }
+
+    setIsGuest(false)
+
+    const applyDashboardData = (data: Awaited<
+      ReturnType<typeof fetchDashboardDataViaClient>
+    >) => {
+      setCredits(data.credits)
+      setTier(data.tier)
+      setBrandVoice(data.brandVoice)
+      setTgChannelId(data.tgChannelId)
+      setGenerations(data.generations)
+      setTrial(data.trial)
       setAuthChecked(true)
     }
-  }, [])
+
+    try {
+      let apiResult = await fetchDashboardDataViaApi()
+
+      if (!apiResult.ok && apiResult.status === 401) {
+        await supabase.auth.refreshSession()
+        router.refresh()
+        await ensureServerProfile()
+        apiResult = await fetchDashboardDataViaApi()
+      }
+
+      if (apiResult.ok) {
+        applyDashboardData(apiResult.data)
+        return
+      }
+
+      if (apiResult.status !== 401) {
+        console.warn(
+          "Dashboard user-data API unavailable, using client fallback:",
+          apiResult.status
+        )
+      }
+
+      await ensureServerProfile()
+      const clientData = await fetchDashboardDataViaClient(supabase, user.id)
+      applyDashboardData(clientData)
+    } catch (error) {
+      console.error("Error fetching user data:", formatSupabaseError(error))
+      applyDashboardData(buildDashboardUserData(null, [], []))
+    }
+  }, [router])
 
   useEffect(() => {
     fetchUserData()
@@ -215,7 +211,7 @@ export default function DashboardPage() {
         ) {
           setTrial((current) => ({
             ...(current ?? {
-              totalTrialDays: 7,
+              totalTrialDays: BASE_TRIAL_DAYS,
               trialStartAt: null,
               trialEndAt: null,
               trialExtendedDays: 0,
@@ -258,6 +254,11 @@ export default function DashboardPage() {
         setActiveGenerationId(generatedContent.generationId)
       }
       await fetchUserData()
+
+      document.getElementById("results")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
     } catch (error) {
       console.error("Generation error:", error)
       alert(
@@ -271,7 +272,10 @@ export default function DashboardPage() {
   const handleViewGeneration = (record: GenerationRecord) => {
     setGeneratedOutputs(record.generated_content)
     setActiveGenerationId(record.id)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    document.getElementById("results")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    })
   }
 
   const handleCopyGeneration = (record: GenerationRecord) => {
@@ -297,6 +301,12 @@ export default function DashboardPage() {
     alert("Copied all platforms to clipboard!")
   }
 
+  const hasResults = Boolean(
+    generatedOutputs.outputX ||
+      generatedOutputs.outputLinkedIn ||
+      generatedOutputs.outputTelegram
+  )
+
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
       <Suspense fallback={null}>
@@ -307,262 +317,115 @@ export default function DashboardPage() {
       </Suspense>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
 
-      <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-6 py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/"
-              className="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight text-white"
-            >
-              <PulseFlowLogo size="xs" showWordmark />
-            </Link>
-            {!isGuest && authChecked ? (
-              <SubscriptionTierBadge tier={tier} isGuest={false} />
-            ) : !authChecked ? (
-              <div className="h-9 w-[7.5rem] animate-pulse rounded-full bg-zinc-900" />
-            ) : null}
+      <DashboardHeader
+        isGuest={isGuest}
+        authChecked={authChecked}
+        tier={tier}
+        credits={credits}
+        trial={trial}
+        trialModalOpen={trialModalOpen}
+        onTrialUpdated={setTrial}
+        onTrialModalOpenChange={setTrialModalOpen}
+      />
+
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {authChecked && isGuest ? (
+          <div className="mb-6 space-y-4">
+            <GuestProTrialBanner variant="card" visible />
+            <DashboardQuickTryCard />
           </div>
-          <div className="flex shrink-0 items-center gap-3">
-            {!isGuest && authChecked ? (
-              <TrialStatusWidget
-                trial={trial}
-                onTrialUpdated={setTrial}
-                modalOpen={trialModalOpen}
-                onModalOpenChange={setTrialModalOpen}
+        ) : null}
+
+        {!isGuest && authChecked && hasTrialAccess ? (
+          <div className="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-violet-100/90">
+            Pro trial active — paste a link below to generate unlimited posts
+            during your trial.
+          </div>
+        ) : null}
+
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="min-w-0 space-y-8">
+            <DashboardCreateWorkspace
+              youtubeUrl={youtubeUrl}
+              onYoutubeUrlChange={setYoutubeUrl}
+              stylePreset={stylePreset}
+              onStylePresetChange={setStylePreset}
+              isLoading={isLoading}
+              isGuest={isGuest}
+              outOfCredits={outOfCredits}
+              onGenerate={handleGenerate}
+            />
+
+            <section id="results" className="scroll-mt-36">
+              {hasResults ? (
+                <GeneratedOutputPanel
+                  content={generatedOutputs}
+                  tier={tier}
+                  tgChannelId={tgChannelId}
+                  onTgChannelSaved={setTgChannelId}
+                  styleTone={PRESET_TONES[stylePreset]}
+                />
+              ) : (
+                <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-12 text-center">
+                  <p className="text-sm font-medium text-zinc-300">
+                    Your generated posts will appear here
+                  </p>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    Use the{" "}
+                    <a
+                      href="#create"
+                      className="text-violet-400 hover:text-violet-300"
+                    >
+                      Create
+                    </a>{" "}
+                    workspace above, or{" "}
+                    <Link
+                      href="/#trial-demo"
+                      className="text-violet-400 hover:text-violet-300"
+                    >
+                      try the live preview
+                    </Link>{" "}
+                    first.
+                  </p>
+                </div>
+              )}
+            </section>
+
+            <section id="history" className="scroll-mt-36">
+              <GenerationHistory
+                generations={generations}
+                isGuest={isGuest}
+                authChecked={authChecked}
+                activeId={activeGenerationId}
+                onView={handleViewGeneration}
+                onCopy={handleCopyGeneration}
               />
-            ) : null}
-            {!isGuest && authChecked ? (
-              <CreditBalance
-                credits={credits}
-                loading={!authChecked}
-                linkToPricing
+            </section>
+
+            <section id="settings" className="scroll-mt-36">
+              <BrandVoiceSettings
+                tier={tier}
+                brandVoice={brandVoice}
+                isGuest={isGuest}
+                authChecked={authChecked}
+                onSaved={setBrandVoice}
               />
-            ) : !authChecked ? (
-              <div className="h-8 w-24 animate-pulse rounded-full bg-zinc-900" />
-            ) : null}
-            <AuthNavButtons
-              signInClassName="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
-              signedInClassName="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
+            </section>
+          </div>
+
+          <div className="xl:sticky xl:top-36 xl:self-start">
+            <DashboardStatsPanel
+              authChecked={authChecked}
+              isGuest={isGuest}
+              tier={tier}
+              planLabel={planLabel}
+              creditsRemaining={usageStats.remaining}
+              generationsCount={usageStats.used}
+              hasTrialAccess={hasTrialAccess}
+              trialDaysRemaining={trial?.daysRemaining}
             />
           </div>
         </div>
-      </header>
-
-      <div className="relative z-10 mx-auto max-w-5xl px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            Turn any YouTube video into ready-to-post content.
-          </p>
-        </div>
-
-        {isGuest && (
-          <div className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-center text-sm text-zinc-400">
-            Sign in to generate content and save your history.{" "}
-            <Link href="/login" className="text-violet-400 hover:text-violet-300">
-              Sign in
-            </Link>{" "}
-            or{" "}
-            <Link href="/" className="text-violet-400 hover:text-violet-300">
-              explore the homepage
-            </Link>
-            .
-          </div>
-        )}
-
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className={statCardClass}>
-            <p className="text-sm text-zinc-500">Plan</p>
-            <div className="mt-2 flex items-center gap-2">
-              {!authChecked ? (
-                <div className="h-7 w-28 animate-pulse rounded bg-zinc-900" />
-              ) : (
-                <>
-                  {isProMax ? (
-                    <Zap className="size-4 text-orange-400" />
-                  ) : isPro ? (
-                    <Sparkles className="size-4 text-violet-400" />
-                  ) : (
-                    <span className="size-2 rounded-full bg-zinc-600" />
-                  )}
-                  <p className="text-lg font-medium text-white">
-                    {isGuest ? "Guest" : `${planLabel} Plan`}
-                  </p>
-                </>
-              )}
-            </div>
-            {!isGuest && authChecked && !isPro ? (
-              <Link
-                href="/pricing"
-                className="mt-2 inline-block text-xs text-violet-400 hover:text-violet-300"
-              >
-                Upgrade to Pro →
-              </Link>
-            ) : !isGuest && authChecked && isPro && !isProMax ? (
-              <Link
-                href="/pricing"
-                className="mt-2 inline-block text-xs text-orange-400 hover:text-orange-300"
-              >
-                Unlock Viral Shorts → Pro Max
-              </Link>
-            ) : null}
-          </div>
-
-          <div className={statCardClass}>
-            <p className="text-sm text-zinc-500">Credits remaining</p>
-            {!authChecked ? (
-              <div className="mt-2 h-7 w-36 animate-pulse rounded bg-zinc-900" />
-            ) : (
-              <p className="mt-2 text-lg font-medium text-white">
-                {isGuest ? "—" : `${usageStats.remaining} remaining`}
-              </p>
-            )}
-            {!isGuest && authChecked ? (
-              <p className="mt-1 text-xs text-zinc-500">
-                1 credit per generation
-              </p>
-            ) : null}
-          </div>
-
-          <div className={statCardClass}>
-            <p className="text-sm text-zinc-500">Generations saved</p>
-            {!authChecked ? (
-              <div className="mt-2 h-7 w-16 animate-pulse rounded bg-zinc-900" />
-            ) : (
-              <p className="mt-2 text-lg font-medium text-white">
-                {isGuest ? "—" : usageStats.used}
-              </p>
-            )}
-            {!isGuest && authChecked ? (
-              <p className="mt-1 text-xs text-zinc-500">
-                View history below
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        <Card className="mb-8 gap-0 rounded-xl border-zinc-800 bg-zinc-950 py-0 shadow-none">
-          <CardHeader className="space-y-1 px-6 pt-6 pb-0">
-            <CardTitle className="text-base font-medium text-white">
-              Generate content
-            </CardTitle>
-            <CardDescription className="text-sm text-zinc-500">
-              Paste a YouTube link and choose how you want it written.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 px-6 py-6">
-            <div className="space-y-2">
-              <Label htmlFor="youtube-url" className="text-sm text-zinc-300">
-                YouTube URL
-              </Label>
-              <Input
-                id="youtube-url"
-                type="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="h-11 rounded-lg border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm text-zinc-300">Tone / style preset</Label>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {STYLE_PRESETS.map((preset) => {
-                  const selected = stylePreset === preset.id
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => setStylePreset(preset.id)}
-                      className={`rounded-xl border px-4 py-3 text-left transition-all ${
-                        selected
-                          ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/30"
-                          : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900"
-                      }`}
-                    >
-                      <p
-                        className={`text-sm font-medium ${
-                          selected ? "text-white" : "text-zinc-200"
-                        }`}
-                      >
-                        {preset.label}
-                      </p>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {preset.description}
-                      </p>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {outOfCredits ? (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                <p className="text-sm text-amber-200/90">
-                  {INSUFFICIENT_CREDITS_MESSAGE}
-                </p>
-                <Link
-                  href="/pricing"
-                  className="mt-2 inline-block text-sm text-violet-400 hover:text-violet-300"
-                >
-                  View pricing →
-                </Link>
-              </div>
-            ) : null}
-
-            <Button
-              onClick={handleGenerate}
-              disabled={!youtubeUrl || isLoading || isGuest || outOfCredits}
-              className="h-11 w-full rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-medium text-white shadow-[0_0_24px_-4px_rgba(139,92,246,0.5)] transition-all hover:from-violet-500 hover:to-indigo-500 hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6)] disabled:opacity-40 disabled:shadow-none"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating…
-                </span>
-              ) : isGuest ? (
-                "Sign in to generate"
-              ) : outOfCredits ? (
-                "Upgrade to generate"
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Generate content
-                </span>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <BrandVoiceSettings
-          tier={tier}
-          brandVoice={brandVoice}
-          isGuest={isGuest}
-          authChecked={authChecked}
-          onSaved={setBrandVoice}
-        />
-
-        {generatedOutputs.outputX ? (
-          <GeneratedOutputPanel
-            content={generatedOutputs}
-            tier={tier}
-            tgChannelId={tgChannelId}
-            onTgChannelSaved={setTgChannelId}
-            styleTone={PRESET_TONES[stylePreset]}
-          />
-        ) : null}
-
-        <GenerationHistory
-          generations={generations}
-          isGuest={isGuest}
-          authChecked={authChecked}
-          activeId={activeGenerationId}
-          onView={handleViewGeneration}
-          onCopy={handleCopyGeneration}
-        />
       </div>
     </div>
   )

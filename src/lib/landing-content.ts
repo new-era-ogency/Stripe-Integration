@@ -88,7 +88,7 @@ export const pricingAnchors = [
     name: "Free",
     price: "$0",
     period: "",
-    description: "Start building. 7-day trial with credits included.",
+    description: "Start building. 30-day Pro trial with full access.",
     cta: "Start free",
     highlighted: false,
   },
@@ -291,6 +291,7 @@ export const productAnnotations = [
 ]
 
 export const navLinks = [
+  { href: "/dashboard", label: "Dashboard", id: "dashboard" },
   { href: "#demo", label: "Try preview", id: "demo" },
   { href: "#workflows", label: "Workflows", id: "workflows" },
   { href: "#proof", label: "Beta proof", id: "proof" },
@@ -305,7 +306,7 @@ export const heroCopy = {
   subtitle: corePromise.subline,
   primaryCta: "Start free beta",
   secondaryCta: "Try live preview",
-  microTrust: "3 free thread previews · No signup · YouTube & Shorts",
+  microTrust: "30-day Pro trial · No signup · YouTube & Shorts",
 }
 
 export const positioning = {

@@ -116,12 +116,12 @@ export default function FeedbackForm({
 
   const title =
     trigger === "trial_exhausted"
-      ? "Out of free previews — help us improve"
+      ? "Pro trial ended — help us improve"
       : "Quick feedback"
 
   const subtitle =
     trigger === "trial_exhausted"
-      ? "Share honest feedback and we'll prioritize you for early-access invites."
+      ? "Your 30-day Pro trial has expired. Share honest feedback and we'll prioritize you for early access."
       : "You just generated a thread — how did we do?"
 
   return (

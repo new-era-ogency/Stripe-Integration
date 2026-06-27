@@ -1,5 +1,19 @@
+import { computeDaysRemaining, isTrialPeriodActive } from "@/lib/trial/period"
 import { BASE_TRIAL_DAYS } from "@/lib/trial/types"
 import type { AccountStatus } from "@/lib/trial/types"
+
+function normalizeAccountStatus(value: string | null | undefined): AccountStatus {
+  if (
+    value === "trial" ||
+    value === "active" ||
+    value === "past_due" ||
+    value === "canceled"
+  ) {
+    return value
+  }
+
+  return "trial"
+}
 
 export type TrialUiState = {
   isValid: boolean
@@ -49,4 +63,37 @@ export function getTrialProgressPercent(
 
   const usedDays = Math.max(0, totalTrialDays - daysRemaining)
   return Math.min(100, Math.max(0, (usedDays / totalTrialDays) * 100))
+}
+
+export function buildTrialUiState(input: {
+  accountStatus?: string | null
+  trialStartAt?: string | null
+  trialEndAt?: string | null
+  trialExtendedDays?: number | null
+  claimedActions?: string[]
+}): TrialUiState {
+  const accountStatus = normalizeAccountStatus(input.accountStatus)
+  const trialStartAt = input.trialStartAt ?? null
+  const trialEndAt = input.trialEndAt ?? null
+  const trialExtendedDays = input.trialExtendedDays ?? 0
+  const claimedActions = input.claimedActions ?? []
+  const daysRemaining =
+    accountStatus === "trial" && !trialEndAt
+      ? BASE_TRIAL_DAYS
+      : computeDaysRemaining(trialEndAt)
+  const isValid =
+    accountStatus === "active" ||
+    (accountStatus === "trial" &&
+      (isTrialPeriodActive(trialEndAt) || !trialEndAt))
+
+  return {
+    isValid,
+    daysRemaining,
+    totalTrialDays: computeTotalTrialDays(trialStartAt, trialEndAt),
+    accountStatus,
+    trialStartAt,
+    trialEndAt,
+    trialExtendedDays,
+    claimedActions,
+  }
 }

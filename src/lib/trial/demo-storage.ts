@@ -1,43 +1,79 @@
-export const TRIAL_PREVIEW_STORAGE_KEY = "pulseflow_trial_preview_count"
-export const DEFAULT_TRIAL_PREVIEWS = 3
+import {
+  addTrialPeriodDays,
+  computeDaysRemaining,
+  isTrialPeriodActive,
+} from "@/lib/trial/period"
+import { TRIAL_PRO_PERIOD_DAYS } from "@/lib/trial/types"
 
-export function readTrialPreviewCount(): number {
+export const TRIAL_EXPIRES_STORAGE_KEY = "pulseflow_trial_expires_at"
+const LEGACY_COUNT_STORAGE_KEY = "pulseflow_trial_preview_count"
+
+export function readTrialExpiresAt(): string | null {
   if (typeof window === "undefined") {
-    return DEFAULT_TRIAL_PREVIEWS
+    return null
   }
 
-  const raw = localStorage.getItem(TRIAL_PREVIEW_STORAGE_KEY)
-
-  if (raw === null) {
-    return DEFAULT_TRIAL_PREVIEWS
-  }
-
-  const parsed = Number.parseInt(raw, 10)
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+  return localStorage.getItem(TRIAL_EXPIRES_STORAGE_KEY)
 }
 
-export function writeTrialPreviewCount(count: number): void {
+export function writeTrialExpiresAt(isoTimestamp: string): void {
   if (typeof window === "undefined") {
     return
   }
 
-  localStorage.setItem(
-    TRIAL_PREVIEW_STORAGE_KEY,
-    String(Math.max(0, Math.floor(count)))
-  )
+  localStorage.setItem(TRIAL_EXPIRES_STORAGE_KEY, isoTimestamp)
 }
 
-export function initTrialPreviewCount(): number {
+function migrateLegacyCountStorage(): void {
   if (typeof window === "undefined") {
-    return DEFAULT_TRIAL_PREVIEWS
+    return
   }
 
-  const raw = localStorage.getItem(TRIAL_PREVIEW_STORAGE_KEY)
+  const legacy = localStorage.getItem(LEGACY_COUNT_STORAGE_KEY)
 
-  if (raw === null) {
-    writeTrialPreviewCount(DEFAULT_TRIAL_PREVIEWS)
-    return DEFAULT_TRIAL_PREVIEWS
+  if (legacy === null) {
+    return
   }
 
-  return readTrialPreviewCount()
+  localStorage.removeItem(LEGACY_COUNT_STORAGE_KEY)
+
+  const parsed = Number.parseInt(legacy, 10)
+
+  if (Number.isFinite(parsed) && parsed <= 0) {
+    writeTrialExpiresAt(new Date().toISOString())
+    return
+  }
+
+  writeTrialExpiresAt(addTrialPeriodDays().toISOString())
 }
+
+/** Starts or resumes the anonymous 30-day Pro trial window in localStorage. */
+export function initTrialExpiresAt(): string {
+  if (typeof window === "undefined") {
+    return addTrialPeriodDays().toISOString()
+  }
+
+  migrateLegacyCountStorage()
+
+  const existing = readTrialExpiresAt()
+
+  if (existing && !Number.isNaN(Date.parse(existing))) {
+    return existing
+  }
+
+  const expiresAt = addTrialPeriodDays().toISOString()
+  writeTrialExpiresAt(expiresAt)
+  return expiresAt
+}
+
+export function getTrialDaysRemaining(): number {
+  const expiresAt = initTrialExpiresAt()
+  return computeDaysRemaining(expiresAt)
+}
+
+export function isLocalTrialActive(): boolean {
+  const expiresAt = initTrialExpiresAt()
+  return isTrialPeriodActive(expiresAt)
+}
+
+export { TRIAL_PRO_PERIOD_DAYS }

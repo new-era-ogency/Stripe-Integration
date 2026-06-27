@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         <h1 className="text-3xl font-semibold tracking-tight text-white">
           Privacy Policy
         </h1>
-        <p className="mt-2 text-sm text-zinc-500">Last updated: June 21, 2026</p>
+        <p className="mt-2 text-sm text-zinc-500">Last updated: June 27, 2026</p>
 
         <div className="mt-10 space-y-8 text-sm leading-relaxed text-zinc-400">
           <section>
@@ -69,7 +69,35 @@ export default function PrivacyPage() {
                 Payment metadata processed by Stripe (we never store full card
                 numbers)
               </li>
+              <li>
+                Optional feedback you submit (rating, comment, optional contact)
+              </li>
+              <li>
+                Limited technical metadata for abuse prevention (e.g. truncated IP
+                address on feedback submissions)
+              </li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-base font-medium text-zinc-200">
+              Data minimization and retention
+            </h2>
+            <p className="mt-3">
+              We collect only what is needed to run the product. YouTube URLs and
+              generated content are stored to power your dashboard history.
+              Feedback is retained for product improvement and may be deleted on
+              request. Account data is removed when you delete your account.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-medium text-zinc-200">Your rights</h2>
+            <p className="mt-3">
+              You may request access, correction, or deletion of your personal
+              data. Contact us at the address below and we will respond within 30
+              days where applicable under GDPR and similar laws.
+            </p>
           </section>
 
           <section>
@@ -81,7 +109,9 @@ export default function PrivacyPage() {
               Access to your profile, credits, and generation history is
               restricted to your authenticated session. API keys for AI and
               messaging services are kept server-side and are never exposed to
-              the browser.
+              the browser. We use HTTPS everywhere, validate and size-limit API
+              requests, rate-limit abuse-prone endpoints, and return generic
+              error messages to clients while logging details server-side.
             </p>
           </section>
 

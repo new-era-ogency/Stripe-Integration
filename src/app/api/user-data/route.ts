@@ -2,12 +2,16 @@ import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
 import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 import {
-  getUserGenerations,
-  toGenerationHistoryItem,
-} from "@/lib/generations"
+  buildDashboardUserData,
+  fetchClaimedViralActions,
+  fetchUserGenerationsWithFallback,
+  fetchUserProfileWithFallback,
+  formatSupabaseError,
+} from "@/lib/dashboard/user-data-loader"
+import { toGenerationHistoryItem } from "@/lib/generations"
 import type { UserTier } from "@/lib/profile"
 import { checkTrialStatus } from "@/lib/trial"
-import { computeTotalTrialDays } from "@/lib/trial/ui"
+import { buildTrialUiState, computeTotalTrialDays } from "@/lib/trial/ui"
 
 export async function GET() {
   const auth = await requireAuthenticatedUser()
@@ -18,29 +22,20 @@ export async function GET() {
   const { user, supabase } = auth
 
   try {
-    let { data: profile, error: profileError } = await supabase
-      .from("users")
-      .select("credits, tier, brand_voice, tg_channel_id")
-      .eq("id", user.id)
-      .maybeSingle()
-
-    if (profileError) {
-      console.error("Error fetching user credits:", profileError)
-      return NextResponse.json(
-        { error: "Failed to fetch user data" },
-        { status: 500 }
-      )
-    }
+    let profile = await fetchUserProfileWithFallback(supabase, user.id)
 
     if (!profile) {
       const { data: created, error: insertError } = await supabase
         .from("users")
         .insert({ id: user.id, credits: DEFAULT_USER_CREDITS })
-        .select("credits, tier, brand_voice, tg_channel_id")
+        .select("credits, tier")
         .single()
 
       if (insertError) {
-        console.error("Error creating user profile:", insertError)
+        console.error(
+          "Error creating user profile:",
+          formatSupabaseError(insertError)
+        )
         return NextResponse.json(
           { error: "Failed to create user profile" },
           { status: 500 }
@@ -50,25 +45,40 @@ export async function GET() {
       profile = created
     }
 
-    const generations = await getUserGenerations(supabase, user.id)
-    const trialStatus = await checkTrialStatus(user.id, { supabase })
+    const [generations, claimedActions] = await Promise.all([
+      fetchUserGenerationsWithFallback(supabase, user.id),
+      fetchClaimedViralActions(supabase, user.id),
+    ])
 
-    const { data: claimedRows } = await supabase
-      .from("viral_actions")
-      .select("action_type")
-      .eq("user_id", user.id)
+    let trialStatus
+    try {
+      trialStatus = await checkTrialStatus(user.id, { supabase })
+    } catch (trialError) {
+      console.error("Error checking trial status:", trialError)
+      trialStatus = buildTrialUiState({
+        accountStatus: profile.account_status,
+        trialStartAt: profile.trial_start_at,
+        trialEndAt: profile.trial_end_at,
+        trialExtendedDays: profile.trial_extended_days,
+        claimedActions,
+      })
+    }
 
-    const claimedActions = (claimedRows ?? []).map((row) => row.action_type)
+    const dashboardData = buildDashboardUserData(
+      profile,
+      generations,
+      claimedActions
+    )
 
     return NextResponse.json({
-      credits: profile.credits,
-      tier: (profile.tier ?? "starter") as UserTier,
-      brandVoice: profile.brand_voice ?? null,
-      tgChannelId: profile.tg_channel_id ?? null,
+      credits: dashboardData.credits,
+      tier: dashboardData.tier,
+      brandVoice: dashboardData.brandVoice,
+      tgChannelId: dashboardData.tgChannelId,
       profile: {
-        tier: (profile.tier ?? "starter") as UserTier,
-        brand_voice: profile.brand_voice ?? null,
-        tg_channel_id: profile.tg_channel_id ?? null,
+        tier: dashboardData.tier,
+        brand_voice: dashboardData.brandVoice,
+        tg_channel_id: dashboardData.tgChannelId,
       },
       trial: {
         isValid: trialStatus.isValid,
@@ -83,11 +93,11 @@ export async function GET() {
         trialExtendedDays: trialStatus.trialExtendedDays,
         claimedActions,
       },
-      generations,
-      history: generations.map(toGenerationHistoryItem),
+      generations: dashboardData.generations,
+      history: dashboardData.generations.map(toGenerationHistoryItem),
     })
   } catch (error) {
-    console.error("Error fetching user data:", error)
+    console.error("Error fetching user data:", formatSupabaseError(error))
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

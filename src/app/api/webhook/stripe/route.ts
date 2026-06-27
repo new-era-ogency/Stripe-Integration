@@ -25,9 +25,9 @@ export async function POST(request: Request) {
     eventId = event.id
     eventType = event.type
 
-    const result = await handleStripeWebhookEvent(event)
+    await handleStripeWebhookEvent(event)
 
-    return NextResponse.json({ received: true, eventId, eventType, result })
+    return NextResponse.json({ received: true })
   } catch (error) {
     console.error("[stripe webhook] handler failed:", {
       eventId,

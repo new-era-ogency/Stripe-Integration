@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
 import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 import { ensureProfileSchema } from "@/lib/validation"
 
@@ -30,17 +32,23 @@ export async function POST(request: Request) {
 
   const { user, supabase } = auth
 
-  let username: string | undefined
-  try {
-    const body = await request.json()
-    const parsed = parseJsonBody(body, ensureProfileSchema)
-    if (parsed instanceof NextResponse) {
-      return parsed
-    }
-    username = parsed.data.username
-  } catch {
-    // Empty body is fine for legacy callers (e.g. sign-in without username).
+  const rateLimited = enforceRateLimit(
+    `ensure-profile:${user.id}`,
+    RATE_LIMITS.ensureProfile,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
   }
+
+  const parsed = await parseRequestJsonBody(request, ensureProfileSchema)
+
+  if (parsed instanceof NextResponse) {
+    return parsed
+  }
+
+  const usernameFromBody = parsed.data.username
 
   try {
     const { data: existing, error: fetchError } = await supabase
@@ -50,17 +58,15 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (fetchError) {
-      console.error("Error fetching user profile:", fetchError)
-      return NextResponse.json(
-        { error: "Failed to fetch user profile" },
-        { status: 500 }
-      )
+      return internalErrorResponse("ensure-profile", fetchError, {
+        userId: user.id,
+      })
     }
 
     if (existing) {
-      if (username && !existing.username) {
+      if (usernameFromBody && !existing.username) {
         const { error: setUsernameError } = await supabase.rpc("set_username", {
-          p_username: username,
+          p_username: usernameFromBody,
         })
 
         if (setUsernameError) {
@@ -73,7 +79,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
           credits: existing.credits,
-          username,
+          username: usernameFromBody,
           created: false,
         })
       }
@@ -84,6 +90,8 @@ export async function POST(request: Request) {
         created: false,
       })
     }
+
+    let username = usernameFromBody
 
     if (!username) {
       const metadataUsername = user.user_metadata?.username
@@ -126,10 +134,6 @@ export async function POST(request: Request) {
       created: true,
     })
   } catch (error) {
-    console.error("Error ensuring user profile:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return internalErrorResponse("ensure-profile", error, { userId: user.id })
   }
 }

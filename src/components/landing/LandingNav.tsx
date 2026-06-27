@@ -27,6 +27,7 @@ export default function LandingNav() {
 
   useEffect(() => {
     const elements = navLinks
+      .filter((link) => link.href.startsWith("#"))
       .map((link) => document.getElementById(link.id))
       .filter(Boolean) as HTMLElement[]
 
@@ -65,25 +66,41 @@ export default function LandingNav() {
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                activeId === link.id
-                  ? "text-white"
-                  : "text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
-              {activeId === link.id ? (
-                <span className="absolute inset-x-2 -bottom-px h-px bg-violet-500" />
-              ) : null}
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const className = `relative rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activeId === link.id
+                ? "text-white"
+                : "text-zinc-500 hover:text-zinc-300"
+            }`
+
+            const content = (
+              <>
+                {activeId === link.id ? (
+                  <span className="absolute inset-x-2 -bottom-px h-px bg-violet-500" />
+                ) : null}
+                {link.label}
+              </>
+            )
+
+            return link.href.startsWith("/") ? (
+              <Link key={link.href} href={link.href} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <a key={link.href} href={link.href} className={className}>
+                {content}
+              </a>
+            )
+          })}
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-zinc-500 transition-colors hover:text-white md:hidden"
+          >
+            Dashboard
+          </Link>
           <Link
             href="/pricing"
             className="hidden text-sm font-medium text-zinc-500 transition-colors hover:text-white sm:inline"

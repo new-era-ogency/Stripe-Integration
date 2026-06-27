@@ -1,7 +1,9 @@
 import Stripe from "stripe"
 import { NextResponse } from "next/server"
 import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
-import { parseJsonBody } from "@/lib/api/parse-body"
+import { parseRequestJsonBody } from "@/lib/api/parse-body"
+import { RATE_LIMITS } from "@/lib/api/rate-limits"
+import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
 import { resolveCheckoutPlanFromRequest } from "@/config/plans"
 import {
   createSubscriptionCheckoutSession,
@@ -24,9 +26,18 @@ export async function POST(request: Request) {
 
   const { user } = auth
 
+  const rateLimited = enforceRateLimit(
+    `checkout:${user.id}`,
+    RATE_LIMITS.checkout,
+    { userId: user.id }
+  )
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
-    const body = await request.json().catch(() => ({}))
-    const parsed = parseJsonBody(body, checkoutRequestSchema)
+    const parsed = await parseRequestJsonBody(request, checkoutRequestSchema)
     if (parsed instanceof NextResponse) {
       return parsed
     }
@@ -104,10 +115,16 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[stripe checkout] Error:", { userId: user.id, error })
 
-    const message = getStripeErrorMessage(error)
     const status =
       error instanceof Stripe.errors.StripeInvalidRequestError ? 400 : 500
 
-    return NextResponse.json({ error: message }, { status })
+    if (status === 400) {
+      return NextResponse.json(
+        { error: getStripeErrorMessage(error) },
+        { status: 400 }
+      )
+    }
+
+    return internalErrorResponse("stripe-checkout", error, { userId: user.id })
   }
 }
