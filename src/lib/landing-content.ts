@@ -291,7 +291,7 @@ export const productAnnotations = [
 ]
 
 export const navLinks = [
-  { href: "#demo", label: "Try demo", id: "demo" },
+  { href: "#demo", label: "Try preview", id: "demo" },
   { href: "#workflows", label: "Workflows", id: "workflows" },
   { href: "#proof", label: "Beta proof", id: "proof" },
   { href: "#pricing", label: "Pricing", id: "pricing" },
@@ -304,8 +304,8 @@ export const heroCopy = {
   titleAccent: "Three posts. One minute.",
   subtitle: corePromise.subline,
   primaryCta: "Start free beta",
-  secondaryCta: "Build a workflow below",
-  microTrust: "38 beta testers · Add 2 nodes + Run · No signup to try",
+  secondaryCta: "Try live preview",
+  microTrust: "3 free thread previews · No signup · YouTube & Shorts",
 }
 
 export const positioning = {

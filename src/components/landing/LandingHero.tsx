@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import HeroVideoBackground from "@/components/landing/HeroVideoBackground"
-import WorkflowBuilderDemo from "@/components/landing/WorkflowBuilderDemo"
+import DemoPreview from "@/components/sections/demo-preview"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import {
   ACCENT_TEXT,
@@ -42,7 +42,7 @@ export default function LandingHero() {
                 {heroCopy.primaryCta}
                 <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
-              <a href="#demo-canvas" className={BTN_SECONDARY}>
+              <a href="#trial-demo" className={BTN_SECONDARY}>
                 {heroCopy.secondaryCta}
               </a>
             </div>
@@ -55,10 +55,7 @@ export default function LandingHero() {
             className="col-span-12 lg:col-span-7"
           >
             <div className="landing-product-glow relative">
-              <WorkflowBuilderDemo
-                id="demo-canvas"
-                showSignupCta
-              />
+              <DemoPreview id="trial-demo" />
             </div>
           </AnimatedSection>
         </div>

@@ -75,6 +75,10 @@ export const transcriptRequestSchema = z.object({
   videoUrl: youtubeUrlSchema,
 })
 
+export const trialPreviewRequestSchema = z.object({
+  videoUrl: youtubeUrlSchema,
+})
+
 export const generateContentRequestSchema = z.object({
   videoUrl: youtubeUrlSchema,
   rawTranscript: z
@@ -150,6 +154,7 @@ export const telegramShareSchema = z.object({
 })
 
 export type TranscriptRequest = z.infer<typeof transcriptRequestSchema>
+export type TrialPreviewRequest = z.infer<typeof trialPreviewRequestSchema>
 export type GenerateContentRequest = z.infer<typeof generateContentRequestSchema>
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>
 export type UserSettingsRequest = z.infer<typeof userSettingsSchema>

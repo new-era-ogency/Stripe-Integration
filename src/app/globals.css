@@ -474,6 +474,37 @@
   }
 }
 
+@keyframes demo-thread-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.demo-thread-card {
+  animation: demo-thread-fade-in 0.45s ease-out both;
+}
+
+.demo-input-glow:focus {
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.35),
+    0 0 24px -6px rgba(139, 92, 246, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-thread-card {
+    animation: none;
+  }
+}
+
+[data-perf="lite"] .demo-thread-card {
+  animation: none !important;
+}
+
 [data-perf="lite"] .landing-section {
   content-visibility: auto;
   contain-intrinsic-size: auto 520px;
