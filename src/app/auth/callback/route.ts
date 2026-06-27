@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { validateEmailDomain } from "@/lib/auth/validate-email"
+import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 import { requireSupabasePublicEnv } from "@/lib/supabase/env"
 
 export const dynamic = "force-dynamic"
@@ -68,11 +69,24 @@ export async function GET(request: NextRequest) {
       .eq("id", userId)
       .maybeSingle()
 
+    if (!profile) {
+      await supabase.from("users").insert({
+        id: userId,
+        credits: DEFAULT_USER_CREDITS,
+      })
+    }
+
+    const { data: profileAfterEnsure } = await supabase
+      .from("users")
+      .select("username")
+      .eq("id", userId)
+      .maybeSingle()
+
     const metadataUsername = data.user?.user_metadata?.username
     const hasMetadataUsername =
       typeof metadataUsername === "string" && metadataUsername.length > 0
 
-    if (!profile?.username && !hasMetadataUsername) {
+    if (!profileAfterEnsure?.username && !hasMetadataUsername) {
       redirectTarget = new URL("/signup/complete", origin)
     }
   }

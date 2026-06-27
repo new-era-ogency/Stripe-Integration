@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth/validate-email"
 import { getAuthErrorMessage } from "@/lib/auth/errors"
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton"
+import { useGoogleSignIn } from "@/components/auth/useGoogleSignIn"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,44 +22,6 @@ export const authInputClassName =
   "h-11 rounded-lg border-zinc-800 bg-[#020202] text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500 focus-visible:ring-0 disabled:opacity-60"
 
 export const authLabelClassName = "text-xs uppercase tracking-wide text-zinc-500"
-
-export function useGoogleSignIn() {
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleGoogleSignIn = async () => {
-    setError(null)
-    setIsGoogleLoading(true)
-
-    try {
-      const supabase = createClient()
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
-      })
-
-      if (oauthError) {
-        setError(getAuthErrorMessage(oauthError))
-        setIsGoogleLoading(false)
-        return
-      }
-
-      if (data.url) {
-        window.location.assign(data.url)
-      } else {
-        setIsGoogleLoading(false)
-      }
-    } catch {
-      setError("Could not start Google sign-in. Please try again.")
-      setIsGoogleLoading(false)
-    }
-  }
-
-  return { isGoogleLoading, error, setError, handleGoogleSignIn }
-}
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")

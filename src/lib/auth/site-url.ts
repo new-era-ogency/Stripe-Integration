@@ -1,0 +1,37 @@
+/**
+ * Canonical app origin for auth redirects and checkout URLs.
+ * Must match Supabase Auth → URL Configuration (Site URL + Redirect URLs).
+ */
+function normalizeSiteUrl(url: string): string {
+  let normalized = url.trim()
+
+  if (!normalized.startsWith("http")) {
+    normalized = `https://${normalized}`
+  }
+
+  return normalized.replace(/\/+$/, "")
+}
+
+export function getSiteUrl(): string {
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.NEXT_PUBLIC_VERCEL_URL
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      : null)
+
+  if (configured) {
+    return normalizeSiteUrl(configured)
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin
+  }
+
+  return "http://localhost:3000"
+}
+
+/** OAuth / magic-link callback — route handler at src/app/auth/callback/route.ts */
+export function getAuthCallbackUrl(): string {
+  return `${getSiteUrl()}/auth/callback`
+}

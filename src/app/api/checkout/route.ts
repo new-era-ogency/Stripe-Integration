@@ -4,6 +4,7 @@ import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
 import { parseRequestJsonBody } from "@/lib/api/parse-body"
 import { RATE_LIMITS } from "@/lib/api/rate-limits"
 import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
+import { getSiteUrl } from "@/lib/auth/site-url"
 import { resolveCheckoutPlanFromRequest } from "@/config/plans"
 import {
   createSubscriptionCheckoutSession,
@@ -15,7 +16,7 @@ import { checkoutRequestSchema } from "@/lib/validation"
 export const runtime = "nodejs"
 
 function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  return getSiteUrl()
 }
 
 export async function POST(request: Request) {

@@ -16,8 +16,9 @@ import GoogleAuthButton from "@/components/auth/GoogleAuthButton"
 import {
   authInputClassName,
   authLabelClassName,
-  useGoogleSignIn,
 } from "@/components/auth/LoginForm"
+import { useGoogleSignIn } from "@/components/auth/useGoogleSignIn"
+import { getAuthCallbackUrl } from "@/lib/auth/site-url"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -93,7 +94,7 @@ export default function SignupForm() {
         email: normalizedEmail,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: getAuthCallbackUrl(),
           data: { username: normalizedUsername },
         },
       })
