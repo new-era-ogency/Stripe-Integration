@@ -505,6 +505,27 @@
   animation: none !important;
 }
 
+@keyframes feedback-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.feedback-panel-enter {
+  animation: feedback-panel-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-panel-enter {
+    animation: none;
+  }
+}
+
 [data-perf="lite"] .landing-section {
   content-visibility: auto;
   contain-intrinsic-size: auto 520px;

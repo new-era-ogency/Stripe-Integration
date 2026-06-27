@@ -79,6 +79,20 @@ export const trialPreviewRequestSchema = z.object({
   videoUrl: youtubeUrlSchema,
 })
 
+export const feedbackRequestSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z
+    .string()
+    .trim()
+    .min(1, "Please share at least one sentence of feedback")
+    .max(2000, "Feedback is too long"),
+  contact: z.string().trim().max(200).optional(),
+  metadata: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .default({}),
+})
+
 export const generateContentRequestSchema = z.object({
   videoUrl: youtubeUrlSchema,
   rawTranscript: z
@@ -155,6 +169,7 @@ export const telegramShareSchema = z.object({
 
 export type TranscriptRequest = z.infer<typeof transcriptRequestSchema>
 export type TrialPreviewRequest = z.infer<typeof trialPreviewRequestSchema>
+export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>
 export type GenerateContentRequest = z.infer<typeof generateContentRequestSchema>
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>
 export type UserSettingsRequest = z.infer<typeof userSettingsSchema>

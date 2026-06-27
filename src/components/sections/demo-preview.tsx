@@ -7,9 +7,13 @@ import {
   Check,
   Copy,
   Loader2,
+  MessageSquarePlus,
   Sparkles,
 } from "lucide-react"
 import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
+import FeedbackForm, {
+  type FeedbackTrigger,
+} from "@/components/sections/feedback-form"
 import { BTN_PRIMARY } from "@/lib/landing-styles"
 import {
   DEFAULT_TRIAL_PREVIEWS,
@@ -103,10 +107,19 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
   const [trialCount, setTrialCount] = useState(DEFAULT_TRIAL_PREVIEWS)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
+  const [feedbackTrigger, setFeedbackTrigger] =
+    useState<FeedbackTrigger>("manual")
+  const [lastGeneratedUrl, setLastGeneratedUrl] = useState<string | null>(null)
 
   useEffect(() => {
     setTrialCount(initTrialPreviewCount())
     setReady(true)
+  }, [])
+
+  const openFeedback = useCallback((trigger: FeedbackTrigger) => {
+    setFeedbackTrigger(trigger)
+    setShowFeedbackForm(true)
   }, [])
 
   const handleSubmit = useCallback(
@@ -122,7 +135,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
       }
 
       if (trialCount <= 0) {
-        setError("No free previews left — sign up to keep generating.")
+        openFeedback("trial_exhausted")
         return
       }
 
@@ -156,138 +169,176 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
         writeTrialPreviewCount(nextCount)
         setTrialCount(nextCount)
         setGeneratedThread(thread)
+        setLastGeneratedUrl(url)
       } catch {
         setError("Network error — check your connection and try again.")
       } finally {
         setIsGenerating(false)
       }
     },
-    [inputUrl, trialCount]
+    [inputUrl, trialCount, openFeedback]
   )
 
   const hasThread = generatedThread.length > 0
   const trialsRemaining = ready ? trialCount : DEFAULT_TRIAL_PREVIEWS
 
+  const feedbackMetadata = {
+    trialCountRemaining: trialsRemaining,
+    videoUrl: inputUrl.trim() || lastGeneratedUrl,
+    threadLength: generatedThread.length,
+    source: "demo_preview",
+  }
+
   return (
-    <div
-      id={id}
-      className={`overflow-hidden rounded-2xl border border-violet-500/20 bg-zinc-950 shadow-[0_32px_80px_-32px_rgba(139,92,246,0.35)] ${className}`}
-    >
-      <div className="flex items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <PulseFlowLogo size={32} />
+    <>
+      <div
+        id={id}
+        className={`overflow-hidden rounded-2xl border border-violet-500/20 bg-zinc-950 shadow-[0_32px_80px_-32px_rgba(139,92,246,0.35)] ${className}`}
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <PulseFlowLogo size={32} />
+            <div>
+              <p className="text-sm font-semibold text-white">Live trial preview</p>
+              <p className="text-[10px] text-zinc-500">
+                Clip → thread · no account required
+              </p>
+            </div>
+          </div>
+          <span
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+              trialsRemaining > 0
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+            }`}
+          >
+            {trialsRemaining} free left
+          </span>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 md:p-5">
           <div>
-            <p className="text-sm font-semibold text-white">Live trial preview</p>
-            <p className="text-[10px] text-zinc-500">
-              Clip → thread · no account required
+            <label
+              htmlFor="demo-video-url"
+              className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500"
+            >
+              Video link
+            </label>
+            <input
+              id="demo-video-url"
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              placeholder="https://youtube.com/watch?v=… or /shorts/…"
+              value={inputUrl}
+              onChange={(event) => setInputUrl(event.target.value)}
+              disabled={isGenerating}
+              className="demo-input-glow w-full rounded-xl border border-zinc-800 bg-black/60 px-4 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 transition-all focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <p className="mt-2 text-[11px] text-zinc-600">
+              YouTube &amp; Shorts supported today. TikTok / Reels coming soon.
             </p>
           </div>
-        </div>
-        <span
-          className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-            trialsRemaining > 0
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-              : "border-amber-500/30 bg-amber-500/10 text-amber-400"
-          }`}
-        >
-          {trialsRemaining} free left
-        </span>
+
+          {error ? (
+            <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isGenerating || !inputUrl.trim()}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_4px_24px_-4px_rgba(139,92,246,0.55)] transition-all hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600 disabled:shadow-none"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Generating thread…
+              </>
+            ) : trialsRemaining <= 0 ? (
+              <>
+                <MessageSquarePlus className="size-4" />
+                Generate Thread
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4" />
+                Generate Thread
+              </>
+            )}
+          </button>
+        </form>
+
+        {hasThread ? (
+          <div className="space-y-3 border-t border-zinc-800 bg-black/40 p-4 md:p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Your X thread preview
+            </p>
+            {generatedThread.map((tweet, index) => (
+              <ThreadTweetCard
+                key={`${index}-${tweet.slice(0, 24)}`}
+                tweet={tweet}
+                index={index}
+                total={generatedThread.length}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => openFeedback("post_generation")}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 transition-colors hover:text-violet-300"
+            >
+              <MessageSquarePlus className="size-3.5" />
+              Share feedback
+            </button>
+          </div>
+        ) : !isGenerating ? (
+          <div className="border-t border-zinc-800/80 px-4 py-6 text-center md:px-5">
+            <p className="text-sm text-zinc-500">
+              Paste a link and hit Generate — your thread appears here in seconds.
+            </p>
+          </div>
+        ) : (
+          <div className="border-t border-zinc-800/80 px-4 py-10 text-center md:px-5">
+            <Loader2 className="mx-auto size-6 animate-spin text-violet-400" />
+            <p className="mt-3 text-sm text-zinc-500">
+              Fetching transcript and writing your hook…
+            </p>
+          </div>
+        )}
+
+        {trialsRemaining <= 0 && !isGenerating ? (
+          <div className="border-t border-zinc-800 bg-violet-500/5 px-4 py-4 md:px-5">
+            <p className="text-sm text-zinc-400">
+              You&apos;ve used all free previews on this device.
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={() => openFeedback("trial_exhausted")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-2.5 text-sm font-medium text-violet-300 transition-colors hover:border-violet-500/50 hover:bg-violet-500/15"
+              >
+                <MessageSquarePlus className="size-4" />
+                Share feedback for early access
+              </button>
+              <Link
+                href="/signup"
+                className={`inline-flex ${BTN_PRIMARY}`}
+              >
+                Start free beta
+                <ArrowRight className="ml-2 size-4" />
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 p-4 md:p-5">
-        <div>
-          <label
-            htmlFor="demo-video-url"
-            className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-500"
-          >
-            Video link
-          </label>
-          <input
-            id="demo-video-url"
-            type="url"
-            inputMode="url"
-            autoComplete="off"
-            placeholder="https://youtube.com/watch?v=… or /shorts/…"
-            value={inputUrl}
-            onChange={(event) => setInputUrl(event.target.value)}
-            disabled={isGenerating || trialsRemaining <= 0}
-            className="demo-input-glow w-full rounded-xl border border-zinc-800 bg-black/60 px-4 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 transition-all focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <p className="mt-2 text-[11px] text-zinc-600">
-            YouTube &amp; Shorts supported today. TikTok / Reels coming soon.
-          </p>
-        </div>
-
-        {error ? (
-          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {error}
-          </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={isGenerating || trialsRemaining <= 0 || !inputUrl.trim()}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_4px_24px_-4px_rgba(139,92,246,0.55)] transition-all hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600 disabled:shadow-none"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Generating thread…
-            </>
-          ) : trialsRemaining <= 0 ? (
-            "No previews remaining"
-          ) : (
-            <>
-              <Sparkles className="size-4" />
-              Generate Thread
-            </>
-          )}
-        </button>
-      </form>
-
-      {hasThread ? (
-        <div className="space-y-3 border-t border-zinc-800 bg-black/40 p-4 md:p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Your X thread preview
-          </p>
-          {generatedThread.map((tweet, index) => (
-            <ThreadTweetCard
-              key={`${index}-${tweet.slice(0, 24)}`}
-              tweet={tweet}
-              index={index}
-              total={generatedThread.length}
-            />
-          ))}
-        </div>
-      ) : !isGenerating ? (
-        <div className="border-t border-zinc-800/80 px-4 py-6 text-center md:px-5">
-          <p className="text-sm text-zinc-500">
-            Paste a link and hit Generate — your thread appears here in seconds.
-          </p>
-        </div>
-      ) : (
-        <div className="border-t border-zinc-800/80 px-4 py-10 text-center md:px-5">
-          <Loader2 className="mx-auto size-6 animate-spin text-violet-400" />
-          <p className="mt-3 text-sm text-zinc-500">
-            Fetching transcript and writing your hook…
-          </p>
-        </div>
-      )}
-
-      {trialsRemaining <= 0 && !isGenerating ? (
-        <div className="border-t border-zinc-800 bg-violet-500/5 px-4 py-4 md:px-5">
-          <p className="text-sm text-zinc-400">
-            You&apos;ve used all free previews on this device.
-          </p>
-          <Link
-            href="/signup"
-            className={`mt-3 inline-flex ${BTN_PRIMARY}`}
-          >
-            Start free beta
-            <ArrowRight className="ml-2 size-4" />
-          </Link>
-        </div>
-      ) : null}
-    </div>
+      <FeedbackForm
+        open={showFeedbackForm}
+        onClose={() => setShowFeedbackForm(false)}
+        trigger={feedbackTrigger}
+        metadata={feedbackMetadata}
+      />
+    </>
   )
 }
