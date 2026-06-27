@@ -1,6 +1,6 @@
 "use client"
 
-import { GitBranch, Plug, Zap, type LucideIcon } from "lucide-react"
+import { GitBranch, Link2, Zap, type LucideIcon } from "lucide-react"
 import AnimatedSection, { StaggerItem } from "@/components/landing/AnimatedSection"
 import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
@@ -8,7 +8,7 @@ import { CARD_INTERACTIVE } from "@/lib/landing-styles"
 import { steps } from "@/lib/landing-content"
 
 const iconMap: Record<(typeof steps)[number]["icon"], LucideIcon> = {
-  plug: Plug,
+  link: Link2,
   workflow: GitBranch,
   zap: Zap,
 }

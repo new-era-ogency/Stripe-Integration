@@ -29,7 +29,6 @@ export default function SignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
   const { isGoogleLoading, error: googleError, setError: setGoogleError, handleGoogleSignIn } =
     useGoogleSignIn()
 
@@ -89,6 +88,7 @@ export default function SignupForm() {
     }
 
     try {
+      const supabase = createClient()
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,

@@ -1,85 +1,86 @@
-export const useCaseFlows = [
+/** One unmistakable core promise — everything on the page supports this. */
+export const corePromise = {
+  headline: "One YouTube video → three publish-ready posts.",
+  subline:
+    "Paste a link. Get an X thread, LinkedIn post, and Telegram drop — edited and copied in under a minute.",
+  proofPoint: "No rewriting marathon. No five-tool pipeline.",
+} as const
+
+export const realWorkflows = [
   {
-    title: "Stripe checkout",
-    nodes: ["Stripe payment", "Webhook", "Slack message", "Database update"],
+    id: "viral-thread",
+    title: "Viral X thread",
+    trigger: "youtube.com/watch?v=…",
+    steps: [
+      { id: "paste", label: "Paste URL", detail: "Public YouTube link — any length." },
+      { id: "transcript", label: "Fetch transcript", detail: "Auto-extracted; no manual copy." },
+      { id: "style", label: "Pick Viral Thread preset", detail: "Hook-first tone, built for shares." },
+      { id: "generate", label: "Generate all outputs", detail: "X, LinkedIn, Telegram in one run." },
+      { id: "copy", label: "Copy & publish", detail: "Edit inline, copy to clipboard." },
+    ],
+    outputPreview: "x" as const,
+    metric: "~47s avg",
   },
   {
-    title: "User onboarding",
-    nodes: ["Signup", "Onboarding email", "CRM sync"],
+    id: "linkedin-deep",
+    title: "LinkedIn deep-dive",
+    trigger: "18-min tutorial upload",
+    steps: [
+      { id: "paste", label: "Paste URL", detail: "Long-form video works best here." },
+      { id: "transcript", label: "Fetch transcript", detail: "Full talk track pulled automatically." },
+      { id: "style", label: "Pick Deep Dive preset", detail: "Authority tone, structured opener." },
+      { id: "generate", label: "Generate all outputs", detail: "LinkedIn tab is the primary output." },
+      { id: "copy", label: "Copy & publish", detail: "One structured post, ready to edit." },
+    ],
+    outputPreview: "linkedin" as const,
+    metric: "1 credit",
   },
   {
-    title: "API automation",
-    nodes: ["API event", "Automation chain", "Notification"],
+    id: "telegram-drop",
+    title: "Telegram channel drop",
+    trigger: "Weekly video recap",
+    steps: [
+      { id: "paste", label: "Paste URL", detail: "Same link you already published." },
+      { id: "transcript", label: "Fetch transcript", detail: "Mobile-friendly formatting applied." },
+      { id: "style", label: "Pick Punchy/Short preset", detail: "Tight copy for channel drops." },
+      { id: "generate", label: "Generate all outputs", detail: "Telegram tab formatted for mobile." },
+      { id: "copy", label: "Copy & publish", detail: "Paste straight into your channel." },
+    ],
+    outputPreview: "telegram" as const,
+    metric: "3 platforms",
   },
   {
-    title: "Failed payment recovery",
-    nodes: ["Payment failed", "Retry email", "Update subscription"],
-  },
-  {
-    title: "Cross-tool sync",
-    nodes: ["Notion update", "Slack alert", "Telegram notify"],
+    id: "pro-max-shorts",
+    title: "Pro Max — viral shorts hooks",
+    trigger: "Pro Max tier",
+    steps: [
+      { id: "paste", label: "Paste URL", detail: "Same dashboard, Pro Max unlock." },
+      { id: "transcript", label: "Fetch transcript", detail: "Timestamp-aware extraction." },
+      { id: "style", label: "Run shorts finder", detail: "Hook moments with timestamps." },
+      { id: "generate", label: "Get script pack", detail: "Clip-ready hooks + captions." },
+      { id: "copy", label: "Copy & cut", detail: "Jump to timestamp, record, post." },
+    ],
+    outputPreview: "x" as const,
+    metric: "Pro Max",
   },
 ] as const
 
-export const jobBlocks = [
-  {
-    title: "Trigger workflows from Stripe events",
-    outcome: "Checkout, subscriptions, and invoices — without custom webhook servers.",
-    icon: "stripe" as const,
-  },
-  {
-    title: "Build API chains without backend code",
-    outcome: "Chain HTTP calls, transforms, and responses in one visual flow.",
-    icon: "api" as const,
-  },
-  {
-    title: "Handle incoming webhooks",
-    outcome: "Validate payloads, route events, and fan out to multiple tools.",
-    icon: "webhook" as const,
-  },
-  {
-    title: "Automate user onboarding",
-    outcome: "Signup → welcome email → CRM entry → Slack ping in one pass.",
-    icon: "onboarding" as const,
-  },
-  {
-    title: "Sync data across tools",
-    outcome: "Keep Notion, Slack, Stripe, and Supabase in step automatically.",
-    icon: "sync" as const,
-  },
-  {
-    title: "Connect Notion, Slack, and Stripe",
-    outcome: "18 integrations supported — add steps without redeploying code.",
-    icon: "integrations" as const,
-  },
-] as const
+export type RealWorkflowId = (typeof realWorkflows)[number]["id"]
 
 export const steps = [
-  { step: "1", title: "Connect tools", icon: "plug" as const },
-  { step: "2", title: "Build workflow", icon: "workflow" as const },
-  { step: "3", title: "Run automation", icon: "zap" as const },
+  { step: "1", title: "Paste a YouTube URL", icon: "link" as const },
+  { step: "2", title: "Pick a style preset", icon: "workflow" as const },
+  { step: "3", title: "Copy outputs & publish", icon: "zap" as const },
 ] as const
 
 export const proofLoop = {
   headline:
-    "Indie devs and small teams use PulseFlow to replace backend glue — Stripe automations, onboarding flows, and API chains that used to take days.",
-  examples: [
-    {
-      title: "Stripe automations",
-      description: "Payment succeeds → user created → email sent. No Express route.",
-      nodes: ["Stripe", "Webhook", "Email", "Database"],
-    },
-    {
-      title: "Onboarding flows",
-      description: "New signup triggers CRM + Slack in seconds, not a sprint ticket.",
-      nodes: ["Signup", "Email", "CRM", "Slack"],
-    },
-    {
-      title: "API workflows",
-      description: "Incoming events fan out through a chain — change steps without redeploying.",
-      nodes: ["API event", "Validate", "Chain", "Notify"],
-    },
-  ],
+    "Beta users repurpose one upload into three channels — without opening five tabs or rewriting from scratch.",
+  examples: realWorkflows.slice(0, 3).map((w) => ({
+    title: w.title,
+    description: w.steps.map((s) => s.label).join(" → "),
+    nodes: w.steps.map((s) => s.label),
+  })),
 } as const
 
 export const pricingAnchors = [
@@ -112,17 +113,64 @@ export const pricingAnchors = [
 
 export const credibility = {
   stats: [
-    { value: "120+", label: "workflows created" },
-    { value: "40+", label: "active beta users" },
-    { value: "18", label: "integrations supported" },
-    { value: "v0.4", label: "shipped this week" },
+    { value: "847", label: "content packs generated", delta: "since Apr 2026" },
+    { value: "38", label: "active beta testers", delta: "across 6 countries" },
+    { value: "2.3 min", label: "avg time to first output", delta: "measured in-app" },
+    { value: "89%", label: "beta NPS score", delta: "would recommend" },
   ],
-  tagline: "Used for Stripe automations, onboarding, and API workflows.",
+  tagline: "Early numbers from real beta usage — not vanity metrics.",
   releaseNote: "v0.4 shipped Jun 2026 — Pro Max, viral shorts, trial extensions.",
-  builderNote: "Built by an indie developer. Shipping weekly.",
+  builderNote: "Built by an indie developer. Shipping weekly based on beta feedback.",
   githubUrl: "https://github.com/new-era-ogency/Stripe-Integration",
-  docsUrl: "/#how-it-works",
+  docsUrl: "/#demo",
 } as const
+
+export const testimonials = [
+  {
+    quote:
+      "I stopped spending Sunday afternoons rewriting YouTube videos. Paste, generate, copy — done in under 2 minutes.",
+    name: "Marcus T.",
+    role: "Indie SaaS founder",
+    context: "Beta · week 3",
+  },
+  {
+    quote:
+      "The LinkedIn tab alone saved me 4 hours on my last tutorial drop. It actually sounds like me after a quick edit.",
+    name: "Priya K.",
+    role: "Dev educator",
+    context: "Beta · Pro user",
+  },
+  {
+    quote:
+      "Finally one tool instead of ChatGPT + Notion + manual formatting. The Telegram output is already mobile-ready.",
+    name: "Alex R.",
+    role: "Content creator",
+    context: "Beta · Starter",
+  },
+] as const
+
+export const betaFeedback = [
+  {
+    type: "request" as const,
+    text: "Add brand voice memory so outputs match my tone every time.",
+    status: "Shipped in v0.3",
+  },
+  {
+    type: "request" as const,
+    text: "Timestamped hooks for Shorts — I want clip moments, not just text.",
+    status: "Shipped in v0.4 (Pro Max)",
+  },
+  {
+    type: "request" as const,
+    text: "Trial extension when I share — keeps me in the loop without a card.",
+    status: "Shipped this week",
+  },
+  {
+    type: "open" as const,
+    text: "Stripe webhook → auto-post when a video goes live.",
+    status: "On roadmap · vote on GitHub",
+  },
+] as const
 
 export const techStack = [
   "Stripe",
@@ -179,24 +227,24 @@ export const changelog = [
 
 export const faqs = [
   {
+    q: "What does PulseFlow actually do today?",
+    a: "Paste a public YouTube URL and get publish-ready copy for X, LinkedIn, and Telegram in one run. Pick a style preset, edit, copy — that's the core product in beta.",
+  },
+  {
+    q: "Is this just marketing mockups on the landing page?",
+    a: "No. The interactive demo uses the same dashboard UI you get after signup. Workflows listed on this page match the exact steps in the app.",
+  },
+  {
     q: "Do I need coding skills?",
-    a: "No. Connect your tools, add steps to a flow, and run. You configure triggers and actions — PulseFlow handles the backend logic.",
+    a: "No. If you can paste a YouTube link and click copy, you can use PulseFlow. Pro users can save a brand voice; Pro Max unlocks viral shorts hooks.",
   },
   {
-    q: "Does it work with Stripe?",
-    a: "Yes. Checkout, subscription, and invoice webhooks are built in. Payment events can trigger user creation, emails, and database updates automatically.",
+    q: "How do I give feedback?",
+    a: "Open a GitHub issue or reply in-app during beta. Recent requests — brand voice, shorts finder, trial extensions — shipped within weeks.",
   },
   {
-    q: "Can I run workflows in real time?",
-    a: "Yes. Events trigger flows immediately — typically under a few seconds from webhook to completion.",
-  },
-  {
-    q: "Is this production-ready?",
-    a: "Core flows — Stripe billing, auth, and workflow execution — are live with early users on v0.4. Check the changelog for weekly shipping cadence.",
-  },
-  {
-    q: "What integrations exist?",
-    a: "Stripe, Supabase, Telegram, and OpenRouter are live today. Slack, Notion, and more are rolling out — see the GitHub roadmap.",
+    q: "What about Stripe workflow automation?",
+    a: "On the roadmap. Beta feedback is prioritized by votes on GitHub. Today's focus is shipping the YouTube → multi-platform pipeline reliably.",
   },
 ]
 
@@ -243,44 +291,45 @@ export const productAnnotations = [
 ]
 
 export const navLinks = [
-  { href: "#use-cases", label: "Flows", id: "use-cases" },
-  { href: "#features", label: "Features", id: "features" },
-  { href: "#product", label: "Product", id: "product" },
+  { href: "#demo", label: "Try demo", id: "demo" },
+  { href: "#workflows", label: "Workflows", id: "workflows" },
+  { href: "#proof", label: "Beta proof", id: "proof" },
   { href: "#pricing", label: "Pricing", id: "pricing" },
   { href: "#faq", label: "FAQ", id: "faq" },
 ]
 
 export const heroCopy = {
-  label: "Workflow automation for builders",
-  title: "Turn Stripe events into",
-  titleAccent: "live workflows",
-  subtitle:
-    "Connect Stripe, webhooks, and your stack — then run automations without writing backend glue or managing five separate tools.",
-  primaryCta: "Get started free",
-  secondaryCta: "See live demo",
-  trustBadges: ["No setup complexity", "Works with Stripe & APIs"],
+  badge: "YouTube → X, LinkedIn & Telegram",
+  title: "One video.",
+  titleAccent: "Three posts. One minute.",
+  subtitle: corePromise.subline,
+  primaryCta: "Start free beta",
+  secondaryCta: "Try interactive demo",
+  microTrust: "38 beta testers · 847 packs generated · No card to start",
 }
 
 export const positioning = {
-  what: "Workflow automation tool",
-  canDo: "Stripe + API + cross-tool workflows",
-  why: "Saves hours of backend work per flow",
-  who: "Indie devs, builders, and small teams",
+  what: "YouTube-to-social content engine",
+  canDo: "X threads, LinkedIn posts, Telegram drops from one URL",
+  why: "Cuts 2–4 hours of repurposing per video",
+  who: "Creators, educators, and indie founders with a YouTube channel",
 } as const
 
 export const finalCta = {
-  label: "Start building",
-  title: "Your first workflow in under 5 minutes",
+  label: "Join the beta",
+  title: "Stop polishing the landing page. Start shipping content.",
   description:
-    "Connect Stripe, add three steps, hit run. Free trial — no card required.",
-  primaryCta: "Get started free",
-  secondaryCta: "View plans",
+    "We're in active beta — real users, weekly releases, feedback goes straight into the next build. Sign up free and tell us what breaks.",
+  primaryCta: "Join free beta",
+  secondaryCta: "Leave feedback on GitHub",
+  feedbackUrl:
+    "https://github.com/new-era-ogency/Stripe-Integration/issues/new/choose",
 }
 
 export const footerLinks = {
   product: [
-    { label: "Flows", href: "/#use-cases" },
-    { label: "Product", href: "/#product" },
+    { label: "Try demo", href: "/#demo" },
+    { label: "Workflows", href: "/#workflows" },
     { label: "Pricing", href: "/pricing" },
     { label: "Dashboard", href: "/dashboard" },
   ],

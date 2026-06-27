@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { validateEmailDomain } from "@/lib/auth/validate-email"
+import { requireSupabasePublicEnv } from "@/lib/supabase/env"
+
+export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -23,10 +26,9 @@ export async function GET(request: NextRequest) {
 
   let response = NextResponse.redirect(dashboardUrl)
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const { url, anonKey } = requireSupabasePublicEnv("Auth callback")
+
+  const supabase = createServerClient(url, anonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll()

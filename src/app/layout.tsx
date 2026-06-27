@@ -15,20 +15,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PulseFlow | AI YouTube Content Generator (Threads, Articles, Scripts)",
+  title: "PulseFlow | One YouTube video → X, LinkedIn & Telegram posts",
   description:
-    "Transform any YouTube video into viral Twitter threads, deep LinkedIn articles, and high-converting Shorts scripts in 30 seconds.",
+    "Paste a YouTube link. Get publish-ready X threads, LinkedIn posts, and Telegram drops in under a minute. Join the free beta.",
   openGraph: {
-    title: "PulseFlow | AI YouTube Content Generator (Threads, Articles, Scripts)",
+    title: "PulseFlow | One YouTube video → X, LinkedIn & Telegram posts",
     description:
-      "Transform any YouTube video into viral Twitter threads, deep LinkedIn articles, and high-converting Shorts scripts in 30 seconds.",
+      "Paste a YouTube link. Get publish-ready X threads, LinkedIn posts, and Telegram drops in under a minute.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PulseFlow | AI YouTube Content Generator (Threads, Articles, Scripts)",
+    title: "PulseFlow | One YouTube video → X, LinkedIn & Telegram posts",
     description:
-      "Transform any YouTube video into viral Twitter threads, deep LinkedIn articles, and high-converting Shorts scripts in 30 seconds.",
+      "Paste a YouTube link. Get publish-ready X threads, LinkedIn posts, and Telegram drops in under a minute.",
   },
 };
 

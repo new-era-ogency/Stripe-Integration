@@ -1,20 +1,20 @@
 "use client"
 
 import Link from "next/link"
-import { Circle, Code2, ExternalLink } from "lucide-react"
+import { Circle, Code2, ExternalLink, Quote } from "lucide-react"
 import AnimatedSection, { StaggerItem } from "@/components/landing/AnimatedSection"
 import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
 import { ACCENT_TEXT, CARD_INTERACTIVE } from "@/lib/landing-styles"
-import { credibility, techStack } from "@/lib/landing-content"
+import { credibility, techStack, testimonials } from "@/lib/landing-content"
 
 export default function CredibilitySection() {
   return (
-    <SectionShell id="credibility">
+    <SectionShell id="proof" tone="spotlight">
       <AnimatedSection>
         <SectionHeader
-          label="Social proof"
-          title="Small numbers, real usage"
+          label="Beta proof"
+          title="Real metrics from real usage"
           description={credibility.tagline}
         />
       </AnimatedSection>
@@ -27,8 +27,28 @@ export default function CredibilitySection() {
                 <p className={`text-2xl font-bold md:text-3xl ${ACCENT_TEXT}`}>
                   {stat.value}
                 </p>
-                <p className="mt-1 text-sm text-zinc-500">{stat.label}</p>
+                <p className="mt-1 text-sm text-zinc-400">{stat.label}</p>
+                <p className="mt-1 text-[11px] text-zinc-600">{stat.delta}</p>
               </div>
+            </StaggerItem>
+          ))}
+        </div>
+
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {testimonials.map((t, index) => (
+            <StaggerItem key={t.name} index={index}>
+              <blockquote className={`h-full ${CARD_INTERACTIVE} p-6`}>
+                <Quote className="size-4 text-violet-500/50" aria-hidden />
+                <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <footer className="mt-4 border-t border-zinc-800/80 pt-4">
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
+                  <p className="text-xs text-zinc-500">
+                    {t.role} · {t.context}
+                  </p>
+                </footer>
+              </blockquote>
             </StaggerItem>
           ))}
         </div>
@@ -37,7 +57,7 @@ export default function CredibilitySection() {
           <AnimatedSection delay={0.1}>
             <div className={`${CARD_INTERACTIVE} p-6`}>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                Built for developers
+                Stack in production
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {techStack.map((name) => (

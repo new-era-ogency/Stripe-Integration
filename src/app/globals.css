@@ -303,6 +303,18 @@
   display: none;
 }
 
+/* Landing page — Figma frame tokens (1440 / 1200 / 12-col / 24px gutter) */
+:root {
+  --landing-frame-width: 1440px;
+  --landing-content-width: 1200px;
+  --landing-grid-columns: 12;
+  --landing-grid-gutter: 24px;
+  --landing-section-gap: 120px;
+  --landing-section-gap-lg: 160px;
+  --landing-hero-min-height: 700px;
+  --landing-hero-max-height: 800px;
+}
+
 /* Landing page atmosphere */
 .landing-grain {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

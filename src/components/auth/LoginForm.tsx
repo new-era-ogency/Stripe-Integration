@@ -25,13 +25,13 @@ export const authLabelClassName = "text-xs uppercase tracking-wide text-zinc-500
 export function useGoogleSignIn() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   const handleGoogleSignIn = async () => {
     setError(null)
     setIsGoogleLoading(true)
 
     try {
+      const supabase = createClient()
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -67,7 +67,6 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
   const { isGoogleLoading, error: googleError, setError: setGoogleError, handleGoogleSignIn } =
     useGoogleSignIn()
 
@@ -110,6 +109,7 @@ export default function LoginForm() {
     }
 
     try {
+      const supabase = createClient()
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,

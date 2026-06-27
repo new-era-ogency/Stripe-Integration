@@ -1,12 +1,20 @@
-/** Landing design tokens — editorial layout + single violet accent. */
+/** Landing design tokens — Figma blueprint (1440 frame / 1200 content / 12-col grid). */
 
-export const LANDING_CONTAINER = "mx-auto w-full max-w-6xl px-6 lg:px-8"
+/** Full viewport frame reference — 1440px artboard */
+export const LANDING_FRAME = "mx-auto w-full max-w-[1440px]"
+
+/** Content column — 1100–1200px max, centered inside frame */
+export const LANDING_CONTAINER =
+  "mx-auto w-full max-w-[1200px] px-6 sm:px-8 xl:px-[120px]"
+
+/** 12-column grid, 24px gutter */
+export const LANDING_GRID = "grid grid-cols-12 gap-6"
 
 export const HERO_SECTION =
-  "relative scroll-mt-28 overflow-hidden pb-24 pt-16 md:pb-32 md:pt-24 lg:pb-40 lg:pt-28"
+  "relative scroll-mt-28 overflow-hidden flex min-h-[700px] items-center lg:min-h-[750px] xl:min-h-[800px] py-16 lg:py-20"
 
 export const LANDING_SECTION =
-  "landing-section relative scroll-mt-28 py-20 md:py-28 lg:py-32"
+  "landing-section relative scroll-mt-28 py-[120px] lg:py-[160px]"
 
 export const SECTION_DIVIDER =
   "pointer-events-none absolute inset-x-0 top-0 h-px bg-zinc-800/80"
@@ -18,8 +26,17 @@ export const SECTION_HEADER_CENTERED = `${SECTION_HEADER} md:mx-auto md:items-ce
 export const SECTION_LABEL =
   "inline-flex w-fit items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-violet-400"
 
+/** Hero badge pill — small, outcome category */
+export const HERO_BADGE_PILL =
+  "inline-flex w-fit items-center rounded-full border border-violet-500/25 bg-violet-500/10 px-3.5 py-1.5 text-xs font-medium text-violet-300"
+
 export const HERO_TITLE =
-  "font-bold tracking-[-0.035em] text-white text-[2.75rem] leading-[1.04] sm:text-5xl md:text-[3.5rem] md:leading-[1.02] lg:text-[4.25rem]"
+  "font-bold tracking-[-0.035em] text-white text-[3.5rem] leading-[1.05] sm:text-[3.75rem] lg:text-[4.5rem] lg:leading-[1.02]"
+
+export const HERO_SUBTEXT =
+  "max-w-xl text-lg leading-[1.6] text-zinc-400 lg:text-xl lg:leading-[1.55]"
+
+export const HERO_MICRO_TRUST = "text-sm text-zinc-500"
 
 export const SECTION_TITLE =
   "text-2xl font-bold tracking-[-0.02em] text-white md:text-3xl md:leading-tight lg:text-4xl"
