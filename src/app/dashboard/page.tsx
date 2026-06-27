@@ -30,6 +30,7 @@ import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
 import type { TrialUiState } from "@/lib/trial/ui"
 import { BASE_TRIAL_DAYS } from "@/lib/trial/types"
 import { createClient } from "@/lib/supabase/client"
+import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 
 const PRESET_TONES: Record<StylePreset, string> = {
   "viral-thread": "Engaging",
@@ -109,6 +110,12 @@ export default function DashboardPage() {
       setGenerations([])
       setTrial(null)
       setAuthChecked(true)
+      return
+    }
+
+    const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
+    if (redirectPath === "/signup/complete") {
+      router.replace("/signup/complete")
       return
     }
 

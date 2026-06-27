@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import {
+  ensureUserProfileRow,
+  getPostAuthRedirectPath,
+} from "@/lib/auth/post-auth-redirect"
 import { validateEmailDomain } from "@/lib/auth/validate-email"
-import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 import { requireSupabasePublicEnv } from "@/lib/supabase/env"
 
 export const dynamic = "force-dynamic"
@@ -22,26 +25,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login`)
   }
 
-  const dashboardUrl = new URL("/dashboard", origin)
-  dashboardUrl.searchParams.set("auth", Date.now().toString())
-
-  let response = NextResponse.redirect(dashboardUrl)
-
   const { url, anonKey } = requireSupabasePublicEnv("Auth callback")
 
+  let response = NextResponse.redirect(new URL("/dashboard", origin))
+
   const supabase = createServerClient(url, anonKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options)
+        })
+      },
+    },
+  })
 
   const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
@@ -60,44 +59,22 @@ export async function GET(request: NextRequest) {
   await supabase.auth.refreshSession()
 
   const userId = data.user?.id
-  let redirectTarget = dashboardUrl
+  let redirectPath: "/dashboard" | "/signup/complete" = "/dashboard"
 
   if (userId) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("username")
-      .eq("id", userId)
-      .maybeSingle()
-
-    if (!profile) {
-      await supabase.from("users").insert({
-        id: userId,
-        credits: DEFAULT_USER_CREDITS,
-      })
-    }
-
-    const { data: profileAfterEnsure } = await supabase
-      .from("users")
-      .select("username")
-      .eq("id", userId)
-      .maybeSingle()
-
-    const metadataUsername = data.user?.user_metadata?.username
-    const hasMetadataUsername =
-      typeof metadataUsername === "string" && metadataUsername.length > 0
-
-    if (!profileAfterEnsure?.username && !hasMetadataUsername) {
-      redirectTarget = new URL("/signup/complete", origin)
-    }
+    await ensureUserProfileRow(supabase, userId)
+    redirectPath = await getPostAuthRedirectPath(supabase, userId)
   }
 
-  if (redirectTarget.pathname !== dashboardUrl.pathname) {
-    const redirectResponse = NextResponse.redirect(redirectTarget)
-    response.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie)
-    })
-    return redirectResponse
+  const redirectTarget = new URL(redirectPath, origin)
+  if (redirectPath === "/dashboard") {
+    redirectTarget.searchParams.set("auth", Date.now().toString())
   }
 
-  return response
+  const redirectResponse = NextResponse.redirect(redirectTarget)
+  response.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie)
+  })
+
+  return redirectResponse
 }

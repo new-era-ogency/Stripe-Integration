@@ -12,6 +12,7 @@ import {
   validateEmailDomain,
 } from "@/lib/auth/validate-email"
 import { getAuthErrorMessage } from "@/lib/auth/errors"
+import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton"
 import { useGoogleSignIn } from "@/components/auth/useGoogleSignIn"
 import { Button } from "@/components/ui/button"
@@ -43,19 +44,21 @@ export default function LoginForm() {
   const isFormDisabled = isGoogleLoading || isSigningIn
 
   const completeAuthAndRedirect = async () => {
-    const response = await fetch("/api/ensure-profile", { method: "POST" })
-    const payload = (await response.json().catch(() => null)) as {
-      username?: string | null
-    } | null
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    router.refresh()
-
-    if (!payload?.username) {
-      window.location.assign("/signup/complete")
+    if (!user) {
       return
     }
 
-    window.location.assign("/dashboard")
+    await fetch("/api/ensure-profile", { method: "POST" })
+
+    router.refresh()
+
+    const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
+    router.push(redirectPath)
   }
 
   const handleSignIn = async () => {

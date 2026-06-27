@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 import AuthPageShell from "@/components/auth/AuthPageShell"
 import SignupForm from "@/components/auth/SignupForm"
 
@@ -14,10 +15,13 @@ function SignupPageContent() {
     router.prefetch("/dashboard")
 
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        router.replace("/dashboard")
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) {
+        return
       }
+
+      const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
+      router.replace(redirectPath)
     })
   }, [router])
 

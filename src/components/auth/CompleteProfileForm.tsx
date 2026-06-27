@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
-import { normalizeUsername, validateUsername } from "@/lib/auth/username"
+import { normalizeUsername } from "@/lib/auth/username"
 import {
   authInputClassName,
   authLabelClassName,
 } from "@/components/auth/LoginForm"
+import { completeUsernameSchema } from "@/lib/validation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,14 +19,17 @@ export default function CompleteProfileForm() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setError(null)
     setIsSubmitting(true)
 
-    const normalizedUsername = normalizeUsername(username)
-    const usernameCheck = validateUsername(normalizedUsername)
-    if (!usernameCheck.valid) {
-      setError(usernameCheck.message ?? "Invalid username.")
+    const parsed = completeUsernameSchema.safeParse({
+      username: normalizeUsername(username),
+    })
+
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid username.")
       setIsSubmitting(false)
       return
     }
@@ -34,7 +38,7 @@ export default function CompleteProfileForm() {
       const response = await fetch("/api/ensure-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: normalizedUsername }),
+        body: JSON.stringify({ username: parsed.data.username }),
       })
 
       if (!response.ok) {
@@ -47,7 +51,7 @@ export default function CompleteProfileForm() {
       }
 
       router.refresh()
-      window.location.assign("/dashboard")
+      router.push("/dashboard")
     } catch {
       setError("Something went wrong. Please try again.")
       setIsSubmitting(false)
@@ -55,9 +59,9 @@ export default function CompleteProfileForm() {
   }
 
   return (
-    <div className="flex flex-col space-y-5">
-      <p className="text-sm leading-relaxed text-zinc-400">
-        Choose a username to finish setting up your account.
+    <form className="flex flex-col space-y-5" onSubmit={handleSubmit}>
+      <p className="text-center text-sm leading-relaxed text-zinc-300">
+        Welcome to PulseFlow! Choose your unique username to get started.
       </p>
 
       <div className="space-y-2">
@@ -90,8 +94,7 @@ export default function CompleteProfileForm() {
       ) : null}
 
       <Button
-        type="button"
-        onClick={handleSubmit}
+        type="submit"
         disabled={isSubmitting || !username.trim()}
         className="h-11 w-full rounded-lg bg-white font-medium text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all duration-300 hover:bg-zinc-200 focus-visible:ring-0 disabled:opacity-50"
       >
@@ -101,9 +104,9 @@ export default function CompleteProfileForm() {
             Saving…
           </span>
         ) : (
-          "Continue"
+          "Continue to dashboard"
         )}
       </Button>
-    </div>
+    </form>
   )
 }

@@ -11,6 +11,7 @@ import {
   validateEmailDomain,
 } from "@/lib/auth/validate-email"
 import { getAuthErrorMessage } from "@/lib/auth/errors"
+import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 import { normalizeUsername, validateUsername } from "@/lib/auth/username"
 import GoogleAuthButton from "@/components/auth/GoogleAuthButton"
 import {
@@ -45,21 +46,25 @@ export default function SignupForm() {
 
     const payload = (await response.json().catch(() => null)) as {
       error?: string
-      username?: string | null
     } | null
 
     if (!response.ok) {
       throw new Error(payload?.error ?? "Could not save your profile.")
     }
 
-    router.refresh()
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!payload?.username) {
-      window.location.assign("/signup/complete")
+    if (!user) {
       return
     }
 
-    window.location.assign("/dashboard")
+    router.refresh()
+
+    const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
+    router.push(redirectPath)
   }
 
   const handleSignUp = async () => {

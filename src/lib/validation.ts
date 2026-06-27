@@ -134,16 +134,21 @@ export const checkoutRequestSchema = z
     priceId: value.priceId,
   }))
 
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(
+    /^[a-z][a-z0-9_]{2,19}$/,
+    "Username must be 3–20 characters: start with a letter, then letters, numbers, or underscores."
+  )
+
+export const completeUsernameSchema = z.object({
+  username: usernameSchema,
+})
+
 export const ensureProfileSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(
-      /^[a-z][a-z0-9_]{2,19}$/,
-      "Username must be 3–20 characters: start with a letter, then letters, numbers, or underscores."
-    )
-    .optional(),
+  username: usernameSchema.optional(),
 })
 
 export const telegramChannelIdSchema = z

@@ -3,7 +3,10 @@
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 import { getAuthCallbackUrl } from "@/lib/auth/site-url"
+
+const AUTH_ENTRY_PATHS = new Set(["/", "/login", "/signup"])
 
 export default function AuthSessionSync() {
   const router = useRouter()
@@ -22,6 +25,20 @@ export default function AuthSessionSync() {
 
     const supabase = createClient()
 
+    const redirectAuthenticatedUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        return
+      }
+
+      const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
+      router.replace(redirectPath)
+      router.refresh()
+    }
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -29,7 +46,7 @@ export default function AuthSessionSync() {
         return
       }
 
-      if (pathname === "/auth/callback") {
+      if (pathname === "/auth/callback" || pathname === "/signup/complete") {
         return
       }
 
@@ -37,11 +54,9 @@ export default function AuthSessionSync() {
         return
       }
 
-      if (pathname === "/login" || pathname === "/signup" || pathname === "/") {
-        router.replace("/dashboard")
+      if (AUTH_ENTRY_PATHS.has(pathname)) {
+        void redirectAuthenticatedUser()
       }
-
-      router.refresh()
     })
 
     return () => subscription.unsubscribe()
