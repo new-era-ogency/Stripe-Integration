@@ -13,6 +13,11 @@ function normalizeSiteUrl(url: string): string {
 }
 
 export function getSiteUrl(): string {
+  // Browser OAuth must use the current origin so PKCE cookies match the callback URL.
+  if (typeof window !== "undefined") {
+    return window.location.origin
+  }
+
   const configured =
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.NEXT_PUBLIC_APP_URL ??
@@ -22,10 +27,6 @@ export function getSiteUrl(): string {
 
   if (configured) {
     return normalizeSiteUrl(configured)
-  }
-
-  if (typeof window !== "undefined") {
-    return window.location.origin
   }
 
   return "http://localhost:3000"

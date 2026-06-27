@@ -4,7 +4,6 @@ import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
-import { getAuthCallbackUrl } from "@/lib/auth/site-url"
 
 const AUTH_ENTRY_PATHS = new Set(["/", "/login", "/signup"])
 
@@ -17,7 +16,7 @@ export default function AuthSessionSync() {
     const code = params.get("code")
 
     if (code && pathname !== "/auth/callback") {
-      const callbackUrl = new URL(getAuthCallbackUrl())
+      const callbackUrl = new URL("/auth/callback", window.location.origin)
       callbackUrl.search = window.location.search
       window.location.replace(callbackUrl.toString())
       return

@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
 
   const { url, anonKey } = requireSupabasePublicEnv("Auth callback")
 
-  let response = NextResponse.redirect(new URL("/dashboard", origin))
+  // Keep a single redirect response so Supabase session cookies keep httpOnly/options.
+  let redirectTarget = new URL("/dashboard", origin)
+  let response = NextResponse.redirect(redirectTarget)
 
   const supabase = createServerClient(url, anonKey, {
     cookies: {
@@ -45,13 +47,16 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
+    console.error("OAuth code exchange failed:", error.message)
     return NextResponse.redirect(`${origin}/login?error=oauth`)
   }
 
   const email = data.user?.email
 
   if (!email || !validateEmailDomain(email)) {
-    response = NextResponse.redirect(`${origin}/login?error=untrusted_email`)
+    redirectTarget = new URL("/login", origin)
+    redirectTarget.searchParams.set("error", "untrusted_email")
+    response.headers.set("Location", redirectTarget.toString())
     await supabase.auth.signOut()
     return response
   }
@@ -66,15 +71,11 @@ export async function GET(request: NextRequest) {
     redirectPath = await getPostAuthRedirectPath(supabase, userId)
   }
 
-  const redirectTarget = new URL(redirectPath, origin)
+  redirectTarget = new URL(redirectPath, origin)
   if (redirectPath === "/dashboard") {
     redirectTarget.searchParams.set("auth", Date.now().toString())
   }
+  response.headers.set("Location", redirectTarget.toString())
 
-  const redirectResponse = NextResponse.redirect(redirectTarget)
-  response.cookies.getAll().forEach((cookie) => {
-    redirectResponse.cookies.set(cookie)
-  })
-
-  return redirectResponse
+  return response
 }
