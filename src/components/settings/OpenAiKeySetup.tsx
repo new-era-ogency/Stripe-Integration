@@ -21,7 +21,15 @@ type ValidationState =
   | { status: "valid" }
   | { status: "invalid"; message: string }
 
-export default function OpenAiKeySetup() {
+type OpenAiKeySetupProps = {
+  embedded?: boolean
+  onKeyValidated?: () => void
+}
+
+export default function OpenAiKeySetup({
+  embedded = false,
+  onKeyValidated,
+}: OpenAiKeySetupProps) {
   const inputId = useId()
   const [apiKey, setApiKey] = useState("")
   const [validation, setValidation] = useState<ValidationState>({ status: "idle" })
@@ -51,11 +59,12 @@ export default function OpenAiKeySetup() {
 
     if (result.ok) {
       setValidation({ status: "valid" })
+      onKeyValidated?.()
       return
     }
 
     setValidation({ status: "invalid", message: result.message })
-  }, [])
+  }, [onKeyValidated])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -74,21 +83,27 @@ export default function OpenAiKeySetup() {
 
   return (
     <form
-      className="w-full max-w-md space-y-4 rounded-2xl border border-violet-500/10 bg-[#050505]/80 p-6 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)] backdrop-blur-xl"
+      className={
+        embedded
+          ? "w-full space-y-4"
+          : "w-full max-w-md space-y-4 rounded-2xl border border-violet-500/10 bg-[#050505]/80 p-6 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)] backdrop-blur-xl"
+      }
       onSubmit={handleSubmit}
     >
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-violet-300">
-          <Lock className="size-4" aria-hidden />
-          <h2 className="text-sm font-semibold uppercase tracking-widest">
-            OpenAI API key
-          </h2>
+      {!embedded ? (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-violet-300">
+            <Lock className="size-4" aria-hidden />
+            <h2 className="text-sm font-semibold uppercase tracking-widest">
+              OpenAI API key
+            </h2>
+          </div>
+          <p className="text-xs leading-relaxed text-zinc-500">
+            Stored only in this browser (`localStorage`). Validation calls OpenAI
+            directly — your key is never sent to PulseFlow servers.
+          </p>
         </div>
-        <p className="text-xs leading-relaxed text-zinc-500">
-          Stored only in this browser (`localStorage`). Validation calls OpenAI
-          directly — your key is never sent to PulseFlow servers.
-        </p>
-      </div>
+      ) : null}
 
       <div className="space-y-2">
         <Label htmlFor={inputId} className={authLabelClassName}>

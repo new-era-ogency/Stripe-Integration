@@ -14,6 +14,8 @@ import BrandVoiceSettings from "@/components/dashboard/BrandVoiceSettings"
 import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
 import GenerationHistory from "@/components/dashboard/GenerationHistory"
 import GuestProTrialBanner from "@/components/marketing/GuestProTrialBanner"
+import OpenAiKeySetup from "@/components/settings/OpenAiKeySetup"
+import OpenAiKeySetupModal from "@/components/settings/OpenAiKeySetupModal"
 import {
   formatShortsScriptForCopy,
   formatTwitterThreadForCopy,
@@ -26,11 +28,17 @@ import {
 } from "@/lib/dashboard/load-user-data"
 import { formatSupabaseError } from "@/lib/dashboard/user-data-loader"
 import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
+import { saveUserGeneration } from "@/lib/generations"
 import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
+import {
+  OpenAiByokError,
+  readStoredOpenAiKey,
+} from "@/lib/openai/client-key"
+import { generateContentByok } from "@/lib/openai/generate-content-byok"
 import type { TrialUiState } from "@/lib/trial/ui"
-import { BASE_TRIAL_DAYS } from "@/lib/trial/types"
 import { createClient } from "@/lib/supabase/client"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
+import { extractYouTubeVideoId } from "@/lib/validation"
 
 const PRESET_TONES: Record<StylePreset, string> = {
   "viral-thread": "Engaging",
@@ -71,6 +79,8 @@ export default function DashboardPage() {
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
   const [trial, setTrial] = useState<TrialUiState | null>(null)
   const [trialModalOpen, setTrialModalOpen] = useState(false)
+  const [openAiKeyModalOpen, setOpenAiKeyModalOpen] = useState(false)
+  const [hasOpenAiKey, setHasOpenAiKey] = useState(false)
   const router = useRouter()
 
   const handleCreditsUpdated = useCallback((updatedCredits: number) => {
@@ -177,13 +187,23 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe()
   }, [fetchUserData])
 
+  useEffect(() => {
+    setHasOpenAiKey(Boolean(readStoredOpenAiKey()))
+  }, [])
+
   const handleGenerate = async () => {
     if (isGuest) {
       router.push("/login")
       return
     }
 
-    if (outOfCredits) {
+    const openAiKey = readStoredOpenAiKey()
+    if (!openAiKey) {
+      setOpenAiKeyModalOpen(true)
+      return
+    }
+
+    if (outOfCredits && !hasOpenAiKey) {
       router.push("/pricing")
       return
     }
@@ -202,60 +222,40 @@ export default function DashboardPage() {
       }
 
       const data = await transcriptResponse.json()
-      const rawTranscript = data.rawTranscript
+      const rawTranscript = data.rawTranscript as string
 
-      const generateResponse = await fetch("/api/generate-content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rawTranscript, videoUrl: youtubeUrl }),
+      const generatedContent = await generateContentByok({
+        rawTranscript,
+        tier,
+        brandVoice,
       })
 
-      if (!generateResponse.ok) {
-        const errorData = (await generateResponse.json().catch(() => ({}))) as {
-          error?: string
-          code?: string
-          detail?: string
-        }
-        if (
-          generateResponse.status === 403 &&
-          errorData.code === "TRIAL_EXPIRED"
-        ) {
-          setTrial((current) => ({
-            ...(current ?? {
-              totalTrialDays: BASE_TRIAL_DAYS,
-              trialStartAt: null,
-              trialEndAt: null,
-              trialExtendedDays: 0,
-              claimedActions: [],
-            }),
-            isValid: false,
-            daysRemaining: 0,
-            accountStatus: "trial",
-          }))
-          setTrialModalOpen(true)
-          return
-        }
-        if (generateResponse.status === 403 || generateResponse.status === 402) {
-          setCredits(0)
-          router.push("/pricing")
-          return
-        }
-        if (generateResponse.status === 401) {
-          router.push("/login")
-          return
-        }
-        throw new Error(
-          [
-            errorData.error || "Failed to generate content",
-            errorData.code ? `(${errorData.code})` : null,
-            errorData.detail,
-          ]
-            .filter(Boolean)
-            .join(" — ")
-        )
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.push("/login")
+        return
       }
 
-      const generatedContent = await generateResponse.json()
+      const videoId = extractYouTubeVideoId(youtubeUrl)
+      if (!videoId) {
+        throw new Error("Invalid YouTube video ID")
+      }
+
+      const sanitizedVideoUrl = `https://www.youtube.com/watch?v=${videoId}`
+
+      const generation = await saveUserGeneration(supabase, {
+        userId: user.id,
+        youtubeUrl: sanitizedVideoUrl,
+        generatedContent: {
+          ...generatedContent,
+          rawTranscript,
+        },
+      })
+
       setGeneratedOutputs({
         packTier: generatedContent.packTier,
         outputX: generatedContent.outputX ?? "",
@@ -265,13 +265,9 @@ export default function DashboardPage() {
         linkedinArticle: generatedContent.linkedinArticle,
         telegramPost: generatedContent.telegramPost,
         shortsScript: generatedContent.shortsScript,
+        viralShortsHooks: generatedContent.viralShortsHooks,
       })
-      if (typeof generatedContent.newCredits === "number") {
-        setCredits(generatedContent.newCredits)
-      }
-      if (typeof generatedContent.generationId === "string") {
-        setActiveGenerationId(generatedContent.generationId)
-      }
+      setActiveGenerationId(generation.id)
       await fetchUserData()
 
       document.getElementById("results")?.scrollIntoView({
@@ -280,6 +276,16 @@ export default function DashboardPage() {
       })
     } catch (error) {
       console.error("Generation error:", error)
+
+      if (error instanceof OpenAiByokError) {
+        if (error.code === "missing_key" || error.code === "invalid_key") {
+          setHasOpenAiKey(false)
+          setOpenAiKeyModalOpen(true)
+        }
+        alert(`Error: ${error.message}`)
+        return
+      }
+
       const message =
         error instanceof Error ? error.message : "Failed to generate content"
       alert(`Error: ${message}`)
@@ -371,7 +377,7 @@ export default function DashboardPage() {
               onStylePresetChange={setStylePreset}
               isLoading={isLoading}
               isGuest={isGuest}
-              outOfCredits={outOfCredits}
+              outOfCredits={outOfCredits && !hasOpenAiKey}
               onGenerate={handleGenerate}
             />
 
@@ -421,7 +427,7 @@ export default function DashboardPage() {
               />
             </section>
 
-            <section id="settings" className="scroll-mt-36">
+            <section id="settings" className="scroll-mt-36 space-y-8">
               <BrandVoiceSettings
                 tier={tier}
                 brandVoice={brandVoice}
@@ -429,6 +435,16 @@ export default function DashboardPage() {
                 authChecked={authChecked}
                 onSaved={setBrandVoice}
               />
+              {!isGuest && authChecked ? (
+                <div>
+                  <h2 className="mb-4 text-lg font-semibold text-white">
+                    OpenAI API key
+                  </h2>
+                  <OpenAiKeySetup
+                    onKeyValidated={() => setHasOpenAiKey(true)}
+                  />
+                </div>
+              ) : null}
             </section>
           </div>
 
@@ -446,6 +462,12 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <OpenAiKeySetupModal
+        open={openAiKeyModalOpen}
+        onClose={() => setOpenAiKeyModalOpen(false)}
+        onKeySaved={() => setHasOpenAiKey(true)}
+      />
     </div>
   )
 }
