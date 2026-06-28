@@ -179,6 +179,14 @@ export const telegramShareSchema = z.object({
     .max(4096, "Telegram messages cannot exceed 4096 characters"),
 })
 
+export const agentRequestSchema = z.object({
+  message: z
+    .string()
+    .trim()
+    .min(1, "Message is required")
+    .max(4000, "Message must be 4000 characters or fewer"),
+})
+
 export type TranscriptRequest = z.infer<typeof transcriptRequestSchema>
 export type TrialPreviewRequest = z.infer<typeof trialPreviewRequestSchema>
 export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>
@@ -186,3 +194,4 @@ export type GenerateContentRequest = z.infer<typeof generateContentRequestSchema
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>
 export type UserSettingsRequest = z.infer<typeof userSettingsSchema>
 export type TelegramShareRequest = z.infer<typeof telegramShareSchema>
+export type AgentRequest = z.infer<typeof agentRequestSchema>

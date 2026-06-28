@@ -11,4 +11,5 @@ export const RATE_LIMITS = {
   telegramShare: { limit: 30, windowMs: 60 * 60 * 1000 },
   userSettings: { limit: 30, windowMs: 60 * 60 * 1000 },
   deductCredit: { limit: 60, windowMs: 60 * 60 * 1000 },
+  agent: { limit: 20, windowMs: 60 * 60 * 1000 },
 } as const satisfies Record<string, RateLimitOptions>
