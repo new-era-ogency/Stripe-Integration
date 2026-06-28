@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { DEFAULT_MAX_JSON_BYTES, readJsonBody } from "@/lib/api/security"
+import { rejectClientSecretsInBody } from "@/lib/api/secret-guard"
 
 export function parseJsonBody<T extends z.ZodType>(
   body: unknown,
   schema: T
 ): { data: z.infer<T> } | NextResponse {
+  const secretViolation = rejectClientSecretsInBody(body)
+
+  if (secretViolation) {
+    return NextResponse.json({ error: secretViolation }, { status: 400 })
+  }
+
   const parsed = schema.safeParse(body)
 
   if (!parsed.success) {

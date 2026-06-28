@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { checkRateLimit, type RateLimitOptions } from "@/lib/api/rate-limit"
+import { redactSecrets } from "@/lib/api/secret-guard"
 
 export const DEFAULT_MAX_JSON_BYTES = 512_000
 
@@ -118,7 +119,7 @@ export function logSecurityEvent(
       level: "security",
       event,
       at: new Date().toISOString(),
-      ...context,
+      ...(redactSecrets(context) as Record<string, unknown>),
     })
   )
 }
@@ -128,14 +129,23 @@ export function internalErrorResponse(
   error: unknown,
   context: Record<string, unknown> = {}
 ): NextResponse {
-  console.error(`[${scope}]`, error, context)
+  console.error(
+    `[${scope}]`,
+    redactSecrets(error),
+    redactSecrets(context)
+  )
 
-  const detail =
+  const detailSource =
     error instanceof Error
       ? error.message
       : typeof error === "string"
         ? error
         : undefined
+
+  const detail =
+    typeof detailSource === "string"
+      ? (redactSecrets(detailSource) as string)
+      : undefined
 
   return NextResponse.json(
     {

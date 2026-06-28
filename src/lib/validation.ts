@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { containsLikelyApiSecret } from "@/lib/api/secret-guard"
 
 const YOUTUBE_VIDEO_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/
 
@@ -92,7 +93,10 @@ export const feedbackRequestSchema = z.object({
     .string()
     .trim()
     .min(1, "Please share at least one sentence of feedback")
-    .max(2000, "Feedback is too long"),
+    .max(2000, "Feedback is too long")
+    .refine((value) => !containsLikelyApiSecret(value), {
+      message: "Do not paste API keys into feedback. Add your key in Settings instead.",
+    }),
   contact: z.string().trim().max(200).optional(),
   metadata: z
     .record(z.string(), z.unknown())
@@ -166,6 +170,9 @@ export const userSettingsSchema = z.object({
     .string()
     .trim()
     .max(4000, "Brand voice must be 4000 characters or less")
+    .refine((value) => !containsLikelyApiSecret(value), {
+      message: "Do not paste API keys into brand voice settings.",
+    })
     .optional()
     .nullable(),
   tgChannelId: telegramChannelIdSchema.optional().nullable(),
