@@ -211,7 +211,11 @@ export default function DashboardPage() {
       })
 
       if (!generateResponse.ok) {
-        const errorData = await generateResponse.json()
+        const errorData = (await generateResponse.json().catch(() => ({}))) as {
+          error?: string
+          code?: string
+          detail?: string
+        }
         if (
           generateResponse.status === 403 &&
           errorData.code === "TRIAL_EXPIRED"
@@ -240,7 +244,15 @@ export default function DashboardPage() {
           router.push("/login")
           return
         }
-        throw new Error(errorData.error || "Failed to generate content")
+        throw new Error(
+          [
+            errorData.error || "Failed to generate content",
+            errorData.code ? `(${errorData.code})` : null,
+            errorData.detail,
+          ]
+            .filter(Boolean)
+            .join(" — ")
+        )
       }
 
       const generatedContent = await generateResponse.json()

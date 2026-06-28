@@ -1,12 +1,14 @@
-import type { SupabaseClient } from "@supabase/supabase-js"
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js"
 import type { AccountStatus, TrialCheckResult, TrialRecord } from "@/lib/trial/types"
+import { BASE_TRIAL_DAYS } from "@/lib/trial/types"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
+import { isMissingSchemaError } from "@/lib/supabase/schema-errors"
 
 type TrialUserRow = {
-  account_status: string | null
-  trial_start_at: string | null
-  trial_end_at: string | null
-  trial_extended_days: number | null
+  account_status?: string | null
+  trial_start_at?: string | null
+  trial_end_at?: string | null
+  trial_extended_days?: number | null
 }
 
 type TrialStatusRpcRow = {
@@ -17,6 +19,11 @@ type TrialStatusRpcRow = {
   is_valid: boolean
   days_remaining: number
 }
+
+const TRIAL_SELECTS = [
+  "account_status, trial_start_at, trial_end_at, trial_extended_days",
+  "credits, tier",
+] as const
 
 function normalizeAccountStatus(value: string | null | undefined): AccountStatus {
   if (
@@ -34,9 +41,20 @@ function normalizeAccountStatus(value: string | null | undefined): AccountStatus
 function toTrialRecord(row: TrialUserRow): TrialRecord {
   return {
     accountStatus: normalizeAccountStatus(row.account_status),
-    trialStartAt: row.trial_start_at,
-    trialEndAt: row.trial_end_at,
+    trialStartAt: row.trial_start_at ?? null,
+    trialEndAt: row.trial_end_at ?? null,
     trialExtendedDays: row.trial_extended_days ?? 0,
+  }
+}
+
+function legacyTrialFallback(): TrialCheckResult {
+  return {
+    isValid: true,
+    daysRemaining: BASE_TRIAL_DAYS,
+    accountStatus: "trial",
+    trialEndAt: null,
+    trialStartAt: null,
+    trialExtendedDays: 0,
   }
 }
 
@@ -54,8 +72,8 @@ function computeTrialCheck(record: TrialRecord, now = new Date()): TrialCheckRes
 
   if (!record.trialEndAt) {
     return {
-      isValid: false,
-      daysRemaining: 0,
+      isValid: true,
+      daysRemaining: BASE_TRIAL_DAYS,
       accountStatus: record.accountStatus,
       trialEndAt: null,
       trialStartAt: record.trialStartAt,
@@ -81,23 +99,54 @@ function computeTrialCheck(record: TrialRecord, now = new Date()): TrialCheckRes
   }
 }
 
+function hasTrialColumns(row: TrialUserRow | null): row is Required<
+  Pick<
+    TrialUserRow,
+    "account_status" | "trial_start_at" | "trial_end_at" | "trial_extended_days"
+  >
+> &
+  TrialUserRow {
+  return (
+    row !== null &&
+    ("account_status" in row ||
+      "trial_start_at" in row ||
+      "trial_end_at" in row ||
+      "trial_extended_days" in row)
+  )
+}
+
 async function fetchTrialRow(
   supabase: SupabaseClient,
   userId: string
 ): Promise<TrialUserRow | null> {
-  const { data, error } = await supabase
-    .from("users")
-    .select(
-      "account_status, trial_start_at, trial_end_at, trial_extended_days"
-    )
-    .eq("id", userId)
-    .maybeSingle()
+  let lastError: PostgrestError | null = null
 
-  if (error) {
-    throw error
+  for (const select of TRIAL_SELECTS) {
+    const { data, error } = await supabase
+      .from("users")
+      .select(select)
+      .eq("id", userId)
+      .maybeSingle()
+
+    if (!error) {
+      return (data ?? null) as TrialUserRow | null
+    }
+
+    lastError = error
+
+    if (!isMissingSchemaError(error)) {
+      throw error
+    }
   }
 
-  return data
+  if (lastError && isMissingSchemaError(lastError)) {
+    console.warn(
+      "Trial columns unavailable in users table; using legacy trial fallback."
+    )
+    return null
+  }
+
+  return null
 }
 
 async function fetchTrialStatusViaRpc(
@@ -118,9 +167,9 @@ async function fetchTrialStatusViaRpc(
 
   if (error) {
     const rpcMissing =
+      isMissingSchemaError(error) ||
       error.message.includes("Could not find the function") ||
-      error.message.includes("get_trial_status") ||
-      error.message.includes("does not exist")
+      error.message.includes("get_trial_status")
 
     if (rpcMissing) {
       return null
@@ -162,17 +211,25 @@ export async function checkTrialStatus(
   }
 
   const supabase = options?.supabase ?? createAdminSupabaseClient()
-  const row = await fetchTrialRow(supabase, userId)
+
+  let row: TrialUserRow | null
+
+  try {
+    row = await fetchTrialRow(supabase, userId)
+  } catch (error) {
+    if (isMissingSchemaError(error as PostgrestError)) {
+      return legacyTrialFallback()
+    }
+
+    throw error
+  }
 
   if (!row) {
-    return {
-      isValid: false,
-      daysRemaining: 0,
-      accountStatus: "trial",
-      trialEndAt: null,
-      trialStartAt: null,
-      trialExtendedDays: 0,
-    }
+    return legacyTrialFallback()
+  }
+
+  if (!hasTrialColumns(row)) {
+    return legacyTrialFallback()
   }
 
   return computeTrialCheck(toTrialRecord(row))
@@ -184,7 +241,7 @@ export async function getTrialRecord(
 ): Promise<TrialRecord | null> {
   const supabase = options?.supabase ?? createAdminSupabaseClient()
   const row = await fetchTrialRow(supabase, userId)
-  return row ? toTrialRecord(row) : null
+  return row && hasTrialColumns(row) ? toTrialRecord(row) : null
 }
 
 export function isTrialCurrentlyValid(

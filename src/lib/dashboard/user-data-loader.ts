@@ -2,6 +2,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js"
 import type { GenerationRecord } from "@/lib/generations"
 import { DEFAULT_USER_CREDITS } from "@/lib/credits"
 import type { UserTier } from "@/lib/profile"
+import { isMissingSchemaError } from "@/lib/supabase/schema-errors"
 import { buildTrialUiState, type TrialUiState } from "@/lib/trial/ui"
 
 export type DashboardUserData = {
@@ -53,19 +54,7 @@ export function formatSupabaseError(error: unknown): string {
   return parts.length > 0 ? parts.join(" | ") : JSON.stringify(error)
 }
 
-function isMissingSchemaError(error: PostgrestError): boolean {
-  if (error.code === "42703" || error.code === "42P01") {
-    return true
-  }
-
-  const message = error.message?.toLowerCase() ?? ""
-  return (
-    message.includes("does not exist") ||
-    message.includes("could not find") ||
-    message.includes("column") ||
-    message.includes("relation")
-  )
-}
+export { isMissingSchemaError } from "@/lib/supabase/schema-errors"
 
 function mapLegacyGeneration(row: {
   id: string

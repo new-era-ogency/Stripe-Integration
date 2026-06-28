@@ -129,7 +129,22 @@ export function internalErrorResponse(
   context: Record<string, unknown> = {}
 ): NextResponse {
   console.error(`[${scope}]`, error, context)
-  return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+
+  const detail =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : undefined
+
+  return NextResponse.json(
+    {
+      error: "Internal server error",
+      ...(process.env.NODE_ENV === "development" &&
+        detail && { detail }),
+    },
+    { status: 500 }
+  )
 }
 
 export function enforceRateLimit(
