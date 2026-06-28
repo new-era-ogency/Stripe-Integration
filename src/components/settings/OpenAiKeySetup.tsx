@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useId, useState } from "react"
-import { AlertCircle, Check, Loader2, Lock } from "lucide-react"
+import { AlertCircle, Check, Eye, EyeOff, Loader2, Lock } from "lucide-react"
 import {
   authInputClassName,
   authLabelClassName,
@@ -10,10 +10,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  clearStoredOpenAiKey,
+  isValidOpenAiKeyFormat,
   readStoredOpenAiKey,
   validateOpenAiKey,
   writeStoredOpenAiKey,
 } from "@/lib/openai/client-key"
+import { cn } from "@/lib/utils"
 
 type ValidationState =
   | { status: "idle" }
@@ -32,6 +35,7 @@ export default function OpenAiKeySetup({
 }: OpenAiKeySetupProps) {
   const inputId = useId()
   const [apiKey, setApiKey] = useState("")
+  const [showKey, setShowKey] = useState(false)
   const [validation, setValidation] = useState<ValidationState>({ status: "idle" })
   const [hasLoadedStoredKey, setHasLoadedStoredKey] = useState(false)
 
@@ -39,6 +43,7 @@ export default function OpenAiKeySetup({
     const stored = readStoredOpenAiKey()
     if (stored) {
       setApiKey(stored)
+      setValidation({ status: "valid" })
     }
     setHasLoadedStoredKey(true)
   }, [])
@@ -47,22 +52,31 @@ export default function OpenAiKeySetup({
     const trimmed = value.trim()
 
     if (!trimmed) {
-      writeStoredOpenAiKey("")
+      clearStoredOpenAiKey()
       setValidation({ status: "idle" })
       return
     }
 
-    writeStoredOpenAiKey(trimmed)
+    if (!isValidOpenAiKeyFormat(trimmed)) {
+      setValidation({
+        status: "invalid",
+        message: "Enter a valid OpenAI key starting with sk-.",
+      })
+      return
+    }
+
     setValidation({ status: "validating" })
 
     const result = await validateOpenAiKey(trimmed)
 
     if (result.ok) {
+      writeStoredOpenAiKey(trimmed)
       setValidation({ status: "valid" })
       onKeyValidated?.()
       return
     }
 
+    clearStoredOpenAiKey()
     setValidation({ status: "invalid", message: result.message })
   }, [onKeyValidated])
 
@@ -89,6 +103,7 @@ export default function OpenAiKeySetup({
           : "w-full max-w-md space-y-4 rounded-2xl border border-violet-500/10 bg-[#050505]/80 p-6 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)] backdrop-blur-xl"
       }
       onSubmit={handleSubmit}
+      autoComplete="off"
     >
       {!embedded ? (
         <div className="space-y-1">
@@ -99,8 +114,9 @@ export default function OpenAiKeySetup({
             </h2>
           </div>
           <p className="text-xs leading-relaxed text-zinc-500">
-            Stored only in this browser (`localStorage`). Validation calls OpenAI
-            directly — your key is never sent to PulseFlow servers.
+            Stored only in this browser&apos;s localStorage. Validation and
+            generation call OpenAI directly — your key never leaves this device
+            or reaches PulseFlow servers.
           </p>
         </div>
       ) : null}
@@ -109,25 +125,44 @@ export default function OpenAiKeySetup({
         <Label htmlFor={inputId} className={authLabelClassName}>
           API key
         </Label>
-        <Input
-          id={inputId}
-          type="password"
-          value={apiKey}
-          onChange={(event) => {
-            setApiKey(event.target.value)
-            if (validation.status !== "idle") {
-              setValidation({ status: "idle" })
-            }
-          }}
-          onBlur={() => {
-            void handleBlur()
-          }}
-          placeholder="sk-..."
-          autoComplete="off"
-          spellCheck={false}
-          disabled={isValidating}
-          className={authInputClassName}
-        />
+        <div className="relative">
+          <Input
+            id={inputId}
+            type={showKey ? "text" : "password"}
+            value={apiKey}
+            onChange={(event) => {
+              setApiKey(event.target.value)
+              if (validation.status !== "idle") {
+                setValidation({ status: "idle" })
+              }
+            }}
+            onBlur={() => {
+              void handleBlur()
+            }}
+            placeholder="sk-..."
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            disabled={isValidating}
+            data-1p-ignore
+            data-lpignore="true"
+            className={cn(authInputClassName, "pr-11")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowKey((current) => !current)}
+            disabled={isValidating || !apiKey}
+            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={showKey ? "Hide API key" : "Show API key"}
+          >
+            {showKey ? (
+              <EyeOff className="size-4" aria-hidden />
+            ) : (
+              <Eye className="size-4" aria-hidden />
+            )}
+          </button>
+        </div>
       </div>
 
       {validation.status === "validating" ? (
@@ -148,7 +183,7 @@ export default function OpenAiKeySetup({
           aria-live="polite"
         >
           <Check className="size-4" aria-hidden />
-          Key is valid
+          Key is valid and saved securely in this browser
         </p>
       ) : null}
 

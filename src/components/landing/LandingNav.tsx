@@ -101,12 +101,6 @@ export default function LandingNav() {
           >
             Dashboard
           </Link>
-          <Link
-            href="/pricing"
-            className="hidden text-sm font-medium text-zinc-500 transition-colors hover:text-white sm:inline"
-          >
-            Pricing
-          </Link>
           <AuthNavButtons />
         </div>
       </div>

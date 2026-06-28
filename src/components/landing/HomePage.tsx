@@ -8,8 +8,7 @@ import HowItWorksSection from "@/components/landing/HowItWorksSection"
 import LandingHero from "@/components/landing/LandingHero"
 import LandingNav from "@/components/landing/LandingNav"
 import LaunchBetaSection from "@/components/landing/LaunchBetaSection"
-import GuestProTrialBanner from "@/components/marketing/GuestProTrialBanner"
-import PricingAnchorSection from "@/components/landing/PricingAnchorSection"
+import ByokLandingBanner from "@/components/marketing/ByokLandingBanner"
 import RealWorkflowsSection from "@/components/landing/RealWorkflowsSection"
 import { LANDING_FRAME } from "@/lib/landing-styles"
 
@@ -18,12 +17,11 @@ export default function HomePage() {
     <PerfModeProvider>
       <div className={`${LANDING_FRAME} min-h-screen bg-black text-white`}>
         <LandingNav />
-        <GuestProTrialBanner />
+        <ByokLandingBanner />
         <LandingHero />
         <RealWorkflowsSection />
         <HowItWorksSection />
         <CredibilitySection />
-        <PricingAnchorSection />
         <ChangelogSection />
         <FaqAccordion />
         <LaunchBetaSection />

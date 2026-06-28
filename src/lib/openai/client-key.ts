@@ -4,6 +4,8 @@
  */
 export const PULSEFLOW_OPENAI_KEY_STORAGE = "pulseflow_openai_key"
 
+export const OPENAI_KEY_CHANGED_EVENT = "pulseflow:openai-key-changed"
+
 export const BYOK_ALLOWED_FETCH_HOSTS = new Set([
   "api.openai.com",
   "api.anthropic.com",
@@ -21,6 +23,14 @@ export const OPENAI_RATE_LIMIT_MESSAGE =
 const OPENAI_MODELS_URL = "https://api.openai.com/v1/models"
 export const OPENAI_CHAT_COMPLETIONS_URL =
   "https://api.openai.com/v1/chat/completions"
+
+/** OpenAI secret keys — never log or send to PulseFlow servers. */
+const OPENAI_KEY_STORAGE_PATTERN = /^sk-(?:proj-)?[a-zA-Z0-9_-]{10,}$/
+
+export function isValidOpenAiKeyFormat(apiKey: string): boolean {
+  const trimmed = apiKey.trim()
+  return trimmed.length >= 20 && OPENAI_KEY_STORAGE_PATTERN.test(trimmed)
+}
 
 export type OpenAiByokErrorCode =
   | "missing_key"
@@ -137,10 +147,20 @@ export function writeStoredOpenAiKey(apiKey: string): void {
 
   if (!trimmed) {
     window.localStorage.removeItem(PULSEFLOW_OPENAI_KEY_STORAGE)
+    window.dispatchEvent(new CustomEvent(OPENAI_KEY_CHANGED_EVENT))
+    return
+  }
+
+  if (!isValidOpenAiKeyFormat(trimmed)) {
     return
   }
 
   window.localStorage.setItem(PULSEFLOW_OPENAI_KEY_STORAGE, trimmed)
+  window.dispatchEvent(new CustomEvent(OPENAI_KEY_CHANGED_EVENT))
+}
+
+export function clearStoredOpenAiKey(): void {
+  writeStoredOpenAiKey("")
 }
 
 async function parseOpenAiErrorMessage(response: Response): Promise<string> {

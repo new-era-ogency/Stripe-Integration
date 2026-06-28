@@ -10,6 +10,7 @@ import {
   BTN_PRIMARY,
   BTN_SECONDARY,
   HERO_BADGE_PILL,
+  HERO_BYOK_BADGE,
   HERO_MICRO_TRUST,
   HERO_SECTION,
   HERO_SUBTEXT,
@@ -17,7 +18,7 @@ import {
   LANDING_CONTAINER,
   LANDING_GRID,
 } from "@/lib/landing-styles"
-import { heroCopy } from "@/lib/landing-content"
+import { corePromise, heroCopy } from "@/lib/landing-content"
 
 export default function LandingHero() {
   return (
@@ -29,6 +30,10 @@ export default function LandingHero() {
           <AnimatedSection className="col-span-12 flex flex-col lg:col-span-5">
             <span className={HERO_BADGE_PILL}>{heroCopy.badge}</span>
 
+            <span className={`mt-3 ${HERO_BYOK_BADGE}`}>
+              {heroCopy.byokBadge}
+            </span>
+
             <h1 className={`mt-6 ${HERO_TITLE}`}>
               {heroCopy.title}
               <br />
@@ -37,8 +42,12 @@ export default function LandingHero() {
 
             <p className={`mt-6 ${HERO_SUBTEXT}`}>{heroCopy.subtitle}</p>
 
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-500">
+              {corePromise.headline}
+            </p>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/signup" className={`group ${BTN_PRIMARY}`}>
+              <Link href="/dashboard" className={`group ${BTN_PRIMARY}`}>
                 {heroCopy.primaryCta}
                 <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>

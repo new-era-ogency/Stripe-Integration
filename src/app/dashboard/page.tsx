@@ -1,21 +1,20 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import DashboardCheckoutSync from "@/components/dashboard/DashboardCheckoutSync"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import DashboardCreateWorkspace, {
   type StylePreset,
 } from "@/components/dashboard/DashboardCreateWorkspace"
-import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import DashboardQuickTryCard from "@/components/dashboard/DashboardQuickTryCard"
 import DashboardStatsPanel from "@/components/dashboard/DashboardStatsPanel"
 import BrandVoiceSettings from "@/components/dashboard/BrandVoiceSettings"
 import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
 import GenerationHistory from "@/components/dashboard/GenerationHistory"
-import GuestProTrialBanner from "@/components/marketing/GuestProTrialBanner"
+import ByokCostExplainer from "@/components/openai/ByokCostExplainer"
+import { useOpenAiKey } from "@/components/openai/OpenAiKeyProvider"
 import OpenAiKeySetup from "@/components/settings/OpenAiKeySetup"
-import OpenAiKeySetupModal from "@/components/settings/OpenAiKeySetupModal"
 import {
   formatShortsScriptForCopy,
   formatTwitterThreadForCopy,
@@ -29,16 +28,16 @@ import {
 import { formatSupabaseError } from "@/lib/dashboard/user-data-loader"
 import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
 import { saveUserGeneration } from "@/lib/generations"
-import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
+import { type UserTier } from "@/lib/profile"
 import {
   OpenAiByokError,
   readStoredOpenAiKey,
 } from "@/lib/openai/client-key"
 import { generateContentByok } from "@/lib/openai/generate-content-byok"
-import type { TrialUiState } from "@/lib/trial/ui"
 import { createClient } from "@/lib/supabase/client"
+import type { ContentSourceInput } from "@/lib/content-sources/types"
+import { resolveTranscriptFromSource } from "@/lib/content-sources/resolve-transcript"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
-import { extractYouTubeVideoId } from "@/lib/validation"
 
 const PRESET_TONES: Record<StylePreset, string> = {
   "viral-thread": "Engaging",
@@ -52,18 +51,9 @@ const emptyGeneratedContent = (): GeneratedContent => ({
   outputTelegram: "",
 })
 
-function getPlanLabel(tier: UserTier | null, isGuest: boolean) {
-  if (isGuest) return "Guest"
-  if (tier === null) return "—"
-  if (isProMaxTier(tier)) return "Pro Max"
-  if (isProTier(tier)) return "Pro"
-  return "Starter"
-}
-
 export default function DashboardPage() {
-  const [youtubeUrl, setYoutubeUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [credits, setCredits] = useState<number | null>(null)
+  const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
   const [tier, setTier] = useState<UserTier>("starter")
   const [brandVoice, setBrandVoice] = useState<string | null>(null)
   const [tgChannelId, setTgChannelId] = useState<string | null>(null)
@@ -77,33 +67,12 @@ export default function DashboardPage() {
   const [isGuest, setIsGuest] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
-  const [trial, setTrial] = useState<TrialUiState | null>(null)
-  const [trialModalOpen, setTrialModalOpen] = useState(false)
-  const [openAiKeyModalOpen, setOpenAiKeyModalOpen] = useState(false)
-  const [hasOpenAiKey, setHasOpenAiKey] = useState(false)
+  const { hasOpenAiKey, openKeyModal, refreshKeyStatus } = useOpenAiKey()
   const router = useRouter()
 
-  const handleCreditsUpdated = useCallback((updatedCredits: number) => {
-    setCredits(updatedCredits)
-    setIsGuest(false)
-    setAuthChecked(true)
-  }, [])
-
-  const hasTrialAccess = Boolean(trial?.isValid)
-  const outOfCredits =
-    !isGuest &&
-    authChecked &&
-    credits !== null &&
-    credits <= 0 &&
-    !hasTrialAccess
-
-  const planLabel = getPlanLabel(tier, isGuest)
-
   const usageStats = useMemo(() => {
-    const used = generations.length
-    const remaining = credits ?? 0
-    return { used, remaining }
-  }, [generations.length, credits])
+    return { used: generations.length }
+  }, [generations.length])
 
   const fetchUserData = useCallback(async () => {
     const supabase = createClient()
@@ -113,12 +82,10 @@ export default function DashboardPage() {
 
     if (!user) {
       setIsGuest(true)
-      setCredits(null)
       setTier("starter")
       setBrandVoice(null)
       setTgChannelId(null)
       setGenerations([])
-      setTrial(null)
       setAuthChecked(true)
       return
     }
@@ -134,12 +101,10 @@ export default function DashboardPage() {
     const applyDashboardData = (data: Awaited<
       ReturnType<typeof fetchDashboardDataViaClient>
     >) => {
-      setCredits(data.credits)
       setTier(data.tier)
       setBrandVoice(data.brandVoice)
       setTgChannelId(data.tgChannelId)
       setGenerations(data.generations)
-      setTrial(data.trial)
       setAuthChecked(true)
     }
 
@@ -187,11 +152,7 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe()
   }, [fetchUserData])
 
-  useEffect(() => {
-    setHasOpenAiKey(Boolean(readStoredOpenAiKey()))
-  }, [])
-
-  const handleGenerate = async () => {
+  const handleGenerate = async (source: ContentSourceInput) => {
     if (isGuest) {
       router.push("/login")
       return
@@ -199,30 +160,30 @@ export default function DashboardPage() {
 
     const openAiKey = readStoredOpenAiKey()
     if (!openAiKey) {
-      setOpenAiKeyModalOpen(true)
-      return
-    }
-
-    if (outOfCredits && !hasOpenAiKey) {
-      router.push("/pricing")
+      openKeyModal()
       return
     }
 
     setIsLoading(true)
+    setLoadingMessage(null)
+
     try {
-      const transcriptResponse = await fetch("/api/transcript", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoUrl: youtubeUrl }),
-      })
+      const { rawTranscript, sourceLabel } = await resolveTranscriptFromSource(
+        source,
+        (phase) => {
+          if (phase === "transcribing") {
+            setLoadingMessage("Transcribing audio via your OpenAI Key…")
+          } else if (phase === "fetching") {
+            setLoadingMessage(
+              source.type === "youtube"
+                ? "Fetching YouTube transcript…"
+                : "Fetching article content…"
+            )
+          }
+        }
+      )
 
-      if (!transcriptResponse.ok) {
-        const errorData = await transcriptResponse.json()
-        throw new Error(errorData.error || "Failed to fetch transcript")
-      }
-
-      const data = await transcriptResponse.json()
-      const rawTranscript = data.rawTranscript as string
+      setLoadingMessage("Generating your posts…")
 
       const generatedContent = await generateContentByok({
         rawTranscript,
@@ -240,16 +201,9 @@ export default function DashboardPage() {
         return
       }
 
-      const videoId = extractYouTubeVideoId(youtubeUrl)
-      if (!videoId) {
-        throw new Error("Invalid YouTube video ID")
-      }
-
-      const sanitizedVideoUrl = `https://www.youtube.com/watch?v=${videoId}`
-
       const generation = await saveUserGeneration(supabase, {
         userId: user.id,
-        youtubeUrl: sanitizedVideoUrl,
+        youtubeUrl: sourceLabel,
         generatedContent: {
           ...generatedContent,
           rawTranscript,
@@ -279,8 +233,8 @@ export default function DashboardPage() {
 
       if (error instanceof OpenAiByokError) {
         if (error.code === "missing_key" || error.code === "invalid_key") {
-          setHasOpenAiKey(false)
-          setOpenAiKeyModalOpen(true)
+          refreshKeyStatus()
+          openKeyModal()
         }
         alert(`Error: ${error.message}`)
         return
@@ -291,6 +245,7 @@ export default function DashboardPage() {
       alert(`Error: ${message}`)
     } finally {
       setIsLoading(false)
+      setLoadingMessage(null)
     }
   }
 
@@ -334,50 +289,41 @@ export default function DashboardPage() {
 
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
-      <Suspense fallback={null}>
-        <DashboardCheckoutSync
-          onCreditsUpdated={handleCreditsUpdated}
-          onRefresh={fetchUserData}
-        />
-      </Suspense>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
 
-      <DashboardHeader
-        isGuest={isGuest}
-        authChecked={authChecked}
-        tier={tier}
-        credits={credits}
-        trial={trial}
-        trialModalOpen={trialModalOpen}
-        onTrialUpdated={setTrial}
-        onTrialModalOpenChange={setTrialModalOpen}
-      />
+      <DashboardHeader isGuest={isGuest} authChecked={authChecked} />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
         {authChecked && isGuest ? (
           <div className="mb-6 space-y-4">
-            <GuestProTrialBanner variant="card" visible />
+            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-violet-500/5 to-transparent px-5 py-5 sm:px-6">
+              <p className="text-sm font-semibold text-white">
+                Free BYOK dashboard — sign in to connect your OpenAI key
+              </p>
+              <p className="mt-2 text-sm text-zinc-400">
+                PulseFlow is 100% free. Bring your OpenAI key, add any source,
+                and generate X, LinkedIn, and Telegram posts from your browser.
+              </p>
+              <Link
+                href="/login"
+                className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-medium text-black hover:bg-zinc-200"
+              >
+                Launch Dashboard (Free)
+              </Link>
+            </div>
             <DashboardQuickTryCard />
-          </div>
-        ) : null}
-
-        {!isGuest && authChecked && hasTrialAccess ? (
-          <div className="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-violet-100/90">
-            Pro trial active — paste a link below to generate unlimited posts
-            during your trial.
           </div>
         ) : null}
 
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
           <div className="min-w-0 space-y-8">
             <DashboardCreateWorkspace
-              youtubeUrl={youtubeUrl}
-              onYoutubeUrlChange={setYoutubeUrl}
               stylePreset={stylePreset}
               onStylePresetChange={setStylePreset}
               isLoading={isLoading}
+              loadingMessage={loadingMessage}
               isGuest={isGuest}
-              outOfCredits={outOfCredits && !hasOpenAiKey}
+              hasOpenAiKey={hasOpenAiKey}
               onGenerate={handleGenerate}
             />
 
@@ -403,9 +349,9 @@ export default function DashboardPage() {
                     >
                       Create
                     </a>{" "}
-                    workspace above, or{" "}
+                    dashboard above, or{" "}
                     <Link
-                      href="/#trial-demo"
+                      href="/#demo"
                       className="text-violet-400 hover:text-violet-300"
                     >
                       try the live preview
@@ -436,13 +382,16 @@ export default function DashboardPage() {
                 onSaved={setBrandVoice}
               />
               {!isGuest && authChecked ? (
-                <div>
-                  <h2 className="mb-4 text-lg font-semibold text-white">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-white">
                     OpenAI API key
                   </h2>
-                  <OpenAiKeySetup
-                    onKeyValidated={() => setHasOpenAiKey(true)}
-                  />
+                  <p className="text-sm text-zinc-500">
+                    Manage or update your key here. You can also connect via the
+                    status badge in the header.
+                  </p>
+                  <OpenAiKeySetup onKeyValidated={refreshKeyStatus} />
+                  <ByokCostExplainer variant="card" />
                 </div>
               ) : null}
             </section>
@@ -452,22 +401,12 @@ export default function DashboardPage() {
             <DashboardStatsPanel
               authChecked={authChecked}
               isGuest={isGuest}
-              tier={tier}
-              planLabel={planLabel}
-              creditsRemaining={usageStats.remaining}
               generationsCount={usageStats.used}
-              hasTrialAccess={hasTrialAccess}
-              trialDaysRemaining={trial?.daysRemaining}
+              hasOpenAiKey={hasOpenAiKey}
             />
           </div>
         </div>
       </div>
-
-      <OpenAiKeySetupModal
-        open={openAiKeyModalOpen}
-        onClose={() => setOpenAiKeyModalOpen(false)}
-        onKeySaved={() => setHasOpenAiKey(true)}
-      />
     </div>
   )
 }

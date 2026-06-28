@@ -30,6 +30,9 @@ export const SECTION_LABEL =
 export const HERO_BADGE_PILL =
   "inline-flex w-fit items-center rounded-full border border-violet-500/25 bg-violet-500/10 px-3.5 py-1.5 text-xs font-medium text-violet-300"
 
+export const HERO_BYOK_BADGE =
+  "inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-300 shadow-[0_0_24px_-8px_rgba(52,211,153,0.45)]"
+
 export const HERO_TITLE =
   "font-bold tracking-[-0.035em] text-white text-[3.5rem] leading-[1.05] sm:text-[3.75rem] lg:text-[4.5rem] lg:leading-[1.02]"
 

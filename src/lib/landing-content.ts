@@ -1,9 +1,9 @@
 /** One unmistakable core promise — everything on the page supports this. */
 export const corePromise = {
-  headline: "One YouTube video → three publish-ready posts.",
+  headline: "100% Free, Privacy-First, BYOK AI Dashboard for Content Creators.",
   subline:
-    "Paste a link. Get an X thread, LinkedIn post, and Telegram drop — edited and copied in under a minute.",
-  proofPoint: "No rewriting marathon. No five-tool pipeline.",
+    "Paste a YouTube link. Connect your OpenAI key once. Get publish-ready X, LinkedIn, and Telegram posts — billed directly by OpenAI, never marked up by PulseFlow.",
+  proofPoint: "Your key stays in your browser. Generation runs client-side.",
 } as const
 
 export const realWorkflows = [
@@ -68,9 +68,9 @@ export const realWorkflows = [
 export type RealWorkflowId = (typeof realWorkflows)[number]["id"]
 
 export const steps = [
-  { step: "1", title: "Paste a YouTube URL", icon: "link" as const },
-  { step: "2", title: "Pick a style preset", icon: "workflow" as const },
-  { step: "3", title: "Copy outputs & publish", icon: "zap" as const },
+  { step: "1", title: "Connect your OpenAI key", icon: "link" as const },
+  { step: "2", title: "Paste a YouTube URL", icon: "workflow" as const },
+  { step: "3", title: "Generate & copy outputs", icon: "zap" as const },
 ] as const
 
 export const proofLoop = {
@@ -85,28 +85,31 @@ export const proofLoop = {
 
 export const pricingAnchors = [
   {
-    name: "Free",
+    name: "Dashboard",
     price: "$0",
     period: "",
-    description: "Start building. 30-day Pro trial with full access.",
-    cta: "Start free",
+    description:
+      "Full dashboard access. Bring your OpenAI key — no PulseFlow subscription.",
+    cta: "Launch dashboard",
+    highlighted: true,
+    badge: "BYOK model",
+  },
+  {
+    name: "OpenAI usage",
+    price: "~$0.01",
+    period: "/ run",
+    description:
+      "Typical cost per generation billed directly to your OpenAI account. No SaaS markup.",
+    cta: "See cost breakdown",
     highlighted: false,
   },
   {
-    name: "Pro",
-    price: "€19",
-    period: "/mo",
-    description: "50 workflow runs/month. Stripe + API chains + Telegram publish.",
-    cta: "Get Pro",
-    badge: "Most popular",
-    highlighted: true,
-  },
-  {
-    name: "Team",
-    price: "€49",
-    period: "/mo",
-    description: "200 runs/month. Everything in Pro + viral shorts finder.",
-    cta: "Go Team",
+    name: "Pro features",
+    price: "Free",
+    period: " in beta",
+    description:
+      "Deep content packs, brand voice, and Pro Max shorts finder — unlocked with your own key.",
+    cta: "Join beta",
     highlighted: false,
   },
 ] as const
@@ -228,23 +231,23 @@ export const changelog = [
 export const faqs = [
   {
     q: "What does PulseFlow actually do today?",
-    a: "Paste a public YouTube URL and get publish-ready copy for X, LinkedIn, and Telegram in one run. Pick a style preset, edit, copy — that's the core product in beta.",
+    a: "Paste a public YouTube URL, connect your OpenAI API key once, and get publish-ready copy for X, LinkedIn, and Telegram in one run. Your key stays in your browser — PulseFlow never stores or proxies it.",
+  },
+  {
+    q: "Is PulseFlow really free?",
+    a: "Yes — the dashboard is 100% free. You pay OpenAI directly for API usage (usually fractions of a cent per run). There are no PulseFlow monthly subscriptions or credit markups.",
+  },
+  {
+    q: "Where is my API key stored?",
+    a: "Only in your browser's localStorage on your device. Validation and generation call OpenAI directly from the client. PulseFlow servers never receive your key.",
   },
   {
     q: "Is the homepage demo real?",
-    a: "Yes — you connect nodes and run a workflow on the landing page without signing up. The same chain maps to the dashboard: paste URL, fetch transcript, generate outputs.",
-  },
-  {
-    q: "Do I need coding skills?",
-    a: "No. If you can paste a YouTube link and click copy, you can use PulseFlow. Pro users can save a brand voice; Pro Max unlocks viral shorts hooks.",
+    a: "Yes — you can explore the workflow on the landing page. The dashboard uses the same pipeline: paste URL, fetch transcript on our server (YouTube CORS), generate with your key client-side.",
   },
   {
     q: "How do I give feedback?",
-    a: "Open a GitHub issue or reply in-app during beta. Recent requests — brand voice, shorts finder, trial extensions — shipped within weeks.",
-  },
-  {
-    q: "What about Stripe workflow automation?",
-    a: "On the roadmap. Beta feedback is prioritized by votes on GitHub. Today's focus is shipping the YouTube → multi-platform pipeline reliably.",
+    a: "Open a GitHub issue or reply in-app during beta. Recent requests — brand voice, shorts finder, BYOK architecture — shipped within weeks.",
   },
 ]
 
@@ -295,33 +298,33 @@ export const navLinks = [
   { href: "#demo", label: "Try preview", id: "demo" },
   { href: "#workflows", label: "Workflows", id: "workflows" },
   { href: "#proof", label: "Beta proof", id: "proof" },
-  { href: "#pricing", label: "Pricing", id: "pricing" },
   { href: "#faq", label: "FAQ", id: "faq" },
 ]
 
 export const heroCopy = {
-  badge: "YouTube → X, LinkedIn & Telegram",
-  title: "One video.",
-  titleAccent: "Three posts. One minute.",
+  badge: "Privacy-first BYOK dashboard",
+  byokBadge: "Bring Your Own Key Model — No Monthly Subscriptions",
+  title: "100% free.",
+  titleAccent: "Your key. Your AI.",
   subtitle: corePromise.subline,
-  primaryCta: "Start free beta",
+  primaryCta: "Launch Dashboard (Free)",
   secondaryCta: "Try live preview",
-  microTrust: "30-day Pro trial · No signup · YouTube & Shorts",
+  microTrust: "Key stays in your browser · Direct OpenAI billing · Zero PulseFlow markup",
 }
 
 export const positioning = {
-  what: "YouTube-to-social content engine",
-  canDo: "X threads, LinkedIn posts, Telegram drops from one URL",
-  why: "Cuts 2–4 hours of repurposing per video",
-  who: "Creators, educators, and indie founders with a YouTube channel",
+  what: "BYOK YouTube-to-social content dashboard",
+  canDo: "X threads, LinkedIn posts, Telegram drops — powered by your OpenAI key",
+  why: "Free dashboard, pay pennies per run, absolute privacy",
+  who: "Creators, educators, and indie founders who want control over AI costs",
 } as const
 
 export const finalCta = {
-  label: "Join the beta",
-  title: "Stop polishing the landing page. Start shipping content.",
+  label: "Ready when you are",
+  title: "Launch your free BYOK dashboard in under a minute.",
   description:
-    "We're in active beta — real users, weekly releases, feedback goes straight into the next build. Sign up free and tell us what breaks.",
-  primaryCta: "Join free beta",
+    "Sign in, paste your OpenAI key once, and start turning YouTube videos into multi-platform content. No subscription. No markup. Just your key and OpenAI's rates.",
+  primaryCta: "Launch Dashboard (Free)",
   secondaryCta: "Leave feedback on GitHub",
   feedbackUrl:
     "https://github.com/new-era-ogency/Stripe-Integration/issues/new/choose",
@@ -331,7 +334,6 @@ export const footerLinks = {
   product: [
     { label: "Try demo", href: "/#demo" },
     { label: "Workflows", href: "/#workflows" },
-    { label: "Pricing", href: "/pricing" },
     { label: "Dashboard", href: "/dashboard" },
   ],
   developers: [

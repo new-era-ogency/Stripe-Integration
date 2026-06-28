@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { CopyIcon, Flame, Lock, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -126,15 +124,9 @@ function ProLockOverlay({ feature }: { feature: string }) {
           {feature} is a Pro feature
         </p>
         <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-          Upgrade to Pro for deep LinkedIn articles, Shorts scripts, and the
-          full 4-part Deep Content Pack.
+          Deep LinkedIn articles, Shorts scripts, and the full 4-part content
+          pack are included when your account has Pro access.
         </p>
-        <Button
-          asChild
-          className="mt-4 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-5 text-sm font-semibold text-white hover:from-violet-400 hover:to-indigo-400"
-        >
-          <Link href="/pricing">Upgrade to Pro</Link>
-        </Button>
       </div>
     </div>
   )
@@ -152,15 +144,9 @@ function ProMaxLockOverlay() {
           Viral Shorts Hooks is a Pro Max feature
         </p>
         <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-          Unlock timestamp-based viral clip windows, hook scores, ready-to-speak
-          scripts, and shot lists — our AI Content Factory killer feature.
+          Timestamp-based viral clip windows, hook scores, ready-to-speak scripts,
+          and shot lists — available on Pro Max accounts.
         </p>
-        <Button
-          asChild
-          className="mt-4 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 px-5 text-sm font-semibold text-white hover:from-orange-400 hover:to-rose-400"
-        >
-          <Link href="/pricing">Upgrade to Pro Max</Link>
-        </Button>
       </div>
     </div>
   )

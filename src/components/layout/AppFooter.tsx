@@ -41,8 +41,8 @@ export default function AppFooter() {
               <PulseFlowLogo size="sm" showWordmark />
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
-              Workflow automation for indie devs — Stripe events, API chains, and
-              cross-tool sync without backend glue.
+              Free BYOK dashboard for creators. Paste YouTube links, connect
+              your OpenAI key, and generate multi-platform content in your browser.
             </p>
             <a
               href={footerLinks.developers[1].href}

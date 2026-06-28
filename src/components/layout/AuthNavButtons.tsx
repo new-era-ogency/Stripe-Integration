@@ -5,16 +5,19 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
-import SubscriptionTierBadge from "@/components/layout/SubscriptionTierBadge"
+import OpenAiKeyStatusBadge from "@/components/openai/OpenAiKeyStatusBadge"
 
 type AuthNavButtonsProps = {
   signInClassName?: string
   signedInClassName?: string
+  /** When false, key status is shown elsewhere (e.g. dashboard header). */
+  showKeyBadge?: boolean
 }
 
 export default function AuthNavButtons({
   signInClassName = "rounded-lg border border-zinc-800 bg-[#09090b] px-4 py-2 text-[11px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-violet-500/30 hover:text-white",
   signedInClassName = "rounded-lg border border-zinc-800 bg-[#09090b] px-3 py-2 text-[11px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-violet-500/30 hover:text-white",
+  showKeyBadge = true,
 }: AuthNavButtonsProps) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,7 +43,7 @@ export default function AuthNavButtons({
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [router])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -56,9 +59,11 @@ export default function AuthNavButtons({
 
   if (user) {
     return (
-      <div className="flex items-center gap-2 sm:gap-3">
-        <SubscriptionTierBadge />
-        <span className="hidden max-w-[140px] truncate font-mono text-[10px] text-zinc-500 lg:inline">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        {showKeyBadge ? (
+          <OpenAiKeyStatusBadge size="sm" className="hidden sm:inline-flex" />
+        ) : null}
+        <span className="hidden max-w-[120px] truncate text-xs text-zinc-500 lg:inline xl:max-w-[160px]">
           {user.email}
         </span>
         <button

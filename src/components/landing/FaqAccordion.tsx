@@ -69,11 +69,11 @@ export default function FaqAccordion() {
       <AnimatedSection className={`max-w-2xl ${SECTION_CONTENT_GAP}`}>
         <p className="text-sm text-zinc-500">Still have doubts?</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <Link href="/signup" className={BTN_PRIMARY}>
-            Try it free
+          <Link href="/dashboard" className={BTN_PRIMARY}>
+            Launch dashboard
           </Link>
-          <Link href="/pricing" className={BTN_SECONDARY}>
-            See pricing
+          <Link href="/#faq" className={BTN_SECONDARY}>
+            Read FAQ
           </Link>
         </div>
       </AnimatedSection>

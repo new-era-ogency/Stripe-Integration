@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Check, Loader2, Lock, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -107,14 +106,14 @@ export default function TelegramPublishActions({
 
     return (
       <Button
-        asChild
+        type="button"
+        disabled
         variant="outline"
-        className="h-8 rounded-lg border-violet-500/30 bg-violet-500/5 px-3 text-[11px] font-medium text-violet-200 hover:bg-violet-500/10"
+        className="h-8 cursor-not-allowed rounded-lg border-zinc-700 bg-zinc-900/50 px-3 text-[11px] font-medium text-zinc-500 opacity-70"
+        title="Telegram publish requires Pro access on your account"
       >
-        <Link href="/pricing">
-          <Lock className="mr-1.5 size-3.5" />
-          Publish · PRO
-        </Link>
+        <Lock className="mr-1.5 size-3.5" />
+        Publish · PRO
       </Button>
     )
   }

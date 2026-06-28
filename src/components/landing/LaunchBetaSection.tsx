@@ -26,7 +26,7 @@ export default function LaunchBetaSection() {
               />
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/signup"
+                  href="/dashboard"
                   className={`group inline-flex ${BTN_PRIMARY}`}
                 >
                   {finalCta.primaryCta}

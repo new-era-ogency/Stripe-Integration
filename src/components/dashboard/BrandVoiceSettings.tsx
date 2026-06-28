@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Loader2, Lock, Sparkles, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -121,18 +120,12 @@ export default function BrandVoiceSettings({
                       <Lock className="size-5 text-violet-300" />
                     </div>
                     <p className="text-sm font-medium text-white">
-                      Upgrade to PRO to unlock Custom AI Personas
+                      Brand voice requires Pro access
                     </p>
                     <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                      Pro members can save a persistent brand voice that shapes
-                      every X, LinkedIn, and Telegram output.
+                      Save a persistent brand voice that shapes every X,
+                      LinkedIn, and Telegram output.
                     </p>
-                    <Button
-                      asChild
-                      className="mt-4 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-5 text-sm font-semibold text-white hover:from-violet-400 hover:to-indigo-400"
-                    >
-                      <Link href="/pricing">Upgrade to Pro</Link>
-                    </Button>
                   </div>
                 </div>
               ) : null}

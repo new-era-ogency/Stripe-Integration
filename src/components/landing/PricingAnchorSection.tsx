@@ -12,9 +12,9 @@ export default function PricingAnchorSection() {
     <SectionShell id="pricing" tone="elevated">
       <AnimatedSection>
         <SectionHeader
-          label="Pricing"
-          title="Simple tiers — know the cost upfront"
-          description="Even early pricing sets expectations. Start free, upgrade when flows are running."
+          label="BYOK pricing"
+          title="Free dashboard. Pay OpenAI, not us."
+          description="PulseFlow never marks up your AI usage. Connect your OpenAI key once and pay only OpenAI's per-request rates."
           centered
         />
       </AnimatedSection>
@@ -26,12 +26,12 @@ export default function PricingAnchorSection() {
               <article
                 className={`relative flex h-full flex-col ${CARD_INTERACTIVE} p-6 md:p-7 ${
                   plan.highlighted
-                    ? "border-violet-500/30 bg-zinc-900/80 md:-translate-y-2 md:shadow-[0_20px_60px_-24px_rgba(139,92,246,0.25)]"
+                    ? "border-emerald-500/30 bg-zinc-900/80 md:-translate-y-2 md:shadow-[0_20px_60px_-24px_rgba(52,211,153,0.2)]"
                     : ""
                 }`}
               >
                 {"badge" in plan && plan.badge ? (
-                  <span className="mb-4 inline-flex w-fit rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-300">
+                  <span className="mb-4 inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
                     {plan.badge}
                   </span>
                 ) : (
@@ -50,7 +50,7 @@ export default function PricingAnchorSection() {
                   {plan.description}
                 </p>
                 <Link
-                  href="/signup"
+                  href={plan.name === "OpenAI usage" ? "/dashboard#settings" : "/dashboard"}
                   className={`mt-6 inline-flex justify-center ${
                     plan.highlighted ? BTN_PRIMARY : BTN_SECONDARY
                   }`}
@@ -63,9 +63,9 @@ export default function PricingAnchorSection() {
         </div>
 
         <AnimatedSection className="mt-8 text-center">
-          <Link href="/pricing" className={`inline-flex ${BTN_SECONDARY}`}>
-            Compare all features →
-          </Link>
+          <p className="text-sm text-zinc-500">
+            Typical generation: ~$0.003–$0.02 billed directly to your OpenAI account.
+          </p>
         </AnimatedSection>
       </SectionHeaderSpacer>
     </SectionShell>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthSessionSync from "@/components/auth/AuthSessionSync";
 import AppFooter from "@/components/layout/AppFooter";
+import { OpenAiKeyProvider } from "@/components/openai/OpenAiKeyProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,20 +16,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PulseFlow | One YouTube video → X, LinkedIn & Telegram posts",
+  title: "PulseFlow | Free BYOK AI Dashboard for Content Creators",
   description:
-    "Paste a YouTube link. Get publish-ready X threads, LinkedIn posts, and Telegram drops in under a minute. Join the free beta.",
+    "100% free, privacy-first BYOK dashboard. Paste a YouTube link, connect your OpenAI key, and get X, LinkedIn, and Telegram posts — billed directly by OpenAI.",
   openGraph: {
-    title: "PulseFlow | One YouTube video → X, LinkedIn & Telegram posts",
+    title: "PulseFlow | Free BYOK AI Dashboard for Content Creators",
     description:
-      "Paste a YouTube link. Get publish-ready X threads, LinkedIn posts, and Telegram drops in under a minute.",
+      "Bring your own OpenAI key. No monthly subscriptions. Generate multi-platform content from YouTube in your browser.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PulseFlow | One YouTube video → X, LinkedIn & Telegram posts",
+    title: "PulseFlow | Free BYOK AI Dashboard for Content Creators",
     description:
-      "Paste a YouTube link. Get publish-ready X threads, LinkedIn posts, and Telegram drops in under a minute.",
+      "100% free BYOK dashboard for creators. Your key stays in your browser. Pay OpenAI directly.",
   },
 };
 
@@ -46,7 +47,9 @@ export default function RootLayout({
         className={`${geistSans.className} dark min-h-full flex flex-col bg-[#000000] text-gray-50 antialiased`}
       >
         <AuthSessionSync />
-        <main className="flex-1">{children}</main>
+        <OpenAiKeyProvider>
+          <main className="flex-1">{children}</main>
+        </OpenAiKeyProvider>
         <AppFooter />
       </body>
     </html>
