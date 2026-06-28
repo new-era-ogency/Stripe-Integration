@@ -68,10 +68,20 @@ const TAB_ITEMS: {
   icon: typeof Video
 }[] = [
   { id: "youtube", label: "YouTube", icon: Video },
-  { id: "article", label: "Web article", icon: Globe },
-  { id: "text", label: "Raw text", icon: FileText },
-  { id: "media", label: "Audio / video", icon: FileAudio },
+  { id: "article", label: "Article", icon: Globe },
+  { id: "text", label: "Text", icon: FileText },
+  { id: "media", label: "Media", icon: FileAudio },
 ]
+
+const tabTriggerClassName = cn(
+  "inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-xs font-medium text-zinc-400 transition-colors sm:px-3 sm:text-sm",
+  "after:hidden",
+  "data-[state=active]:border-violet-500/40 data-[state=active]:bg-violet-500/15 data-[state=active]:text-violet-100 data-[state=active]:shadow-none",
+  "dark:data-[state=active]:border-violet-500/40 dark:data-[state=active]:bg-violet-500/15 dark:data-[state=active]:text-violet-100"
+)
+
+const sourcePanelClassName =
+  "space-y-2 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-4 sm:p-5"
 
 const inputClassName =
   "demo-input-glow h-12 rounded-xl border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20 disabled:opacity-60"
@@ -248,9 +258,12 @@ export default function DashboardCreateWorkspace({
           <Tabs
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as ContentSourceTab)}
-            className="gap-4"
+            className="gap-3"
           >
-            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-xl border border-zinc-800 bg-zinc-900/60 p-1 lg:grid-cols-4">
+            <TabsList
+              variant="line"
+              className="flex h-auto w-full gap-1 rounded-xl border border-zinc-800 bg-zinc-900/60 p-1.5"
+            >
               {TAB_ITEMS.map((tab) => {
                 const Icon = tab.icon
                 return (
@@ -258,16 +271,17 @@ export default function DashboardCreateWorkspace({
                     key={tab.id}
                     value={tab.id}
                     disabled={isGuest}
-                    className="rounded-lg border border-transparent px-3 py-2.5 text-xs text-zinc-400 data-[state=active]:border-violet-500/30 data-[state=active]:bg-violet-500/10 data-[state=active]:text-violet-100 sm:text-sm"
+                    className={tabTriggerClassName}
                   >
-                    <Icon className="size-4 shrink-0" />
-                    {tab.label}
+                    <Icon className="size-4 shrink-0" aria-hidden />
+                    <span className="truncate">{tab.label}</span>
                   </TabsTrigger>
                 )
               })}
             </TabsList>
 
-            <TabsContent value="youtube" className="mt-0 space-y-2">
+            <TabsContent value="youtube" className="mt-0 focus-visible:outline-none">
+              <div className={sourcePanelClassName}>
               <Label htmlFor="youtube-url" className="text-sm text-zinc-300">
                 YouTube URL
               </Label>
@@ -286,9 +300,11 @@ export default function DashboardCreateWorkspace({
                 Transcript is fetched on our server; generation uses your OpenAI
                 key client-side.
               </p>
+              </div>
             </TabsContent>
 
-            <TabsContent value="article" className="mt-0 space-y-4">
+            <TabsContent value="article" className="mt-0 focus-visible:outline-none">
+              <div className={cn(sourcePanelClassName, "space-y-4")}>
               <div className="space-y-2">
                 <Label htmlFor="article-url" className="text-sm text-zinc-300">
                   Article URL
@@ -322,9 +338,11 @@ export default function DashboardCreateWorkspace({
                   className={textareaClassName}
                 />
               </div>
+              </div>
             </TabsContent>
 
-            <TabsContent value="text" className="mt-0 space-y-2">
+            <TabsContent value="text" className="mt-0 focus-visible:outline-none">
+              <div className={sourcePanelClassName}>
               <Label htmlFor="raw-text" className="text-sm text-zinc-300">
                 Raw source text
               </Label>
@@ -340,9 +358,11 @@ export default function DashboardCreateWorkspace({
                 Skips all transcript fetching — your text goes straight into
                 generation.
               </p>
+              </div>
             </TabsContent>
 
-            <TabsContent value="media" className="mt-0 space-y-3">
+            <TabsContent value="media" className="mt-0 focus-visible:outline-none">
+              <div className={cn(sourcePanelClassName, "space-y-3")}>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -406,6 +426,7 @@ export default function DashboardCreateWorkspace({
                   {mediaError}
                 </p>
               ) : null}
+              </div>
             </TabsContent>
           </Tabs>
 
@@ -413,7 +434,7 @@ export default function DashboardCreateWorkspace({
 
           <div className="space-y-3">
             <Label className="text-sm text-zinc-300">Tone / style preset</Label>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
               {STYLE_PRESETS.map((preset) => {
                 const selected = stylePreset === preset.id
                 return (
@@ -422,20 +443,22 @@ export default function DashboardCreateWorkspace({
                     type="button"
                     onClick={() => onStylePresetChange(preset.id)}
                     disabled={isGuest || isLoading}
-                    className={`rounded-xl border px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={cn(
+                      "flex min-h-[4.5rem] flex-col rounded-xl border px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50",
                       selected
                         ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/30"
                         : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900"
-                    }`}
+                    )}
                   >
                     <p
-                      className={`text-sm font-medium ${
+                      className={cn(
+                        "text-sm font-medium",
                         selected ? "text-white" : "text-zinc-200"
-                      }`}
+                      )}
                     >
                       {preset.label}
                     </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
+                    <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
                       {preset.description}
                     </p>
                   </button>
