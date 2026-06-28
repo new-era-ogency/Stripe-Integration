@@ -268,9 +268,9 @@ export default function DashboardPage() {
       })
     } catch (error) {
       console.error("Generation error:", error)
-      alert(
-        `Error: ${error instanceof Error ? error.message : "Failed to fetch transcript"}`
-      )
+      const message =
+        error instanceof Error ? error.message : "Failed to generate content"
+      alert(`Error: ${message}`)
     } finally {
       setIsLoading(false)
     }

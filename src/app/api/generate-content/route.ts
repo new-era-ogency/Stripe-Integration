@@ -282,6 +282,24 @@ export async function POST(request: Request) {
       tier: flags.tier,
     })
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown generation error"
+
+    if (
+      message.includes("No endpoints found") ||
+      message.includes("OPENROUTER_API_KEY")
+    ) {
+      console.error("[generate-content] OpenRouter configuration error:", error)
+      return NextResponse.json(
+        {
+          error:
+            "AI generation is temporarily unavailable. Please try again shortly.",
+          code: "AI_UNAVAILABLE",
+        },
+        { status: 503 }
+      )
+    }
+
     return internalErrorResponse("generate-content", error, { userId: user.id })
   }
 }

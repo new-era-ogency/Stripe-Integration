@@ -7,8 +7,8 @@ export type GenerationLimits = {
   modelId: string
 }
 
-const STARTER_MODEL = "anthropic/claude-3.5-sonnet"
-const PRO_MODEL = "anthropic/claude-3.5-sonnet"
+const STARTER_MODEL = "openai/gpt-4o-mini"
+const PRO_MODEL = "anthropic/claude-sonnet-4"
 const PRO_MAX_MODEL = "anthropic/claude-sonnet-4"
 
 export const TIER_GENERATION_LIMITS: Record<SubscriptionTier, GenerationLimits> = {
