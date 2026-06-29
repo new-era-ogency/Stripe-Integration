@@ -7,11 +7,14 @@ import {
 } from "@/lib/api/auth"
 import { parseRequestJsonBody } from "@/lib/api/parse-body"
 import { RATE_LIMITS } from "@/lib/api/rate-limits"
-import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
+import { enforceRateLimit } from "@/lib/api/security"
 import {
   extractYouTubeVideoId,
   transcriptRequestSchema,
 } from "@/lib/validation"
+
+const TRANSCRIPT_EXTRACTION_ERROR =
+  "Failed to extract YouTube transcript. Please ensure the video has captions enabled or try pasting the raw text instead."
 
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser()
@@ -31,22 +34,26 @@ export async function POST(request: Request) {
     return rateLimited
   }
 
+  const parsed = await parseRequestJsonBody(request, transcriptRequestSchema)
+
+  if (parsed instanceof NextResponse) {
+    return parsed
+  }
+
+  const { videoUrl } = parsed.data
+  const videoId = extractYouTubeVideoId(videoUrl)
+
+  if (!videoId) {
+    return badRequestResponse("Invalid YouTube video ID")
+  }
+
   try {
-    const parsed = await parseRequestJsonBody(request, transcriptRequestSchema)
-
-    if (parsed instanceof NextResponse) {
-      return parsed
-    }
-
-    const { videoUrl } = parsed.data
-    const videoId = extractYouTubeVideoId(videoUrl)
-
-    if (!videoId) {
-      return badRequestResponse("Invalid YouTube video ID")
-    }
-
     const transcript = await YoutubeTranscript.fetchTranscript(videoId)
-    const rawTranscript = transcript.map((item) => item.text).join(" ")
+    const rawTranscript = transcript.map((item) => item.text).join(" ").trim()
+
+    if (!rawTranscript) {
+      return NextResponse.json({ error: TRANSCRIPT_EXTRACTION_ERROR }, { status: 422 })
+    }
 
     if (rawTranscript.length > 500_000) {
       return badRequestResponse("Transcript exceeds maximum length")
@@ -54,6 +61,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ rawTranscript })
   } catch (error) {
-    return internalErrorResponse("transcript", error, { userId: user.id })
+    console.error("YouTube parse error:", error)
+
+    return NextResponse.json(
+      { error: TRANSCRIPT_EXTRACTION_ERROR },
+      { status: 422 }
+    )
   }
 }
