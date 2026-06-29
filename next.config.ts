@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { buildByokCspConnectSrc } from "./src/lib/api/byok-security";
+
+const byokConnectSrc = buildByokCspConnectSrc();
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -14,7 +17,7 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value:
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://api.openai.com https://api.anthropic.com https://api.telegram.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+      `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co ${byokConnectSrc} https://api.telegram.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`,
   },
 ];
 

@@ -2,6 +2,7 @@ import {
   OpenAiByokError,
   requireStoredOpenAiKey,
 } from "@/lib/openai/client-key"
+import { assertByokFetchHostAllowed } from "@/lib/api/byok-security"
 
 export const OPENAI_AUDIO_TRANSCRIPTIONS_URL =
   "https://api.openai.com/v1/audio/transcriptions"
@@ -30,8 +31,9 @@ type WhisperResponse = {
 }
 
 function assertAllowedWhisperEndpoint(): void {
-  const hostname = new URL(OPENAI_AUDIO_TRANSCRIPTIONS_URL).hostname
-  if (hostname !== "api.openai.com") {
+  try {
+    assertByokFetchHostAllowed(OPENAI_AUDIO_TRANSCRIPTIONS_URL)
+  } catch {
     throw new OpenAiByokError(
       "Blocked BYOK request to an unsupported provider endpoint.",
       "api_error"

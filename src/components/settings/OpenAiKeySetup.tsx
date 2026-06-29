@@ -60,7 +60,7 @@ export default function OpenAiKeySetup({
     if (!isValidOpenAiKeyFormat(trimmed)) {
       setValidation({
         status: "invalid",
-        message: "Enter a valid OpenAI key starting with sk-.",
+        message: "Enter a valid OpenRouter key starting with sk-or-v1-.",
       })
       return
     }
@@ -139,7 +139,7 @@ export default function OpenAiKeySetup({
             onBlur={() => {
               void handleBlur()
             }}
-            placeholder="sk-..."
+            placeholder="sk-or-v1-..."
             autoComplete="new-password"
             autoCorrect="off"
             autoCapitalize="off"

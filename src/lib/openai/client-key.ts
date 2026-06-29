@@ -1,3 +1,5 @@
+import { assertByokFetchHostAllowed, BYOK_ALLOWED_FETCH_HOSTS } from "@/lib/api/byok-security"
+
 /**
  * BYOK client module — API keys live only in browser localStorage and are sent
  * directly to AI provider endpoints. Never import this from server routes.
@@ -6,30 +8,43 @@ export const PULSEFLOW_OPENAI_KEY_STORAGE = "pulseflow_openai_key"
 
 export const OPENAI_KEY_CHANGED_EVENT = "pulseflow:openai-key-changed"
 
-export const BYOK_ALLOWED_FETCH_HOSTS = new Set([
-  "api.openai.com",
-  "api.anthropic.com",
-])
+export { BYOK_ALLOWED_FETCH_HOSTS }
+
+export const OPENROUTER_REFERER = "https://www.pulseflow.art"
+export const OPENROUTER_APP_TITLE = "PulseFlow"
+export const DEFAULT_BYOK_MODEL = "openai/gpt-4o-mini"
 
 export const OPENAI_MISSING_KEY_MESSAGE =
-  "Please add your OpenAI API key in Settings to proceed."
+  "Please add your OpenRouter API key in Settings to proceed."
 
 export const OPENAI_INVALID_KEY_MESSAGE =
-  "Your OpenAI API key is invalid. Please update it in Settings and try again."
+  "Your OpenRouter API key is invalid. Please update it in Settings and try again."
 
 export const OPENAI_RATE_LIMIT_MESSAGE =
-  "OpenAI rate limit exceeded or your account has insufficient balance. Please check your OpenAI billing dashboard and try again."
+  "OpenRouter rate limit exceeded or your account has insufficient balance. Please check your OpenRouter credits and try again."
 
-const OPENAI_MODELS_URL = "https://api.openai.com/v1/models"
-export const OPENAI_CHAT_COMPLETIONS_URL =
-  "https://api.openai.com/v1/chat/completions"
+const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+export const OPENROUTER_CHAT_COMPLETIONS_URL =
+  "https://openrouter.ai/api/v1/chat/completions"
 
-/** OpenAI secret keys — never log or send to PulseFlow servers. */
-const OPENAI_KEY_STORAGE_PATTERN = /^sk-(?:proj-)?[a-zA-Z0-9_-]{10,}$/
+/** @deprecated Use OPENROUTER_CHAT_COMPLETIONS_URL */
+export const OPENAI_CHAT_COMPLETIONS_URL = OPENROUTER_CHAT_COMPLETIONS_URL
+
+/** OpenRouter secret keys — never log or send to PulseFlow servers. */
+const OPENROUTER_KEY_STORAGE_PATTERN = /^sk-or-v1-[a-zA-Z0-9_-]{20,}$/
 
 export function isValidOpenAiKeyFormat(apiKey: string): boolean {
   const trimmed = apiKey.trim()
-  return trimmed.length >= 20 && OPENAI_KEY_STORAGE_PATTERN.test(trimmed)
+  return trimmed.length >= 20 && OPENROUTER_KEY_STORAGE_PATTERN.test(trimmed)
+}
+
+export function buildOpenRouterByokHeaders(apiKey: string): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+    "HTTP-Referer": OPENROUTER_REFERER,
+    "X-Title": OPENROUTER_APP_TITLE,
+  }
 }
 
 export type OpenAiByokErrorCode =
@@ -129,8 +144,9 @@ function assertByokClientEnvironment(): void {
 }
 
 function assertAllowedByokEndpoint(url: string): void {
-  const hostname = new URL(url).hostname
-  if (!BYOK_ALLOWED_FETCH_HOSTS.has(hostname)) {
+  try {
+    assertByokFetchHostAllowed(url)
+  } catch {
     throw new OpenAiByokError(
       "Blocked BYOK request to an unsupported provider endpoint.",
       "api_error"
@@ -164,7 +180,7 @@ export function clearStoredOpenAiKey(): void {
 }
 
 async function parseOpenAiErrorMessage(response: Response): Promise<string> {
-  let message = `OpenAI returned HTTP ${response.status}.`
+  let message = `OpenRouter returned HTTP ${response.status}.`
 
   try {
     const body = (await response.json()) as OpenAiErrorBody
@@ -193,23 +209,20 @@ function mapOpenAiHttpError(status: number, fallbackMessage: string): OpenAiByok
 
 /**
  * Client-side BYOK chat completion.
- * The API key is read from localStorage and sent directly to OpenAI — never to PulseFlow servers.
+ * The API key is read from localStorage and sent directly to OpenRouter — never to PulseFlow servers.
  */
 export async function fetchOpenAiChatCompletion(
   request: OpenAiChatCompletionRequest
 ): Promise<OpenAiChatCompletionResult> {
   const apiKey = requireStoredOpenAiKey()
-  assertAllowedByokEndpoint(OPENAI_CHAT_COMPLETIONS_URL)
+  assertAllowedByokEndpoint(OPENROUTER_CHAT_COMPLETIONS_URL)
 
   try {
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+    const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: buildOpenRouterByokHeaders(apiKey),
       body: JSON.stringify({
-        model: request.model ?? "gpt-4o-mini",
+        model: request.model ?? DEFAULT_BYOK_MODEL,
         messages: request.messages,
         max_tokens: request.max_tokens ?? 500,
         temperature: request.temperature ?? 0.3,
@@ -226,14 +239,14 @@ export async function fetchOpenAiChatCompletion(
 
     if (!content) {
       throw new OpenAiByokError(
-        "OpenAI returned an empty response. Please try again.",
+        "OpenRouter returned an empty response. Please try again.",
         "api_error"
       )
     }
 
     return {
       content,
-      model: body.model ?? request.model ?? "gpt-4o-mini",
+      model: body.model ?? request.model ?? DEFAULT_BYOK_MODEL,
       usage: body.usage
         ? {
             prompt_tokens: body.usage.prompt_tokens ?? 0,
@@ -250,13 +263,13 @@ export async function fetchOpenAiChatCompletion(
     const message =
       error instanceof Error
         ? error.message
-        : "Could not reach the OpenAI API from this browser."
+        : "Could not reach the OpenRouter API from this browser."
 
     throw new OpenAiByokError(message, "network_error")
   }
 }
 
-/** Client-only validation — key is sent directly to OpenAI, never to PulseFlow servers. */
+/** Client-only validation — key is sent directly to OpenRouter, never to PulseFlow servers. */
 export async function validateOpenAiKey(
   apiKey: string
 ): Promise<OpenAiKeyValidationResult> {
@@ -267,14 +280,12 @@ export async function validateOpenAiKey(
   }
 
   assertByokClientEnvironment()
-  assertAllowedByokEndpoint(OPENAI_MODELS_URL)
+  assertAllowedByokEndpoint(OPENROUTER_MODELS_URL)
 
   try {
-    const response = await fetch(OPENAI_MODELS_URL, {
+    const response = await fetch(OPENROUTER_MODELS_URL, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${trimmed}`,
-      },
+      headers: buildOpenRouterByokHeaders(trimmed),
     })
 
     if (response.ok) {
@@ -294,7 +305,7 @@ export async function validateOpenAiKey(
     const message =
       error instanceof Error
         ? error.message
-        : "Could not reach the OpenAI API from this browser."
+        : "Could not reach the OpenRouter API from this browser."
 
     return { ok: false, message }
   }

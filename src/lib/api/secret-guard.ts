@@ -1,4 +1,5 @@
-const OPENAI_KEY_PATTERN = /\bsk-[a-zA-Z0-9-_]{10,}\b/
+const OPENAI_KEY_PATTERN = /\bsk-(?!or-v1-)[a-zA-Z0-9-_]{10,}\b/
+const OPENROUTER_KEY_PATTERN = /\bsk-or-v1-[a-zA-Z0-9-_]{10,}\b/
 const ANTHROPIC_KEY_PATTERN = /\bsk-ant-[a-zA-Z0-9-_]{10,}\b/
 const BEARER_SECRET_PATTERN = /\bBearer\s+[a-zA-Z0-9-_]{10,}\b/i
 
@@ -8,9 +9,12 @@ export const FORBIDDEN_CLIENT_SECRET_FIELDS = new Set([
   "api_key",
   "openai_key",
   "openai_api_key",
+  "openrouter_key",
+  "openrouter_api_key",
   "anthropic_key",
   "anthropic_api_key",
   "pulseflow_openai_key",
+  "pulseflow_openrouter_key",
   "authorization",
   "bearer",
   "secret",
@@ -26,6 +30,7 @@ export function containsLikelyApiSecret(value: string): boolean {
 
   return (
     OPENAI_KEY_PATTERN.test(trimmed) ||
+    OPENROUTER_KEY_PATTERN.test(trimmed) ||
     ANTHROPIC_KEY_PATTERN.test(trimmed) ||
     BEARER_SECRET_PATTERN.test(trimmed)
   )
@@ -34,6 +39,7 @@ export function containsLikelyApiSecret(value: string): boolean {
 export function redactSecrets(value: unknown): unknown {
   if (typeof value === "string") {
     return value
+      .replace(OPENROUTER_KEY_PATTERN, "[REDACTED_OPENROUTER_KEY]")
       .replace(OPENAI_KEY_PATTERN, "[REDACTED_OPENAI_KEY]")
       .replace(ANTHROPIC_KEY_PATTERN, "[REDACTED_ANTHROPIC_KEY]")
       .replace(BEARER_SECRET_PATTERN, "Bearer [REDACTED]")
@@ -93,7 +99,7 @@ export function rejectClientSecretsInBody(body: unknown): string | null {
   const forbiddenField = findForbiddenClientSecretField(body)
 
   if (forbiddenField) {
-    return `Do not send API keys to PulseFlow servers. Remove "${forbiddenField}" from the request body and store keys in Settings instead.`
+    return `Do not send API keys to PulseFlow servers. Remove "${forbiddenField}" from the request body and store your OpenRouter key in Settings instead.`
   }
 
   return null

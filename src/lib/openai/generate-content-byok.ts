@@ -7,17 +7,14 @@ import {
 import { buildGenerationPrompts } from "@/lib/ai/prompts"
 import type { GeneratedContent } from "@/lib/generations"
 import type { UserTier } from "@/lib/profile"
-import { fetchOpenAiChatCompletion } from "@/lib/openai/client-key"
+import {
+  DEFAULT_BYOK_MODEL,
+  fetchOpenAiChatCompletion,
+} from "@/lib/openai/client-key"
 import {
   getGenerationLimitsForTier,
   normalizeSubscriptionTier,
 } from "@/lib/subscription"
-
-const BYOK_MODEL_IDS = {
-  starter: "gpt-4o-mini",
-  pro: "gpt-4o",
-  pro_max: "gpt-4o",
-} as const
 
 export type GenerateContentByokParams = {
   rawTranscript: string
@@ -33,7 +30,7 @@ async function generateStarterContentByok(
   rawTranscript: string,
   maxOutputTokens: number
 ): Promise<GeneratedContent> {
-  const model = BYOK_MODEL_IDS.starter
+  const model = DEFAULT_BYOK_MODEL
 
   const [twitter, linkedin, telegram] = await Promise.all([
     fetchOpenAiChatCompletion({
@@ -76,7 +73,7 @@ async function generateProContentByok(
   maxOutputTokens: number
 ): Promise<GeneratedContent> {
   const result = await fetchOpenAiChatCompletion({
-    model: BYOK_MODEL_IDS.pro,
+    model: getGenerationLimitsForTier("pro").modelId,
     max_tokens: maxOutputTokens,
     messages: [
       { role: "system", content: prompts.system },
@@ -101,7 +98,7 @@ async function generateProMaxContentByok(
   maxOutputTokens: number
 ): Promise<GeneratedContent> {
   const result = await fetchOpenAiChatCompletion({
-    model: BYOK_MODEL_IDS.pro_max,
+    model: getGenerationLimitsForTier("pro_max").modelId,
     max_tokens: maxOutputTokens,
     messages: [
       { role: "system", content: prompts.system },
@@ -114,7 +111,7 @@ async function generateProMaxContentByok(
   return proMaxPackToLegacyFields(pack)
 }
 
-/** Client-side BYOK generation — calls OpenAI directly using the user's stored key. */
+/** Client-side BYOK generation — calls OpenRouter directly using the user's stored key. */
 export async function generateContentByok(
   params: GenerateContentByokParams
 ): Promise<GeneratedContent> {
