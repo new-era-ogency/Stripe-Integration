@@ -3,6 +3,7 @@ import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
 import { parseRequestJsonBody } from "@/lib/api/parse-body"
 import { RATE_LIMITS } from "@/lib/api/rate-limits"
 import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
+import { supabaseRpcErrorResponse } from "@/lib/api/supabase-errors"
 import { isProTier } from "@/lib/profile"
 import {
   telegramIntegrationErrorResponse,
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
       )
 
       if (voiceError) {
-        return internalErrorResponse("user-settings", voiceError, {
+        return supabaseRpcErrorResponse("user-settings", voiceError, {
           userId: user.id,
           field: "brandVoice",
         })
@@ -75,9 +76,15 @@ export async function POST(request: Request) {
     }
 
     if (parsed.data.tgChannelId !== undefined) {
-      const formattedChannelId = parsed.data.tgChannelId
-        ? formatTelegramChatIdOrNull(parsed.data.tgChannelId)
-        : null
+      let formattedChannelId: string | null = null
+
+      try {
+        formattedChannelId = parsed.data.tgChannelId
+          ? formatTelegramChatIdOrNull(parsed.data.tgChannelId)
+          : null
+      } catch (error) {
+        return telegramIntegrationErrorResponse(error)
+      }
 
       if (formattedChannelId) {
         try {
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
       )
 
       if (channelError) {
-        return internalErrorResponse("user-settings", channelError, {
+        return supabaseRpcErrorResponse("user-settings", channelError, {
           userId: user.id,
           field: "tgChannelId",
         })
@@ -105,7 +112,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       brandVoice,
       tgChannelId,
-      tier: profile.tier,
+      tier: profile?.tier ?? "starter",
     })
   } catch (error) {
     return internalErrorResponse("user-settings", error, { userId: user.id })

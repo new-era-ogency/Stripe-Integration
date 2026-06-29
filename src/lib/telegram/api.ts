@@ -58,11 +58,14 @@ function isChannelPermissionTelegramError(
 }
 
 function getBotToken(): string {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim()
+  const botToken =
+    process.env.TELEGRAM_BOT_TOKEN?.trim() ??
+    process.env.TELEGRAM_TOKEN?.trim()
 
   if (!botToken) {
     throw new TelegramIntegrationError({
-      message: "Telegram bot is not configured on the server. Contact support.",
+      message:
+        "Telegram bot is not configured on the server. Set TELEGRAM_BOT_TOKEN in your environment.",
     })
   }
 
@@ -133,15 +136,25 @@ export async function validateTelegramChannel(channelId: string): Promise<void> 
     {}
   )
 
-  const membership = await callTelegramApi<{ status: string }>(
-    "getChatMember",
-    {
-      chat_id: chatId,
-      user_id: bot.id,
-    }
-  )
+  const membership = await callTelegramApi<{
+    status: string
+    can_post_messages?: boolean
+  }>("getChatMember", {
+    chat_id: chatId,
+    user_id: bot.id,
+  })
 
   if (membership.status !== "administrator" && membership.status !== "creator") {
+    throw new TelegramIntegrationError({
+      message: TELEGRAM_CHANNEL_PERMISSION_ERROR,
+      isChannelPermissionError: true,
+    })
+  }
+
+  if (
+    membership.status === "administrator" &&
+    membership.can_post_messages === false
+  ) {
     throw new TelegramIntegrationError({
       message: TELEGRAM_CHANNEL_PERMISSION_ERROR,
       isChannelPermissionError: true,
