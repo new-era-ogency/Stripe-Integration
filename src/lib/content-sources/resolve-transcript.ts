@@ -5,6 +5,8 @@ import type {
 } from "@/lib/content-sources/types"
 import { OpenAiByokError } from "@/lib/openai/client-key"
 import { transcribeAudioWithWhisper } from "@/lib/openai/whisper-transcribe"
+import { extractYouTubeTranscriptViaOpenRouter } from "@/lib/youtube/extract-transcript-openrouter"
+import { TRANSCRIPT_OPENROUTER_FALLBACK_CODE } from "@/lib/youtube/transcript-constants"
 import { extractYouTubeVideoId } from "@/lib/validation"
 
 const MIN_TEXT_LENGTH = 40
@@ -28,28 +30,46 @@ function htmlToPlainText(html: string): string {
   return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? ""
 }
 
-async function fetchYouTubeTranscript(videoUrl: string): Promise<string> {
+async function fetchYouTubeTranscript(
+  videoUrl: string,
+  onPhaseChange?: (phase: TranscriptResolvePhase) => void
+): Promise<string> {
   const response = await fetch("/api/transcript", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ videoUrl }),
   })
 
-  if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as {
-      error?: string
+  const data = (await response.json().catch(() => ({}))) as {
+    rawTranscript?: string
+    error?: string
+    code?: string
+    canonicalUrl?: string
+    videoTitle?: string
+  }
+
+  if (response.ok) {
+    const rawTranscript = data.rawTranscript?.trim()
+
+    if (!rawTranscript) {
+      throw new Error("YouTube transcript was empty.")
     }
-    throw new Error(errorData.error || "Failed to fetch YouTube transcript")
+
+    return rawTranscript
   }
 
-  const data = (await response.json()) as { rawTranscript?: string }
-  const rawTranscript = data.rawTranscript?.trim()
-
-  if (!rawTranscript) {
-    throw new Error("YouTube transcript was empty.")
+  if (
+    data.code === TRANSCRIPT_OPENROUTER_FALLBACK_CODE ||
+    response.status === 422
+  ) {
+    onPhaseChange?.("openrouter_extract")
+    return extractYouTubeTranscriptViaOpenRouter(
+      data.canonicalUrl ?? videoUrl,
+      data.videoTitle
+    )
   }
 
-  return rawTranscript
+  throw new Error(data.error || "Failed to fetch YouTube transcript")
 }
 
 async function fetchArticleTextFromUrl(url: string): Promise<string> {
@@ -109,7 +129,7 @@ export async function resolveTranscriptFromSource(
   switch (source.type) {
     case "youtube": {
       onPhaseChange?.("fetching")
-      const rawTranscript = await fetchYouTubeTranscript(source.url)
+      const rawTranscript = await fetchYouTubeTranscript(source.url, onPhaseChange)
       return {
         rawTranscript,
         sourceLabel: buildYouTubeSourceLabel(source.url),

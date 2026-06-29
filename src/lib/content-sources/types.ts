@@ -6,7 +6,10 @@ export type ContentSourceInput =
   | { type: "text"; rawText: string }
   | { type: "media"; file: File }
 
-export type TranscriptResolvePhase = "fetching" | "transcribing"
+export type TranscriptResolvePhase =
+  | "fetching"
+  | "openrouter_extract"
+  | "transcribing"
 
 export type ResolvedTranscript = {
   rawTranscript: string

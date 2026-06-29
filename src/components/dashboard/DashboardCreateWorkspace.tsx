@@ -297,8 +297,8 @@ export default function DashboardCreateWorkspace({
                 className={inputClassName}
               />
               <p className="text-xs text-zinc-600">
-                Transcript is fetched on our server; generation uses your OpenAI
-                key client-side.
+                We try our server first, then your OpenRouter key with a
+                web-enabled model if YouTube blocks cloud IPs.
               </p>
               </div>
             </TabsContent>

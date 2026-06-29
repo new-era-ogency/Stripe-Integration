@@ -179,6 +179,10 @@ export default function DashboardPage() {
                 ? "Fetching YouTube transcript…"
                 : "Fetching article content…"
             )
+          } else if (phase === "openrouter_extract") {
+            setLoadingMessage(
+              "Server fetch blocked — extracting transcript via your OpenRouter key…"
+            )
           }
         }
       )
