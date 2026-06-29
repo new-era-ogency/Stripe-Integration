@@ -3,7 +3,12 @@ import { isErrorResponse, requireAuthenticatedUser } from "@/lib/api/auth"
 import { parseRequestJsonBody } from "@/lib/api/parse-body"
 import { RATE_LIMITS } from "@/lib/api/rate-limits"
 import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
-import { isProTier, normalizeTelegramChannelId } from "@/lib/profile"
+import { isProTier } from "@/lib/profile"
+import {
+  telegramIntegrationErrorResponse,
+  validateTelegramChannel,
+} from "@/lib/telegram/api"
+import { formatTelegramChatIdOrNull } from "@/lib/telegram/channel-id"
 import { userSettingsSchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
@@ -70,9 +75,21 @@ export async function POST(request: Request) {
     }
 
     if (parsed.data.tgChannelId !== undefined) {
+      const formattedChannelId = parsed.data.tgChannelId
+        ? formatTelegramChatIdOrNull(parsed.data.tgChannelId)
+        : null
+
+      if (formattedChannelId) {
+        try {
+          await validateTelegramChannel(formattedChannelId)
+        } catch (error) {
+          return telegramIntegrationErrorResponse(error)
+        }
+      }
+
       const { data: savedChannel, error: channelError } = await supabase.rpc(
         "update_tg_channel_id",
-        { p_tg_channel_id: parsed.data.tgChannelId ?? "" }
+        { p_tg_channel_id: formattedChannelId ?? "" }
       )
 
       if (channelError) {
@@ -82,7 +99,7 @@ export async function POST(request: Request) {
         })
       }
 
-      tgChannelId = normalizeTelegramChannelId(savedChannel || null)
+      tgChannelId = formatTelegramChatIdOrNull(savedChannel || formattedChannelId)
     }
 
     return NextResponse.json({

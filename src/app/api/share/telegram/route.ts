@@ -6,8 +6,13 @@ import {
 import { parseRequestJsonBody } from "@/lib/api/parse-body"
 import { RATE_LIMITS } from "@/lib/api/rate-limits"
 import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
-import { isProTier, normalizeTelegramChannelId } from "@/lib/profile"
-import { sendTelegramChannelMessage } from "@/lib/telegram/publish"
+import { isProTier } from "@/lib/profile"
+import {
+  sendTelegramChannelMessage,
+  telegramIntegrationErrorResponse,
+} from "@/lib/telegram/api"
+import { formatTelegramChatIdOrNull } from "@/lib/telegram/channel-id"
+import { toTelegramHtml } from "@/lib/telegram/format"
 import { telegramShareSchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const channelId = normalizeTelegramChannelId(profile.tg_channel_id)
+    const channelId = formatTelegramChatIdOrNull(profile.tg_channel_id)
     if (!channelId) {
       return NextResponse.json(
         {
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
 
     const result = await sendTelegramChannelMessage({
       channelId,
-      text: parsed.data.text,
+      text: toTelegramHtml(parsed.data.text),
     })
 
     return NextResponse.json({
@@ -77,6 +82,6 @@ export async function POST(request: Request) {
       chatId: result.chatId,
     })
   } catch (error) {
-    return internalErrorResponse("telegram-share", error, { userId: user.id })
+    return telegramIntegrationErrorResponse(error)
   }
 }

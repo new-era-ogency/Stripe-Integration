@@ -124,13 +124,13 @@ export default function TelegramPublishActions({
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3">
         <p className="mb-2 text-[11px] text-zinc-400">
-          Enter your Telegram Channel ID to connect (e.g. @mychannel)
+          Enter your channel as @mychannel or a numeric ID (e.g. -1001234567890)
         </p>
         <div className="flex gap-2">
           <Input
             value={channelDraft}
             onChange={(event) => setChannelDraft(event.target.value)}
-            placeholder="@mychannel"
+            placeholder="@mychannel or -100…"
             disabled={publishState === "connecting"}
             className="h-9 border-zinc-800 bg-[#010101] text-sm text-zinc-200 placeholder:text-zinc-600"
           />
