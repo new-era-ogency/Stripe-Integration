@@ -355,19 +355,23 @@ export const changelog = [
 export const faqs = [
   {
     q: "What does PulseFlow actually do today?",
-    a: "Paste a public YouTube URL, connect your OpenAI API key once, and get publish-ready copy for X, LinkedIn, and Telegram in one run. Your key stays in your browser — PulseFlow never stores or proxies it.",
+    a: "Paste a public YouTube URL, connect your OpenRouter API key once, and get publish-ready copy for X, LinkedIn, and Telegram in one run. PulseFlow is free — OpenRouter bills you directly for AI usage.",
   },
   {
     q: "Is PulseFlow really free?",
-    a: "Yes — the dashboard is 100% free. You pay OpenAI directly for API usage (usually fractions of a cent per run). There are no PulseFlow monthly subscriptions or credit markups.",
+    a: "Yes — the dashboard is 100% free. You pay OpenRouter directly for API usage (many runs use free models). There are no PulseFlow monthly subscriptions or credit markups.",
+  },
+  {
+    q: "How do I get an OpenRouter API key?",
+    a: "Create a free account at openrouter.ai, open Keys, and create a key starting with sk-or-v1-. See our step-by-step OpenRouter setup guide in the footer or Settings tab.",
   },
   {
     q: "Where is my API key stored?",
-    a: "Only in your browser's localStorage on your device. Validation and generation call OpenAI directly from the client. PulseFlow servers never receive your key.",
+    a: "In your browser's localStorage on your device. When you generate, it is sent in a request header so PulseFlow can call OpenRouter on your behalf. We do not save it in our database.",
   },
   {
     q: "Is the homepage demo real?",
-    a: "Yes — you can explore the workflow on the landing page. The dashboard uses the same pipeline: paste URL, fetch transcript on our server (YouTube CORS), generate with your key client-side.",
+    a: "Yes — connect your OpenRouter key and try a YouTube link on the landing demo or in the dashboard. Same pipeline: transcript fetch, then AI generation with your key.",
   },
   {
     q: "How do I give feedback?",
@@ -483,6 +487,7 @@ export const footerLinks = {
     { label: "Status", href: "https://github.com/new-era-ogency/Stripe-Integration/commits/main", external: true },
   ],
   resources: [
+    { label: "OpenRouter key guide", href: "/guide/openrouter-key" },
     { label: "Book demo", href: "mailto:hello@pulseflow.art?subject=PulseFlow%20demo", external: true },
     { label: "FAQ", href: "/#faq" },
     { label: "Privacy Policy", href: "/privacy" },

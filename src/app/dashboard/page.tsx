@@ -9,12 +9,11 @@ import DashboardCreateWorkspace, {
 } from "@/components/dashboard/DashboardCreateWorkspace"
 import DashboardQuickTryCard from "@/components/dashboard/DashboardQuickTryCard"
 import DashboardStatsPanel from "@/components/dashboard/DashboardStatsPanel"
-import BrandVoiceSettings from "@/components/dashboard/BrandVoiceSettings"
+import DashboardSettingsPanel from "@/components/dashboard/DashboardSettingsPanel"
 import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
 import GenerationHistory from "@/components/dashboard/GenerationHistory"
-import ByokCostExplainer from "@/components/openai/ByokCostExplainer"
+import { useToast } from "@/components/feedback/ToastProvider"
 import { useOpenAiKey } from "@/components/openai/OpenAiKeyProvider"
-import OpenAiKeySetup from "@/components/settings/OpenAiKeySetup"
 import {
   formatShortsScriptForCopy,
   formatTwitterThreadForCopy,
@@ -27,13 +26,12 @@ import {
 } from "@/lib/dashboard/load-user-data"
 import { formatSupabaseError } from "@/lib/dashboard/user-data-loader"
 import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
-import { saveUserGeneration } from "@/lib/generations"
+import { requestGenerateContent } from "@/lib/api/generate-content-client"
 import { type UserTier } from "@/lib/profile"
 import {
   OpenAiByokError,
   readStoredOpenAiKey,
 } from "@/lib/openai/client-key"
-import { generateContentByok } from "@/lib/openai/generate-content-byok"
 import { createClient } from "@/lib/supabase/client"
 import type { ContentSourceInput } from "@/lib/content-sources/types"
 import { resolveTranscriptFromSource } from "@/lib/content-sources/resolve-transcript"
@@ -68,6 +66,11 @@ export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false)
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
   const { hasOpenAiKey, openKeyModal, refreshKeyStatus } = useOpenAiKey()
+  const { success: toastSuccess, error: toastError } = useToast()
+
+  const handleKeyChanged = useCallback(() => {
+    refreshKeyStatus()
+  }, [refreshKeyStatus])
   const router = useRouter()
 
   const usageStats = useMemo(() => {
@@ -189,43 +192,23 @@ export default function DashboardPage() {
 
       setLoadingMessage("Generating your posts…")
 
-      const generatedContent = await generateContentByok({
+      const result = await requestGenerateContent({
         rawTranscript,
-        tier,
-        brandVoice,
-      })
-
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
-      const generation = await saveUserGeneration(supabase, {
-        userId: user.id,
-        youtubeUrl: sourceLabel,
-        generatedContent: {
-          ...generatedContent,
-          rawTranscript,
-        },
+        videoUrl: sourceLabel,
       })
 
       setGeneratedOutputs({
-        packTier: generatedContent.packTier,
-        outputX: generatedContent.outputX ?? "",
-        outputLinkedIn: generatedContent.outputLinkedIn ?? "",
-        outputTelegram: generatedContent.outputTelegram ?? "",
-        twitterThread: generatedContent.twitterThread,
-        linkedinArticle: generatedContent.linkedinArticle,
-        telegramPost: generatedContent.telegramPost,
-        shortsScript: generatedContent.shortsScript,
-        viralShortsHooks: generatedContent.viralShortsHooks,
+        packTier: result.packTier,
+        outputX: result.outputX ?? "",
+        outputLinkedIn: result.outputLinkedIn ?? "",
+        outputTelegram: result.outputTelegram ?? "",
+        twitterThread: result.twitterThread,
+        linkedinArticle: result.linkedinArticle,
+        telegramPost: result.telegramPost,
+        shortsScript: result.shortsScript,
+        viralShortsHooks: result.viralShortsHooks,
       })
-      setActiveGenerationId(generation.id)
+      setActiveGenerationId(result.generationId ?? null)
       await fetchUserData()
 
       document.getElementById("results")?.scrollIntoView({
@@ -240,13 +223,13 @@ export default function DashboardPage() {
           refreshKeyStatus()
           openKeyModal()
         }
-        alert(`Error: ${error.message}`)
+        toastError(error.message)
         return
       }
 
       const message =
         error instanceof Error ? error.message : "Failed to generate content"
-      alert(`Error: ${message}`)
+      toastError(message)
     } finally {
       setIsLoading(false)
       setLoadingMessage(null)
@@ -262,7 +245,7 @@ export default function DashboardPage() {
     })
   }
 
-  const handleCopyGeneration = (record: GenerationRecord) => {
+  const handleCopyGeneration = async (record: GenerationRecord) => {
     const content = record.generated_content
     const twitterText =
       content.twitterThread && content.twitterThread.length > 0
@@ -281,8 +264,12 @@ export default function DashboardPage() {
       .filter(Boolean)
       .join("\n\n")
 
-    navigator.clipboard.writeText(combined)
-    alert("Copied all platforms to clipboard!")
+    try {
+      await navigator.clipboard.writeText(combined)
+      toastSuccess("Copied all platforms to clipboard!")
+    } catch {
+      toastError("Could not copy to clipboard.")
+    }
   }
 
   const hasResults = Boolean(
@@ -302,11 +289,12 @@ export default function DashboardPage() {
           <div className="mb-6 space-y-4">
             <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-violet-500/5 to-transparent px-5 py-5 sm:px-6">
               <p className="text-sm font-semibold text-white">
-                Free BYOK dashboard — sign in to connect your OpenAI key
+                Free BYOK dashboard — sign in to add your OpenRouter key
               </p>
               <p className="mt-2 text-sm text-zinc-400">
-                PulseFlow is 100% free. Bring your OpenAI key, add any source,
-                and generate X, LinkedIn, and Telegram posts from your browser.
+                PulseFlow is 100% free. Bring your own OpenRouter key in Settings,
+                add any source, and generate X, LinkedIn, and Telegram posts from
+                your browser.
               </p>
               <Link
                 href="/login"
@@ -377,28 +365,16 @@ export default function DashboardPage() {
               />
             </section>
 
-            <section id="settings" className="scroll-mt-36 space-y-8">
-              <BrandVoiceSettings
-                tier={tier}
-                brandVoice={brandVoice}
-                isGuest={isGuest}
-                authChecked={authChecked}
-                onSaved={setBrandVoice}
-              />
-              {!isGuest && authChecked ? (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-white">
-                    OpenAI API key
-                  </h2>
-                  <p className="text-sm text-zinc-500">
-                    Manage or update your key here. You can also connect via the
-                    status badge in the header.
-                  </p>
-                  <OpenAiKeySetup onKeyValidated={refreshKeyStatus} />
-                  <ByokCostExplainer variant="card" />
-                </div>
-              ) : null}
-            </section>
+            <DashboardSettingsPanel
+              tier={tier}
+              brandVoice={brandVoice}
+              tgChannelId={tgChannelId}
+              isGuest={isGuest}
+              authChecked={authChecked}
+              onBrandVoiceSaved={setBrandVoice}
+              onTgChannelSaved={setTgChannelId}
+              onKeyChanged={handleKeyChanged}
+            />
           </div>
 
           <div className="xl:sticky xl:top-36 xl:self-start">

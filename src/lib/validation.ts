@@ -72,6 +72,12 @@ export function extractYouTubeVideoId(videoUrl: string): string | null {
   }
 }
 
+export const generationSourceUrlSchema = z
+  .string()
+  .trim()
+  .min(1, "Source URL is required")
+  .max(2048, "Source URL is too long")
+
 export const transcriptRequestSchema = z.object({
   videoUrl: youtubeUrlSchema,
 })
@@ -105,7 +111,7 @@ export const feedbackRequestSchema = z.object({
 })
 
 export const generateContentRequestSchema = z.object({
-  videoUrl: youtubeUrlSchema,
+  videoUrl: generationSourceUrlSchema,
   rawTranscript: z
     .string()
     .trim()
@@ -175,7 +181,10 @@ export const userSettingsSchema = z.object({
     })
     .optional()
     .nullable(),
-  tgChannelId: telegramChannelIdSchema.optional().nullable(),
+  tgChannelId: z
+    .union([z.literal(""), telegramChannelIdSchema])
+    .optional()
+    .nullable(),
 })
 
 export const telegramShareSchema = z.object({

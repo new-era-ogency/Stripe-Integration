@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthSessionSync from "@/components/auth/AuthSessionSync";
 import AppFooter from "@/components/layout/AppFooter";
+import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { OpenAiKeyProvider } from "@/components/openai/OpenAiKeyProvider";
 import "./globals.css";
 
@@ -47,9 +48,11 @@ export default function RootLayout({
         className={`${geistSans.className} dark min-h-full flex flex-col bg-[#000000] text-gray-50 antialiased`}
       >
         <AuthSessionSync />
-        <OpenAiKeyProvider>
-          <main className="flex-1">{children}</main>
-        </OpenAiKeyProvider>
+        <ToastProvider>
+          <OpenAiKeyProvider>
+            <main className="flex-1">{children}</main>
+          </OpenAiKeyProvider>
+        </ToastProvider>
         <AppFooter />
       </body>
     </html>

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useOpenAiKey } from "@/components/openai/OpenAiKeyProvider"
 
@@ -21,20 +22,21 @@ export default function OpenAiKeyStatusBadge({
 
   if (hasOpenAiKey) {
     return (
-      <span
+      <Link
+        href="/dashboard#settings"
         className={cn(
-          "inline-flex items-center rounded-full border border-emerald-500/25 bg-emerald-500/10 font-medium text-emerald-300 transition-colors",
+          "inline-flex items-center rounded-full border border-emerald-500/25 bg-emerald-500/10 font-medium text-emerald-300 transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/15",
           sizeClasses,
           className
         )}
-        title="OpenAI API key connected in this browser"
+        title="Your OpenRouter key is connected — open Settings to change it"
       >
         <span
           className="size-1.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
           aria-hidden
         />
-        OpenAI Active
-      </span>
+        Your key active
+      </Link>
     )
   }
 
@@ -47,10 +49,10 @@ export default function OpenAiKeyStatusBadge({
         sizeClasses,
         className
       )}
-      title="Connect your OpenAI API key to enable generation"
+      title="Add your OpenRouter API key to enable generation"
     >
       <span aria-hidden>⚠️</span>
-      API Key Missing
+      Add your API key
     </button>
   )
 }

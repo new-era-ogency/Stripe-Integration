@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import SuccessToast from "@/components/trial/SuccessToast"
+import { useToast } from "@/components/feedback/ToastProvider"
 import TrialConfetti from "@/components/trial/TrialConfetti"
 import type { TrialUiState } from "@/lib/trial/ui"
 import type { ViralActionType } from "@/lib/trial/types"
@@ -87,7 +87,7 @@ export default function TrialExtensionModal({
   )
   const [error, setError] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const { success: toastSuccess } = useToast()
 
   useEffect(() => {
     setClaimedActions(trial.claimedActions)
@@ -154,7 +154,7 @@ export default function TrialExtensionModal({
         setClaimedActions(nextTrial.claimedActions)
         onTrialUpdated(nextTrial)
         setShowConfetti(true)
-        setToastMessage(
+        toastSuccess(
           `Nice! +${daysGranted} trial day${daysGranted === 1 ? "" : "s"} unlocked.`
         )
         window.setTimeout(() => setShowConfetti(false), 1400)
@@ -168,7 +168,7 @@ export default function TrialExtensionModal({
         setLoadingAction(null)
       }
     },
-    [claimedActions, onTrialUpdated, trial]
+    [claimedActions, onTrialUpdated, toastSuccess, trial]
   )
 
   return (
@@ -310,11 +310,6 @@ export default function TrialExtensionModal({
         ) : null}
       </AnimatePresence>
 
-      <SuccessToast
-        open={Boolean(toastMessage)}
-        message={toastMessage ?? ""}
-        onClose={() => setToastMessage(null)}
-      />
     </>
   )
 }

@@ -20,15 +20,15 @@ export default function ByokCostExplainer({
       type="button"
       onClick={() => setExpanded((current) => !current)}
       className={cn(
-        "inline-flex items-center gap-1 text-left text-xs text-violet-400 transition-colors hover:text-violet-300",
-        variant === "card" && "text-sm"
+        "inline-flex w-full items-center justify-between gap-2 text-left text-sm text-zinc-300 transition-colors hover:text-white",
+        variant === "inline" && "w-auto text-xs text-violet-400 hover:text-violet-300"
       )}
       aria-expanded={expanded}
     >
-      How much does this cost me?
+      <span>How much does this cost me?</span>
       <ChevronDown
         className={cn(
-          "size-3.5 transition-transform duration-200",
+          "size-4 shrink-0 text-zinc-500 transition-transform duration-200",
           expanded && "rotate-180"
         )}
         aria-hidden
@@ -40,22 +40,21 @@ export default function ByokCostExplainer({
     <div
       className={cn(
         "overflow-hidden transition-all duration-300",
-        expanded ? "mt-3 max-h-48 opacity-100" : "max-h-0 opacity-0"
+        expanded ? "mt-3 max-h-56 opacity-100" : "max-h-0 opacity-0"
       )}
     >
       <p className="text-sm leading-relaxed text-zinc-400">
-        PulseFlow is free. OpenAI bills you directly — typically a fraction of a
-        cent per generation with{" "}
-        <span className="text-zinc-300">gpt-4o-mini</span> or a few cents with{" "}
-        <span className="text-zinc-300">gpt-4o</span>. No PulseFlow markup, no
-        hidden SaaS fees. Check usage anytime on your{" "}
+        PulseFlow is free. OpenRouter bills you directly — many models cost a
+        fraction of a cent per run, and free-tier models are available on your
+        account. No PulseFlow markup or hidden SaaS fees. Check usage anytime on
+        your{" "}
         <a
-          href="https://platform.openai.com/usage"
+          href="https://openrouter.ai/activity"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-violet-400 hover:text-violet-300"
         >
-          OpenAI billing dashboard
+          OpenRouter activity dashboard
           <ExternalLink className="size-3" aria-hidden />
         </a>
         .
@@ -67,7 +66,7 @@ export default function ByokCostExplainer({
     return (
       <div
         className={cn(
-          "rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3",
+          "rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-4 py-3.5",
           className
         )}
       >

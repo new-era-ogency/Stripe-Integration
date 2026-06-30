@@ -68,12 +68,12 @@ export default function FaqAccordion() {
 
       <AnimatedSection className={`max-w-2xl ${SECTION_CONTENT_GAP}`}>
         <p className="text-sm text-zinc-500">Still have doubts?</p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link href="/dashboard" className={BTN_PRIMARY}>
             Launch dashboard
           </Link>
-          <Link href="/#faq" className={BTN_SECONDARY}>
-            Read FAQ
+          <Link href="/guide/openrouter-key" className={BTN_SECONDARY}>
+            OpenRouter setup guide
           </Link>
         </div>
       </AnimatedSection>

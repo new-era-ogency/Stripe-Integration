@@ -9,7 +9,10 @@ import {
   getClientIp,
   internalErrorResponse,
 } from "@/lib/api/security"
-import { getOpenRouterModel } from "@/lib/ai/openrouter"
+import { requireUserApiKey } from "@/lib/api/user-api-key"
+import { openRouterErrorResponse } from "@/lib/ai/openrouter-errors"
+import { enforceOpenRouterFreeTierLimit } from "@/lib/ai/openrouter-rate-limit"
+import { getOpenRouterModelForUser } from "@/lib/ai/openrouter"
 import { buildSystemPrompt } from "@/lib/ai/prompts"
 import { parseThreadChunks } from "@/lib/ai/thread-utils"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
@@ -36,6 +39,16 @@ export async function POST(request: Request) {
 
   if (rateLimited) {
     return rateLimited
+  }
+
+  const userKey = requireUserApiKey(request)
+  if (userKey instanceof NextResponse) {
+    return userKey
+  }
+
+  const openRouterLimited = enforceOpenRouterFreeTierLimit({ ip })
+  if (openRouterLimited) {
+    return openRouterLimited
   }
 
   try {
@@ -98,7 +111,7 @@ export async function POST(request: Request) {
     }
 
     const clippedTranscript = rawTranscript.slice(0, 12_000)
-    const model = getOpenRouterModel()
+    const model = getOpenRouterModelForUser(userKey.apiKey)
 
     const { text } = await generateText({
       model,
@@ -123,6 +136,12 @@ export async function POST(request: Request) {
       daysRemaining,
     })
   } catch (error) {
+    const rateLimitResponse = openRouterErrorResponse(error)
+    if (rateLimitResponse) {
+      console.warn("[trial-preview] OpenRouter rate limit:", error)
+      return rateLimitResponse
+    }
+
     return internalErrorResponse("trial-preview", error, { ip })
   }
 }

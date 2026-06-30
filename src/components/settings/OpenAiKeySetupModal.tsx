@@ -1,9 +1,11 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Lock, X } from "lucide-react"
 import OpenAiKeySetup from "@/components/settings/OpenAiKeySetup"
+import { OPENROUTER_API_KEY_GUIDE_PATH } from "@/lib/guides/openrouter-api-key"
 
 type OpenAiKeySetupModalProps = {
   open: boolean
@@ -62,11 +64,20 @@ export default function OpenAiKeySetupModal({
                   id="openai-key-modal-title"
                   className="text-lg font-semibold text-white"
                 >
-                  Add your OpenAI API key
+                  Add your OpenRouter API key
                 </h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Generation runs in your browser and bills your OpenAI account
-                  directly. Your key is never sent to PulseFlow servers.
+                  Your key stays in this browser. PulseFlow sends it only when you
+                  generate — OpenRouter bills your account directly.
+                </p>
+                <p className="mt-2 text-sm">
+                  <Link
+                    href={OPENROUTER_API_KEY_GUIDE_PATH}
+                    className="text-violet-400 hover:text-violet-300"
+                    onClick={onClose}
+                  >
+                    New here? Read the setup guide →
+                  </Link>
                 </p>
               </div>
               <button
@@ -86,6 +97,7 @@ export default function OpenAiKeySetupModal({
                   onKeySaved?.()
                   onClose()
                 }}
+                onKeyRemoved={onKeySaved}
               />
             </div>
           </motion.div>

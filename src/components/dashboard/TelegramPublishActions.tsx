@@ -12,7 +12,7 @@ type TelegramPublishActionsProps = {
   text: string
   tier: UserTier
   tgChannelId: string | null
-  onChannelSaved: (channelId: string) => void
+  onChannelSaved: (channelId: string | null) => void
   compact?: boolean
   showConnectOnly?: boolean
 }
@@ -188,7 +188,12 @@ export default function TelegramPublishActions({
           )}
         </Button>
         {hasChannel ? (
-          <p className="font-mono text-[10px] text-zinc-600">{tgChannelId}</p>
+          <p className="font-mono text-[10px] text-zinc-600">
+            {tgChannelId}{" "}
+            <a href="/dashboard#settings" className="text-violet-400 hover:text-violet-300">
+              Change
+            </a>
+          </p>
         ) : null}
         {error ? (
           <p className="max-w-xs text-right text-[11px] text-amber-300/90" role="alert">

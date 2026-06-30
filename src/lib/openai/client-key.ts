@@ -1,4 +1,8 @@
 import { assertByokFetchHostAllowed, BYOK_ALLOWED_FETCH_HOSTS } from "@/lib/api/byok-security"
+import {
+  OPENROUTER_API_BASE_URL,
+  PRODUCTION_OPENROUTER_MODEL,
+} from "@/lib/ai/models"
 
 /**
  * BYOK client module — API keys live only in browser localStorage and are sent
@@ -12,7 +16,7 @@ export { BYOK_ALLOWED_FETCH_HOSTS }
 
 export const OPENROUTER_REFERER = "https://www.pulseflow.art"
 export const OPENROUTER_APP_TITLE = "PulseFlow"
-export const DEFAULT_BYOK_MODEL = "openai/gpt-4o-mini"
+export const DEFAULT_BYOK_MODEL = PRODUCTION_OPENROUTER_MODEL
 
 export const OPENAI_MISSING_KEY_MESSAGE =
   "Please add your OpenRouter API key in Settings to proceed."
@@ -23,9 +27,9 @@ export const OPENAI_INVALID_KEY_MESSAGE =
 export const OPENAI_RATE_LIMIT_MESSAGE =
   "OpenRouter rate limit exceeded or your account has insufficient balance. Please check your OpenRouter credits and try again."
 
-const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+const OPENROUTER_MODELS_URL = `${OPENROUTER_API_BASE_URL}/models`
 export const OPENROUTER_CHAT_COMPLETIONS_URL =
-  "https://openrouter.ai/api/v1/chat/completions"
+  `${OPENROUTER_API_BASE_URL}/chat/completions`
 
 /** @deprecated Use OPENROUTER_CHAT_COMPLETIONS_URL */
 export const OPENAI_CHAT_COMPLETIONS_URL = OPENROUTER_CHAT_COMPLETIONS_URL

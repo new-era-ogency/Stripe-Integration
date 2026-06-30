@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import HeroVideoBackground from "@/components/landing/HeroVideoBackground"
-import FlowDiagram from "@/components/landing/FlowDiagram"
+import HeroFlowPreview from "@/components/landing/HeroFlowPreview"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import {
   ACCENT_TEXT,
@@ -63,31 +63,7 @@ export default function LandingHero() {
             delay={0.08}
             className="col-span-12 lg:col-span-6"
           >
-            <div className="landing-product-glow rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-6 md:p-8">
-              <p className="text-xs font-semibold uppercase tracking-wider text-violet-400">
-                The flow
-              </p>
-              <p className="mt-2 text-lg font-semibold text-white">
-                Conversation → clarity → committed work
-              </p>
-              <div className="mt-6">
-                <FlowDiagram
-                  nodes={[
-                    "Upload meeting",
-                    "AI extracts tasks",
-                    "Kanban updated",
-                  ]}
-                  animated
-                />
-              </div>
-              <a
-                href={ctaStrategy.primary.href}
-                className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-violet-300 transition-colors hover:text-violet-200"
-              >
-                Play with the full product shell
-                <ArrowRight className="size-3.5" />
-              </a>
-            </div>
+            <HeroFlowPreview />
           </AnimatedSection>
         </div>
       </div>

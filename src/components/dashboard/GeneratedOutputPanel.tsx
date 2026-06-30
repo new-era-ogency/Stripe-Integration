@@ -19,6 +19,7 @@ import {
 import type { GeneratedContent } from "@/lib/generations"
 import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
 import TelegramPublishActions from "@/components/dashboard/TelegramPublishActions"
+import { useToast } from "@/components/feedback/ToastProvider"
 
 type OutputTabId =
   | "twitter"
@@ -31,7 +32,7 @@ type GeneratedOutputPanelProps = {
   content: GeneratedContent
   tier: UserTier
   tgChannelId?: string | null
-  onTgChannelSaved?: (channelId: string) => void
+  onTgChannelSaved?: (channelId: string | null) => void
   styleTone?: string
 }
 
@@ -153,15 +154,23 @@ function ProMaxLockOverlay() {
 }
 
 function CopyButton({ label, text }: { label: string; text: string }) {
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text)
-    alert("Copied to clipboard!")
+  const { success: toastSuccess, error: toastError } = useToast()
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toastSuccess("Copied to clipboard!")
+    } catch {
+      toastError("Could not copy to clipboard.")
+    }
   }
 
   return (
     <button
       type="button"
-      onClick={handleCopy}
+      onClick={() => {
+        void handleCopy()
+      }}
       className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-500 transition-colors hover:text-white"
       aria-label={`Copy ${label}`}
     >

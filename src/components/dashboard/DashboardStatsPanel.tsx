@@ -23,8 +23,11 @@ export default function DashboardStatsPanel({
           BYOK dashboard
         </p>
         <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-          PulseFlow is free. Connect your OpenAI key in the header, add a
-          source in{" "}
+          PulseFlow is free. Add your OpenRouter key in{" "}
+          <a href="#settings" className="font-medium text-violet-300 hover:text-violet-200">
+            Settings
+          </a>
+          , add a source in{" "}
           <a href="#create" className="font-medium text-violet-300 hover:text-violet-200">
             Create
           </a>
@@ -34,10 +37,10 @@ export default function DashboardStatsPanel({
 
       {!isGuest && authChecked && hasOpenAiKey ? (
         <div className={panelClass}>
-          <p className="text-xs text-zinc-500">OpenAI usage</p>
+          <p className="text-xs text-zinc-500">OpenRouter usage</p>
           <p className="mt-2 text-base font-medium text-white">~$0.01 / run</p>
           <p className="mt-1 text-xs text-zinc-500">
-            Billed directly by OpenAI to your account.
+            Billed directly by OpenRouter to your account.
           </p>
         </div>
       ) : null}

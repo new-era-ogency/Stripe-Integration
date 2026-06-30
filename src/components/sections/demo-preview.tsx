@@ -15,6 +15,8 @@ import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import FeedbackForm, {
   type FeedbackTrigger,
 } from "@/components/sections/feedback-form"
+import { buildUserApiKeyHeaders } from "@/lib/api/byok-request-headers"
+import { OPENROUTER_API_KEY_GUIDE_PATH } from "@/lib/guides/openrouter-api-key"
 import { BTN_PRIMARY } from "@/lib/landing-styles"
 import {
   getTrialDaysRemaining,
@@ -111,6 +113,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
   const [trialExpiresAt, setTrialExpiresAt] = useState<string>("")
   const [daysRemaining, setDaysRemaining] = useState(TRIAL_PRO_PERIOD_DAYS)
   const [error, setError] = useState<string | null>(null)
+  const [showKeyGuide, setShowKeyGuide] = useState(false)
   const [ready, setReady] = useState(false)
   const [showFeedbackForm, setShowFeedbackForm] = useState(false)
   const [feedbackTrigger, setFeedbackTrigger] =
@@ -138,6 +141,7 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
     async (event: React.FormEvent) => {
       event.preventDefault()
       setError(null)
+      setShowKeyGuide(false)
 
       const url = inputUrl.trim()
 
@@ -157,7 +161,10 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
       try {
         const response = await fetch("/api/trial/preview", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...buildUserApiKeyHeaders(),
+          },
           body: JSON.stringify({
             videoUrl: url,
             trialExpiresAt,
@@ -167,6 +174,17 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
         const data = (await response.json()) as PreviewResponse
 
         if (!response.ok) {
+          if (
+            (response.status === 401 || response.status === 403) &&
+            data.code === "BYOK_REQUIRED"
+          ) {
+            setError(
+              "Add your OpenRouter API key to generate. Use the nav button or follow the setup guide."
+            )
+            setShowKeyGuide(true)
+            return
+          }
+
           if (response.status === 403 && data.code === "TRIAL_EXPIRED") {
             setDaysRemaining(0)
             openFeedback("trial_exhausted")
@@ -281,6 +299,17 @@ export default function DemoPreview({ id, className = "" }: DemoPreviewProps) {
           {error ? (
             <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
               {error}
+              {showKeyGuide ? (
+                <>
+                  {" "}
+                  <Link
+                    href={OPENROUTER_API_KEY_GUIDE_PATH}
+                    className="font-medium text-violet-300 underline underline-offset-2 hover:text-violet-200"
+                  >
+                    Setup guide
+                  </Link>
+                </>
+              ) : null}
             </p>
           ) : null}
 

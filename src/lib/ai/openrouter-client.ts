@@ -1,19 +1,16 @@
 import OpenAI from "openai"
 import { getSiteUrl } from "@/lib/auth/site-url"
+import {
+  OPENROUTER_API_BASE_URL,
+  PRODUCTION_OPENROUTER_MODEL,
+} from "@/lib/ai/models"
 
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-export const AGENT_MODEL = "openai/gpt-4o-mini"
+export const AGENT_MODEL = PRODUCTION_OPENROUTER_MODEL
 
-/** Server-only OpenRouter client via the official OpenAI SDK. */
-export function createOpenRouterClient(): OpenAI {
-  const apiKey = process.env.OPENROUTER_API_KEY
-
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured")
-  }
-
+/** Server-only OpenRouter client via the official OpenAI SDK (user BYOK key). */
+export function createOpenRouterClientForUser(apiKey: string): OpenAI {
   return new OpenAI({
-    baseURL: OPENROUTER_BASE_URL,
+    baseURL: OPENROUTER_API_BASE_URL,
     apiKey,
     defaultHeaders: {
       "HTTP-Referer": getSiteUrl(),

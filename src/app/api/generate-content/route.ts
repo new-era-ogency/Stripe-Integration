@@ -2,7 +2,6 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import {
-  badRequestResponse,
   forbiddenResponse,
   isErrorResponse,
   paymentRequiredResponse,
@@ -11,13 +10,16 @@ import {
 import { parseRequestJsonBody } from "@/lib/api/parse-body"
 import { RATE_LIMITS } from "@/lib/api/rate-limits"
 import { enforceRateLimit, internalErrorResponse } from "@/lib/api/security"
+import { requireUserApiKey } from "@/lib/api/user-api-key"
 import {
   parseProContentPack,
   parseProMaxContentPack,
   proMaxPackToLegacyFields,
   proPackToLegacyFields,
 } from "@/lib/ai/content-pack"
-import { getOpenRouterModel } from "@/lib/ai/openrouter"
+import { openRouterErrorResponse } from "@/lib/ai/openrouter-errors"
+import { enforceOpenRouterFreeTierLimit } from "@/lib/ai/openrouter-rate-limit"
+import { getOpenRouterModelForUser } from "@/lib/ai/openrouter"
 import { buildGenerationPrompts } from "@/lib/ai/prompts"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
 import type { GeneratedContent } from "@/lib/generations"
@@ -36,6 +38,16 @@ import {
 } from "@/lib/validation"
 
 type OpenRouterModel = ReturnType<ReturnType<typeof createOpenAI>>
+
+function resolveStoredSourceUrl(videoUrl: string): string {
+  const videoId = extractYouTubeVideoId(videoUrl)
+
+  if (videoId) {
+    return `https://www.youtube.com/watch?v=${videoId}`
+  }
+
+  return videoUrl.trim()
+}
 
 async function generateStarterContent(
   model: OpenRouterModel,
@@ -129,6 +141,16 @@ export async function POST(request: Request) {
     return rateLimited
   }
 
+  const userKey = requireUserApiKey(request)
+  if (userKey instanceof NextResponse) {
+    return userKey
+  }
+
+  const openRouterLimited = enforceOpenRouterFreeTierLimit({ userId: user.id })
+  if (openRouterLimited) {
+    return openRouterLimited
+  }
+
   try {
     const trial = await checkTrialStatus(user.id, { supabase })
 
@@ -149,13 +171,7 @@ export async function POST(request: Request) {
     }
 
     const { rawTranscript, videoUrl } = parsed.data
-    const videoId = extractYouTubeVideoId(videoUrl)
-
-    if (!videoId) {
-      return badRequestResponse("Invalid YouTube video ID")
-    }
-
-    const sanitizedVideoUrl = `https://www.youtube.com/watch?v=${videoId}`
+    const storedSourceUrl = resolveStoredSourceUrl(videoUrl)
 
     const { data: profile, error: profileError } = await supabase
       .from("users")
@@ -233,7 +249,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const model = getOpenRouterModel(limits.modelId)
+    const model = getOpenRouterModelForUser(userKey.apiKey)
 
     const generatedContent =
       prompts.mode === "pro_max"
@@ -261,7 +277,7 @@ export async function POST(request: Request) {
     try {
       generation = await saveUserGeneration(supabase, {
         userId: user.id,
-        youtubeUrl: sanitizedVideoUrl,
+        youtubeUrl: storedSourceUrl,
         generatedContent: {
           ...generatedContent,
           rawTranscript,
@@ -282,14 +298,17 @@ export async function POST(request: Request) {
       tier: flags.tier,
     })
   } catch (error) {
+    const rateLimitResponse = openRouterErrorResponse(error)
+    if (rateLimitResponse) {
+      console.warn("[generate-content] OpenRouter rate limit:", error)
+      return rateLimitResponse
+    }
+
     const message =
       error instanceof Error ? error.message : "Unknown generation error"
 
-    if (
-      message.includes("No endpoints found") ||
-      message.includes("OPENROUTER_API_KEY")
-    ) {
-      console.error("[generate-content] OpenRouter configuration error:", error)
+    if (message.includes("No endpoints found")) {
+      console.error("[generate-content] OpenRouter model error:", error)
       return NextResponse.json(
         {
           error:

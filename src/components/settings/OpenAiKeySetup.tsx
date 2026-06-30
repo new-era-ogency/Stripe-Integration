@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useCallback, useEffect, useId, useState } from "react"
-import { AlertCircle, Check, Eye, EyeOff, Loader2, Lock } from "lucide-react"
+import { AlertCircle, Check, Eye, EyeOff, Loader2, Lock, Trash2 } from "lucide-react"
 import {
   authInputClassName,
   authLabelClassName,
@@ -16,6 +17,7 @@ import {
   validateOpenAiKey,
   writeStoredOpenAiKey,
 } from "@/lib/openai/client-key"
+import { OPENROUTER_API_KEY_GUIDE_PATH } from "@/lib/guides/openrouter-api-key"
 import { cn } from "@/lib/utils"
 
 type ValidationState =
@@ -27,11 +29,19 @@ type ValidationState =
 type OpenAiKeySetupProps = {
   embedded?: boolean
   onKeyValidated?: () => void
+  onKeyRemoved?: () => void
 }
+
+const primaryButtonClassName =
+  "h-10 rounded-lg bg-white px-5 text-sm font-medium text-black hover:bg-zinc-200 focus-visible:ring-0 disabled:opacity-50"
+
+const secondaryButtonClassName =
+  "h-10 rounded-lg border-zinc-700 bg-transparent px-4 text-sm text-zinc-300 hover:bg-zinc-900"
 
 export default function OpenAiKeySetup({
   embedded = false,
   onKeyValidated,
+  onKeyRemoved,
 }: OpenAiKeySetupProps) {
   const inputId = useId()
   const [apiKey, setApiKey] = useState("")
@@ -54,6 +64,7 @@ export default function OpenAiKeySetup({
     if (!trimmed) {
       clearStoredOpenAiKey()
       setValidation({ status: "idle" })
+      onKeyRemoved?.()
       return
     }
 
@@ -78,7 +89,8 @@ export default function OpenAiKeySetup({
 
     clearStoredOpenAiKey()
     setValidation({ status: "invalid", message: result.message })
-  }, [onKeyValidated])
+    onKeyRemoved?.()
+  }, [onKeyRemoved, onKeyValidated])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -93,14 +105,31 @@ export default function OpenAiKeySetup({
     await persistAndValidate(apiKey)
   }
 
+  const handleRemoveKey = () => {
+    clearStoredOpenAiKey()
+    setApiKey("")
+    setShowKey(false)
+    setValidation({ status: "idle" })
+    onKeyRemoved?.()
+  }
+
+  const handleChangeKey = () => {
+    clearStoredOpenAiKey()
+    setApiKey("")
+    setShowKey(true)
+    setValidation({ status: "idle" })
+    onKeyRemoved?.()
+  }
+
   const isValidating = validation.status === "validating"
+  const hasSavedKey = validation.status === "valid" && Boolean(apiKey.trim())
 
   return (
     <form
       className={
         embedded
-          ? "w-full space-y-4"
-          : "w-full max-w-md space-y-4 rounded-2xl border border-violet-500/10 bg-[#050505]/80 p-6 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)] backdrop-blur-xl"
+          ? "w-full space-y-5"
+          : "w-full max-w-md space-y-5 rounded-2xl border border-violet-500/10 bg-[#050505]/80 p-6 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)] backdrop-blur-xl"
       }
       onSubmit={handleSubmit}
       autoComplete="off"
@@ -110,20 +139,38 @@ export default function OpenAiKeySetup({
           <div className="flex items-center gap-2 text-violet-300">
             <Lock className="size-4" aria-hidden />
             <h2 className="text-sm font-semibold uppercase tracking-widest">
-              OpenAI API key
+              OpenRouter API key
             </h2>
           </div>
           <p className="text-xs leading-relaxed text-zinc-500">
-            Stored only in this browser&apos;s localStorage. Validation and
-            generation call OpenAI directly — your key never leaves this device
-            or reaches PulseFlow servers.
+            Stored in this browser&apos;s localStorage. Sent to OpenRouter when you
+            generate — not saved in PulseFlow&apos;s database.{" "}
+            <Link
+              href={OPENROUTER_API_KEY_GUIDE_PATH}
+              className="text-violet-400 hover:text-violet-300"
+            >
+              Setup guide
+            </Link>
           </p>
         </div>
-      ) : null}
+      ) : (
+        <p className="text-sm leading-relaxed text-zinc-400">
+          Paste your personal OpenRouter key below.{" "}
+          <Link
+            href={OPENROUTER_API_KEY_GUIDE_PATH}
+            className="text-violet-400 hover:text-violet-300"
+          >
+            How to get a key →
+          </Link>
+        </p>
+      )}
 
       <div className="space-y-2">
-        <Label htmlFor={inputId} className={authLabelClassName}>
-          API key
+        <Label
+          htmlFor={inputId}
+          className={cn(authLabelClassName, embedded && "normal-case tracking-normal text-zinc-400")}
+        >
+          Your OpenRouter API key
         </Label>
         <div className="relative">
           <Input
@@ -147,7 +194,7 @@ export default function OpenAiKeySetup({
             disabled={isValidating}
             data-1p-ignore
             data-lpignore="true"
-            className={cn(authInputClassName, "pr-11")}
+            className={cn(authInputClassName, "pr-11 font-mono text-sm")}
           />
           <button
             type="button"
@@ -172,30 +219,30 @@ export default function OpenAiKeySetup({
           aria-live="polite"
         >
           <Loader2 className="size-4 animate-spin" aria-hidden />
-          Validating...
+          Validating…
         </p>
       ) : null}
 
       {validation.status === "valid" ? (
-        <p
-          className="flex items-center gap-2 text-sm text-emerald-400"
+        <div
+          className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 text-sm text-emerald-300"
           role="status"
           aria-live="polite"
         >
-          <Check className="size-4" aria-hidden />
-          Key is valid and saved securely in this browser
-        </p>
+          <Check className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden />
+          <span>Key saved in this browser — only your key is used for generation.</span>
+        </div>
       ) : null}
 
       {validation.status === "invalid" ? (
         <div
-          className="flex items-start gap-2 text-sm text-red-400"
+          className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5 text-sm text-red-300"
           role="alert"
           aria-live="assertive"
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
           <div>
-            <p className="font-medium">Invalid API Key</p>
+            <p className="font-medium text-red-200">Invalid API key</p>
             <p className="mt-1 leading-relaxed text-red-300/90">
               {validation.message}
             </p>
@@ -203,20 +250,50 @@ export default function OpenAiKeySetup({
         </div>
       ) : null}
 
-      <Button
-        type="submit"
-        disabled={isValidating || !apiKey.trim()}
-        className="h-11 w-full rounded-lg bg-white font-medium text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all duration-300 hover:bg-zinc-200 focus-visible:ring-0 disabled:opacity-50"
-      >
-        {isValidating ? (
-          <span className="flex items-center gap-2">
-            <Loader2 className="size-4 animate-spin" />
-            Validating...
-          </span>
-        ) : (
-          "Save & validate key"
-        )}
-      </Button>
+      <div className="space-y-3 border-t border-zinc-800/80 pt-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button
+            type="submit"
+            disabled={isValidating || !apiKey.trim()}
+            className={cn(primaryButtonClassName, "w-full sm:w-auto")}
+          >
+            {isValidating ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                Validating…
+              </span>
+            ) : hasSavedKey ? (
+              "Update key"
+            ) : (
+              "Save & validate key"
+            )}
+          </Button>
+
+          {hasSavedKey ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleChangeKey}
+                disabled={isValidating}
+                className={secondaryButtonClassName}
+              >
+                Change key
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleRemoveKey}
+                disabled={isValidating}
+                className="h-10 rounded-lg border-red-500/25 bg-transparent px-4 text-sm text-red-300 hover:bg-red-500/10 hover:text-red-200"
+              >
+                <Trash2 className="mr-1.5 size-3.5" />
+                Remove
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </div>
     </form>
   )
 }

@@ -1,18 +1,16 @@
 import { createOpenAI } from "@ai-sdk/openai"
 import { getSiteUrl } from "@/lib/auth/site-url"
+import {
+  OPENROUTER_API_BASE_URL,
+  PRODUCTION_OPENROUTER_MODEL,
+} from "@/lib/ai/models"
 
-export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
+export const DEFAULT_OPENROUTER_MODEL = PRODUCTION_OPENROUTER_MODEL
 
-/** Server-only OpenRouter client. Never import this from client components. */
-export function getOpenRouterModel(modelId = DEFAULT_OPENROUTER_MODEL) {
-  const apiKey = process.env.OPENROUTER_API_KEY
-
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured")
-  }
-
+/** Server-only: OpenRouter client using the caller's BYOK key. */
+export function getOpenRouterModelForUser(apiKey: string) {
   const openrouter = createOpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
+    baseURL: OPENROUTER_API_BASE_URL,
     apiKey,
     headers: {
       "HTTP-Referer": getSiteUrl(),
@@ -20,5 +18,5 @@ export function getOpenRouterModel(modelId = DEFAULT_OPENROUTER_MODEL) {
     },
   })
 
-  return openrouter(modelId)
+  return openrouter(PRODUCTION_OPENROUTER_MODEL)
 }
