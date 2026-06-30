@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Code2, ExternalLink } from "lucide-react"
 import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
-import { footerLinks } from "@/lib/landing-content"
+import { brandIdentity, footerLinks } from "@/lib/landing-content"
 
 function FooterLink({
   href,
@@ -41,8 +41,7 @@ export default function AppFooter() {
               <PulseFlowLogo size="sm" showWordmark />
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
-              Free BYOK dashboard for creators. Paste YouTube links, connect
-              your OpenAI key, and generate multi-platform content in your browser.
+              {brandIdentity.tagline} {brandIdentity.supportLine}
             </p>
             <a
               href={footerLinks.developers[1].href}
@@ -61,7 +60,7 @@ export default function AppFooter() {
             </p>
             <ul className="mt-4 space-y-2.5">
               {footerLinks.product.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <FooterLink href={link.href} label={link.label} />
                 </li>
               ))}
@@ -74,7 +73,7 @@ export default function AppFooter() {
             </p>
             <ul className="mt-4 space-y-2.5">
               {footerLinks.developers.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <FooterLink
                     href={link.href}
                     label={link.label}
@@ -89,7 +88,7 @@ export default function AppFooter() {
         <div className="mt-10 border-t border-zinc-900 pt-8">
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {footerLinks.resources.map((link) => (
-              <li key={link.href}>
+              <li key={link.label}>
                 <FooterLink href={link.href} label={link.label} />
               </li>
             ))}

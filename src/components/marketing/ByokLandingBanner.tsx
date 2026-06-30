@@ -38,21 +38,21 @@ export default function ByokLandingBanner() {
           <KeyRound className="size-4 shrink-0 text-emerald-300" />
           <span>
             <span className="font-semibold text-white">
-              100% free BYOK dashboard
+              Try the interactive demo
             </span>
             <span className="hidden text-emerald-200/80 sm:inline">
               {" "}
-              — bring your OpenAI key, pay OpenAI directly, zero PulseFlow markup.
+              — no signup. Play with Kanban, AI chat, and AI Meetings in your browser.
             </span>
           </span>
         </div>
-        <Link
-          href="/dashboard"
+        <a
+          href="/#interactive-demo"
           className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-100 transition-colors hover:border-emerald-400/50 hover:bg-emerald-500/25"
         >
-          Launch Dashboard (Free)
+          Try Interactive Demo
           <ArrowRight className="size-3.5" />
-        </Link>
+        </a>
       </div>
     </div>
   )

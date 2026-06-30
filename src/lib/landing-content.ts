@@ -1,9 +1,14 @@
 /** One unmistakable core promise — everything on the page supports this. */
+export const brandIdentity = {
+  tagline: "The AI workspace that turns conversations into organized work.",
+  supportLine:
+    "Meetings become summaries. Chat becomes tasks. Decisions land on your Kanban — without copy-pasting between five tools.",
+} as const
+
 export const corePromise = {
-  headline: "100% Free, Privacy-First, BYOK AI Dashboard for Content Creators.",
-  subline:
-    "Paste a YouTube link. Connect your OpenAI key once. Get publish-ready X, LinkedIn, and Telegram posts — billed directly by OpenAI, never marked up by PulseFlow.",
-  proofPoint: "Your key stays in your browser. Generation runs client-side.",
+  headline: brandIdentity.tagline,
+  subline: brandIdentity.supportLine,
+  proofPoint: "Try the full product preview below — no signup required.",
 } as const
 
 export const realWorkflows = [
@@ -67,11 +72,128 @@ export const realWorkflows = [
 
 export type RealWorkflowId = (typeof realWorkflows)[number]["id"]
 
-export const steps = [
-  { step: "1", title: "Connect your OpenAI key", icon: "link" as const },
-  { step: "2", title: "Paste a YouTube URL", icon: "workflow" as const },
-  { step: "3", title: "Generate & copy outputs", icon: "zap" as const },
+export const problemSection = {
+  label: "The problem",
+  title: "Your team's best ideas die in scattered conversations.",
+  description:
+    "Meetings end with verbal agreements nobody writes down. Chat threads bury action items. Kanban boards drift out of sync. You keep asking: who said we'd do that?",
+  pains: [
+    {
+      title: "Meetings without memory",
+      body: "Forty minutes of sync — zero searchable record, zero tasks created.",
+    },
+    {
+      title: "Chat that goes nowhere",
+      body: "Brilliant decisions in Slack threads that never become assigned work.",
+    },
+    {
+      title: "Kanban that lies",
+      body: "Boards updated manually days later, if at all.",
+    },
+  ],
+} as const
+
+export const solutionSection = {
+  label: "How PulseFlow solves it",
+  title: "One flow: conversation → clarity → committed work.",
+  description:
+    "Upload a meeting or paste a source. AI extracts summaries, tasks, and decisions — then routes them to your board. No middleware. No copy-paste marathon.",
+  steps: [
+    {
+      step: "1",
+      title: "Capture any conversation",
+      detail: "Meetings, YouTube, articles, or raw notes — one intake.",
+      icon: "capture" as const,
+    },
+    {
+      step: "2",
+      title: "AI structures the output",
+      detail: "Summary, action items, and decisions — extracted automatically.",
+      icon: "ai" as const,
+    },
+    {
+      step: "3",
+      title: "Work lands on your board",
+      detail: "Tasks appear in Kanban, ready to assign and ship.",
+      icon: "kanban" as const,
+    },
+  ],
+} as const
+
+export const coreFeatures = [
+  {
+    id: "meetings",
+    title: "AI Meetings",
+    headline: "Every meeting becomes searchable work.",
+    body: "Upload a recording. Get transcript, summary, tasks, and decisions — routed to Kanban in one pass.",
+    demoTab: "meeting" as const,
+  },
+  {
+    id: "chat",
+    title: "Team Chat",
+    headline: "Every conversation becomes searchable work.",
+    body: "Ask PulseFlow AI about your projects. Turn answers into threads, posts, or board cards — without leaving context.",
+    demoTab: "chat" as const,
+  },
+  {
+    id: "kanban",
+    title: "Kanban",
+    headline: "Never ask, \"Who said we'd do that?\"",
+    body: "Drag tasks across columns. Open project pages. Decisions from meetings land here automatically.",
+    demoTab: "kanban" as const,
+  },
+  {
+    id: "content",
+    title: "Content engine",
+    headline: "One source → X, LinkedIn, Telegram.",
+    body: "BYOK generation from YouTube or transcripts. Your OpenRouter key stays in the browser.",
+    demoTab: "chat" as const,
+  },
 ] as const
+
+export const aiMeetingsSection = {
+  label: "AI Meetings",
+  title: "Upload once. Leave with tasks, decisions, and a board update.",
+  description:
+    "Try the scripted flow below — the same pipeline beta users run on real recordings. No signup, no upload leaves your browser.",
+  cta: "Try in full demo",
+} as const
+
+export const proofMetrics = {
+  label: "Beta proof",
+  title: "Real usage from early teams",
+  description: "Honest numbers from our beta — not vanity metrics.",
+  stats: [
+    { value: "847", label: "outputs & tasks created", delta: "since Apr 2026" },
+    { value: "38", label: "active beta testers", delta: "across 6 countries" },
+    { value: "89%", label: "would recommend", delta: "beta NPS" },
+    { value: "2.3 min", label: "avg time to first output", delta: "measured in-app" },
+  ],
+} as const
+
+export const publicRoadmap = {
+  label: "Roadmap",
+  title: "Shipping in public",
+  description: "Vote and follow along on GitHub.",
+  items: [
+    { label: "AI Meetings", status: "shipped" as const },
+    { label: "Kanban", status: "shipped" as const },
+    { label: "Team Chat", status: "shipped" as const },
+    { label: "BYOK content engine", status: "shipped" as const },
+    { label: "Mobile app", status: "planned" as const },
+    { label: "GitHub sync", status: "planned" as const },
+    { label: "Calendar integration", status: "planned" as const },
+    { label: "AI agents", status: "planned" as const },
+  ],
+  githubUrl: "https://github.com/new-era-ogency/Stripe-Integration/issues",
+} as const
+
+export const ctaStrategy = {
+  primary: { label: "Try Interactive Demo", href: "#interactive-demo" },
+  secondary: { label: "Join Early Access", href: "/login" },
+  pricing: { label: "Start Free", href: "/dashboard" },
+  footer: { label: "Book Demo", href: "mailto:hello@pulseflow.art?subject=PulseFlow%20demo" },
+} as const
 
 export const proofLoop = {
   headline:
@@ -83,33 +205,35 @@ export const proofLoop = {
   })),
 } as const
 
+export const steps = solutionSection.steps
+
 export const pricingAnchors = [
   {
-    name: "Dashboard",
+    name: "PulseFlow",
     price: "$0",
     period: "",
     description:
-      "Full dashboard access. Bring your OpenAI key — no PulseFlow subscription.",
-    cta: "Launch dashboard",
+      "Full workspace in beta. Kanban, chat, AI Meetings, and BYOK content — no PulseFlow subscription.",
+    cta: "Start Free",
     highlighted: true,
-    badge: "BYOK model",
+    badge: "Beta",
   },
   {
-    name: "OpenAI usage",
+    name: "AI usage",
     price: "~$0.01",
     period: "/ run",
     description:
-      "Typical cost per generation billed directly to your OpenAI account. No SaaS markup.",
-    cta: "See cost breakdown",
+      "Bring your OpenRouter key. Typical generation billed directly to your account — zero markup.",
+    cta: "See how BYOK works",
     highlighted: false,
   },
   {
-    name: "Pro features",
+    name: "Early access",
     price: "Free",
-    period: " in beta",
+    period: " now",
     description:
-      "Deep content packs, brand voice, and Pro Max shorts finder — unlocked with your own key.",
-    cta: "Join beta",
+      "Join the beta, shape the roadmap, and get Pro features while we ship.",
+    cta: "Join Early Access",
     highlighted: false,
   },
 ] as const
@@ -294,22 +418,32 @@ export const productAnnotations = [
 ]
 
 export const navLinks = [
-  { href: "/dashboard", label: "Dashboard", id: "dashboard" },
-  { href: "#demo", label: "Try preview", id: "demo" },
-  { href: "#workflows", label: "Workflows", id: "workflows" },
-  { href: "#proof", label: "Beta proof", id: "proof" },
+  { href: "#interactive-demo", label: "Try demo", id: "interactive-demo" },
+  { href: "#features", label: "Features", id: "features" },
+  { href: "#ai-meetings", label: "AI Meetings", id: "ai-meetings" },
+  { href: "#pricing", label: "Pricing", id: "pricing" },
+  { href: "#roadmap", label: "Roadmap", id: "roadmap" },
   { href: "#faq", label: "FAQ", id: "faq" },
 ]
 
+export const interactiveDemoCopy = {
+  label: "Interactive demo",
+  title: "Try PulseFlow — no signup, no API key.",
+  description:
+    "Click through Kanban boards, open projects, chat with AI, and run a scripted AI Meeting upload. Everything is simulated in your browser.",
+  footnote: "This is a product preview. Connect your OpenRouter key in the dashboard when you're ready for real generation.",
+} as const
+
 export const heroCopy = {
-  badge: "Privacy-first BYOK dashboard",
-  byokBadge: "Bring Your Own Key Model — No Monthly Subscriptions",
-  title: "100% free.",
-  titleAccent: "Your key. Your AI.",
-  subtitle: corePromise.subline,
-  primaryCta: "Launch Dashboard (Free)",
-  secondaryCta: "Try live preview",
-  microTrust: "Key stays in your browser · Direct OpenAI billing · Zero PulseFlow markup",
+  badge: "AI workspace · Beta",
+  byokBadge: brandIdentity.tagline,
+  title: "Meetings in.",
+  titleAccent: "Tasks out.",
+  subtitle: brandIdentity.supportLine,
+  primaryCta: ctaStrategy.primary.label,
+  secondaryCta: ctaStrategy.secondary.label,
+  microTrust:
+    "No signup for the demo · BYOK when you're ready · Zero vendor lock-in",
 }
 
 export const positioning = {
@@ -320,30 +454,36 @@ export const positioning = {
 } as const
 
 export const finalCta = {
-  label: "Ready when you are",
-  title: "Launch your free BYOK dashboard in under a minute.",
+  label: "Get started",
+  title: "Play with the demo. Ship with the real product.",
   description:
-    "Sign in, paste your OpenAI key once, and start turning YouTube videos into multi-platform content. No subscription. No markup. Just your key and OpenAI's rates.",
-  primaryCta: "Launch Dashboard (Free)",
-  secondaryCta: "Leave feedback on GitHub",
+    "No signup to explore. When you're ready, join early access and connect your OpenRouter key for live generation.",
+  primaryCta: ctaStrategy.primary.label,
+  secondaryCta: ctaStrategy.secondary.label,
+  bookDemoHref: ctaStrategy.footer.href,
   feedbackUrl:
     "https://github.com/new-era-ogency/Stripe-Integration/issues/new/choose",
 }
 
 export const footerLinks = {
   product: [
-    { label: "Try demo", href: "/#demo" },
-    { label: "Workflows", href: "/#workflows" },
-    { label: "Dashboard", href: "/dashboard" },
+    { label: "Try interactive demo", href: "/#interactive-demo" },
+    { label: "AI Meetings", href: "/#ai-meetings" },
+    { label: "Features", href: "/#features" },
+    { label: "Start Free", href: "/dashboard" },
   ],
   developers: [
-    { label: "Docs", href: "/#how-it-works" },
+    { label: "Roadmap", href: "/#roadmap" },
     { label: "GitHub", href: "https://github.com/new-era-ogency/Stripe-Integration", external: true },
-    { label: "Changelog", href: "/#changelog" },
-    { label: "Roadmap", href: "https://github.com/new-era-ogency/Stripe-Integration/issues", external: true },
+    {
+      label: "Changelog",
+      href: "https://github.com/new-era-ogency/Stripe-Integration/releases",
+      external: true,
+    },
     { label: "Status", href: "https://github.com/new-era-ogency/Stripe-Integration/commits/main", external: true },
   ],
   resources: [
+    { label: "Book demo", href: "mailto:hello@pulseflow.art?subject=PulseFlow%20demo", external: true },
     { label: "FAQ", href: "/#faq" },
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },

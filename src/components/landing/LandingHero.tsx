@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import HeroVideoBackground from "@/components/landing/HeroVideoBackground"
-import DemoPreview from "@/components/sections/demo-preview"
+import FlowDiagram from "@/components/landing/FlowDiagram"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import {
   ACCENT_TEXT,
@@ -18,16 +18,16 @@ import {
   LANDING_CONTAINER,
   LANDING_GRID,
 } from "@/lib/landing-styles"
-import { corePromise, heroCopy } from "@/lib/landing-content"
+import { brandIdentity, ctaStrategy, heroCopy } from "@/lib/landing-content"
 
 export default function LandingHero() {
   return (
-    <section id="demo" className={HERO_SECTION}>
+    <section id="hero" className={HERO_SECTION}>
       <HeroVideoBackground />
 
       <div className={`${LANDING_CONTAINER} relative z-10 w-full`}>
         <div className={`${LANDING_GRID} items-center gap-y-10`}>
-          <AnimatedSection className="col-span-12 flex flex-col lg:col-span-5">
+          <AnimatedSection className="col-span-12 flex flex-col lg:col-span-6">
             <span className={HERO_BADGE_PILL}>{heroCopy.badge}</span>
 
             <span className={`mt-3 ${HERO_BYOK_BADGE}`}>
@@ -43,17 +43,17 @@ export default function LandingHero() {
             <p className={`mt-6 ${HERO_SUBTEXT}`}>{heroCopy.subtitle}</p>
 
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-500">
-              {corePromise.headline}
+              {brandIdentity.tagline}
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/dashboard" className={`group ${BTN_PRIMARY}`}>
+              <a href={ctaStrategy.primary.href} className={`group ${BTN_PRIMARY}`}>
                 {heroCopy.primaryCta}
                 <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
-              </Link>
-              <a href="#trial-demo" className={BTN_SECONDARY}>
-                {heroCopy.secondaryCta}
               </a>
+              <Link href={ctaStrategy.secondary.href} className={BTN_SECONDARY}>
+                {heroCopy.secondaryCta}
+              </Link>
             </div>
 
             <p className={`mt-6 ${HERO_MICRO_TRUST}`}>{heroCopy.microTrust}</p>
@@ -61,10 +61,32 @@ export default function LandingHero() {
 
           <AnimatedSection
             delay={0.08}
-            className="col-span-12 lg:col-span-7"
+            className="col-span-12 lg:col-span-6"
           >
-            <div className="landing-product-glow relative">
-              <DemoPreview id="trial-demo" />
+            <div className="landing-product-glow rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-6 md:p-8">
+              <p className="text-xs font-semibold uppercase tracking-wider text-violet-400">
+                The flow
+              </p>
+              <p className="mt-2 text-lg font-semibold text-white">
+                Conversation → clarity → committed work
+              </p>
+              <div className="mt-6">
+                <FlowDiagram
+                  nodes={[
+                    "Upload meeting",
+                    "AI extracts tasks",
+                    "Kanban updated",
+                  ]}
+                  animated
+                />
+              </div>
+              <a
+                href={ctaStrategy.primary.href}
+                className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-violet-300 transition-colors hover:text-violet-200"
+              >
+                Play with the full product shell
+                <ArrowRight className="size-3.5" />
+              </a>
             </div>
           </AnimatedSection>
         </div>

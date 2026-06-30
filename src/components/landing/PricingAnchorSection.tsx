@@ -1,20 +1,21 @@
 "use client"
 
 import Link from "next/link"
+import { ArrowRight, Calendar } from "lucide-react"
 import AnimatedSection, { StaggerItem } from "@/components/landing/AnimatedSection"
 import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
 import { BTN_PRIMARY, BTN_SECONDARY, CARD_INTERACTIVE } from "@/lib/landing-styles"
-import { pricingAnchors } from "@/lib/landing-content"
+import { brandIdentity, ctaStrategy, pricingAnchors } from "@/lib/landing-content"
 
 export default function PricingAnchorSection() {
   return (
     <SectionShell id="pricing" tone="elevated">
       <AnimatedSection>
         <SectionHeader
-          label="BYOK pricing"
-          title="Free dashboard. Pay OpenAI, not us."
-          description="PulseFlow never marks up your AI usage. Connect your OpenAI key once and pay only OpenAI's per-request rates."
+          label="Pricing"
+          title="Start free. Pay for AI only when you generate."
+          description={brandIdentity.supportLine}
           centered
         />
       </AnimatedSection>
@@ -50,7 +51,13 @@ export default function PricingAnchorSection() {
                   {plan.description}
                 </p>
                 <Link
-                  href={plan.name === "OpenAI usage" ? "/dashboard#settings" : "/dashboard"}
+                  href={
+                    plan.name === "Early access"
+                      ? ctaStrategy.secondary.href
+                      : plan.name === "AI usage"
+                        ? "/dashboard#settings"
+                        : ctaStrategy.pricing.href
+                  }
                   className={`mt-6 inline-flex justify-center ${
                     plan.highlighted ? BTN_PRIMARY : BTN_SECONDARY
                   }`}
@@ -63,9 +70,13 @@ export default function PricingAnchorSection() {
         </div>
 
         <AnimatedSection className="mt-8 text-center">
-          <p className="text-sm text-zinc-500">
-            Typical generation: ~$0.003–$0.02 billed directly to your OpenAI account.
-          </p>
+          <a
+            href={ctaStrategy.footer.href}
+            className={`inline-flex ${BTN_SECONDARY}`}
+          >
+            <Calendar className="mr-2 size-4" />
+            {ctaStrategy.footer.label}
+          </a>
         </AnimatedSection>
       </SectionHeaderSpacer>
     </SectionShell>

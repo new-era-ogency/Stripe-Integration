@@ -1,15 +1,19 @@
 "use client"
 
 import { PerfModeProvider } from "@/hooks/usePerfMode"
-import ChangelogSection from "@/components/landing/ChangelogSection"
-import CredibilitySection from "@/components/landing/CredibilitySection"
+import AiMeetingsSection from "@/components/landing/AiMeetingsSection"
+import CoreFeaturesSection from "@/components/landing/CoreFeaturesSection"
 import FaqAccordion from "@/components/landing/FaqAccordion"
-import HowItWorksSection from "@/components/landing/HowItWorksSection"
+import InteractiveDemoSection from "@/components/landing/InteractiveDemoSection"
 import LandingHero from "@/components/landing/LandingHero"
 import LandingNav from "@/components/landing/LandingNav"
 import LaunchBetaSection from "@/components/landing/LaunchBetaSection"
 import ByokLandingBanner from "@/components/marketing/ByokLandingBanner"
-import RealWorkflowsSection from "@/components/landing/RealWorkflowsSection"
+import PricingAnchorSection from "@/components/landing/PricingAnchorSection"
+import ProblemSection from "@/components/landing/ProblemSection"
+import ProofSection from "@/components/landing/ProofSection"
+import PublicRoadmapSection from "@/components/landing/PublicRoadmapSection"
+import SolutionSection from "@/components/landing/SolutionSection"
 import { LANDING_FRAME } from "@/lib/landing-styles"
 
 export default function HomePage() {
@@ -19,10 +23,14 @@ export default function HomePage() {
         <LandingNav />
         <ByokLandingBanner />
         <LandingHero />
-        <RealWorkflowsSection />
-        <HowItWorksSection />
-        <CredibilitySection />
-        <ChangelogSection />
+        <InteractiveDemoSection />
+        <ProblemSection />
+        <SolutionSection />
+        <CoreFeaturesSection />
+        <AiMeetingsSection />
+        <ProofSection />
+        <PricingAnchorSection />
+        <PublicRoadmapSection />
         <FaqAccordion />
         <LaunchBetaSection />
       </div>
