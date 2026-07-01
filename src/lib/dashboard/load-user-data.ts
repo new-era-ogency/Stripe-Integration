@@ -4,37 +4,105 @@ import {
   fetchClaimedViralActions,
   fetchUserGenerationsWithFallback,
   fetchUserProfileWithFallback,
+  formatSupabaseError,
   loadDashboardUserData,
   type DashboardUserData,
 } from "@/lib/dashboard/user-data-loader"
 
 export type { DashboardUserData }
 
-export async function fetchDashboardDataViaApi(): Promise<
+export type DashboardApiResult =
   | { ok: true; data: DashboardUserData }
-  | { ok: false; status: number }
-> {
-  const response = await fetch("/api/user-data", {
-    credentials: "same-origin",
-    cache: "no-store",
-  })
+  | { ok: false; status: number; networkError?: boolean }
 
-  if (!response.ok) {
-    return { ok: false, status: response.status }
-  }
-
-  const data = await response.json()
+function parseDashboardApiPayload(data: Record<string, unknown>): DashboardUserData {
+  const profile =
+    data.profile && typeof data.profile === "object"
+      ? (data.profile as Record<string, unknown>)
+      : null
 
   return {
-    ok: true,
-    data: {
-      credits: data.credits,
-      tier: data.tier ?? data.profile?.tier ?? "starter",
-      brandVoice: data.brandVoice ?? data.profile?.brand_voice ?? null,
-      tgChannelId: data.tgChannelId ?? data.profile?.tg_channel_id ?? null,
-      generations: data.generations ?? [],
-      trial: data.trial ?? null,
-    },
+    credits: typeof data.credits === "number" ? data.credits : 0,
+    tier: (data.tier ?? profile?.tier ?? "starter") as DashboardUserData["tier"],
+    brandVoice:
+      (data.brandVoice as string | null | undefined) ??
+      (profile?.brand_voice as string | null | undefined) ??
+      null,
+    tgChannelId:
+      (data.tgChannelId as string | null | undefined) ??
+      (profile?.tg_channel_id as string | null | undefined) ??
+      null,
+    generations: Array.isArray(data.generations)
+      ? (data.generations as DashboardUserData["generations"])
+      : [],
+    trial:
+      data.trial && typeof data.trial === "object"
+        ? (data.trial as DashboardUserData["trial"])
+        : null,
+  }
+}
+
+export async function fetchDashboardDataViaApi(): Promise<DashboardApiResult> {
+  try {
+    const response = await fetch("/api/user-data", {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      return { ok: false, status: response.status }
+    }
+
+    const data = (await response.json()) as Record<string, unknown>
+
+    return {
+      ok: true,
+      data: parseDashboardApiPayload(data),
+    }
+  } catch (error) {
+    console.warn(
+      "Dashboard user-data API request failed:",
+      formatSupabaseError(error)
+    )
+    return { ok: false, status: 0, networkError: true }
+  }
+}
+
+export async function loadDashboardDataForUser(
+  supabase: SupabaseClient,
+  userId: string,
+  options?: {
+    onSessionRefreshed?: () => void
+  }
+): Promise<{ ok: true; data: DashboardUserData } | { ok: false; error: string }> {
+  try {
+    let apiResult = await fetchDashboardDataViaApi()
+
+    if (!apiResult.ok && apiResult.status === 401) {
+      await supabase.auth.refreshSession()
+      options?.onSessionRefreshed?.()
+      await ensureServerProfile()
+      apiResult = await fetchDashboardDataViaApi()
+    }
+
+    if (apiResult.ok) {
+      return { ok: true, data: apiResult.data }
+    }
+
+    if (apiResult.networkError) {
+      console.warn("Falling back to direct Supabase load after API network error")
+    } else if (apiResult.status !== 401) {
+      console.warn(
+        "Dashboard user-data API unavailable, using client fallback:",
+        apiResult.status
+      )
+    }
+
+    await ensureServerProfile()
+    const data = await fetchDashboardDataViaClient(supabase, userId)
+    return { ok: true, data }
+  } catch (error) {
+    return { ok: false, error: formatSupabaseError(error) }
   }
 }
 

@@ -20,9 +20,8 @@ import {
 } from "@/lib/ai/content-pack"
 import {
   buildDashboardUserData,
-  ensureServerProfile,
-  fetchDashboardDataViaApi,
-  fetchDashboardDataViaClient,
+  loadDashboardDataForUser,
+  type DashboardUserData,
 } from "@/lib/dashboard/load-user-data"
 import { formatSupabaseError } from "@/lib/dashboard/user-data-loader"
 import type { GeneratedContent, GenerationRecord } from "@/lib/generations"
@@ -79,9 +78,23 @@ export default function DashboardPage() {
 
   const fetchUserData = useCallback(async () => {
     const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+
+    let user
+    try {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
+      user = authUser
+    } catch (error) {
+      console.warn("Auth session check failed:", formatSupabaseError(error))
+      setIsGuest(true)
+      setTier("starter")
+      setBrandVoice(null)
+      setTgChannelId(null)
+      setGenerations([])
+      setAuthChecked(true)
+      return
+    }
 
     if (!user) {
       setIsGuest(true)
@@ -93,17 +106,22 @@ export default function DashboardPage() {
       return
     }
 
-    const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
-    if (redirectPath === "/signup/complete") {
-      router.replace("/signup/complete")
-      return
+    try {
+      const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
+      if (redirectPath === "/signup/complete") {
+        router.replace("/signup/complete")
+        return
+      }
+    } catch (error) {
+      console.warn(
+        "Could not resolve post-auth redirect:",
+        formatSupabaseError(error)
+      )
     }
 
     setIsGuest(false)
 
-    const applyDashboardData = (data: Awaited<
-      ReturnType<typeof fetchDashboardDataViaClient>
-    >) => {
+    const applyDashboardData = (data: DashboardUserData) => {
       setTier(data.tier)
       setBrandVoice(data.brandVoice)
       setTgChannelId(data.tgChannelId)
@@ -111,35 +129,17 @@ export default function DashboardPage() {
       setAuthChecked(true)
     }
 
-    try {
-      let apiResult = await fetchDashboardDataViaApi()
+    const result = await loadDashboardDataForUser(supabase, user.id, {
+      onSessionRefreshed: () => router.refresh(),
+    })
 
-      if (!apiResult.ok && apiResult.status === 401) {
-        await supabase.auth.refreshSession()
-        router.refresh()
-        await ensureServerProfile()
-        apiResult = await fetchDashboardDataViaApi()
-      }
-
-      if (apiResult.ok) {
-        applyDashboardData(apiResult.data)
-        return
-      }
-
-      if (apiResult.status !== 401) {
-        console.warn(
-          "Dashboard user-data API unavailable, using client fallback:",
-          apiResult.status
-        )
-      }
-
-      await ensureServerProfile()
-      const clientData = await fetchDashboardDataViaClient(supabase, user.id)
-      applyDashboardData(clientData)
-    } catch (error) {
-      console.error("Error fetching user data:", formatSupabaseError(error))
-      applyDashboardData(buildDashboardUserData(null, [], []))
+    if (result.ok) {
+      applyDashboardData(result.data)
+      return
     }
+
+    console.error("Error fetching user data:", result.error)
+    applyDashboardData(buildDashboardUserData(null, [], []))
   }, [router])
 
   useEffect(() => {
