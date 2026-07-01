@@ -11,10 +11,10 @@ export const LANDING_CONTAINER =
 export const LANDING_GRID = "grid grid-cols-12 gap-6"
 
 export const HERO_SECTION =
-  "relative scroll-mt-28 overflow-hidden flex min-h-[700px] items-center lg:min-h-[750px] xl:min-h-[800px] py-16 lg:py-20"
+  "relative scroll-mt-28 overflow-hidden flex min-h-[min(100svh,640px)] items-center md:min-h-[700px] lg:min-h-[750px] xl:min-h-[800px] py-12 md:py-16 lg:py-20"
 
 export const LANDING_SECTION =
-  "landing-section relative scroll-mt-28 py-[120px] lg:py-[160px]"
+  "landing-section relative scroll-mt-28 py-16 md:py-[120px] lg:py-[160px]"
 
 export const SECTION_DIVIDER =
   "pointer-events-none absolute inset-x-0 top-0 h-px bg-zinc-800/80"
@@ -34,7 +34,7 @@ export const HERO_BYOK_BADGE =
   "inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-300 shadow-[0_0_24px_-8px_rgba(52,211,153,0.45)]"
 
 export const HERO_TITLE =
-  "font-bold tracking-[-0.035em] text-white text-[3.5rem] leading-[1.05] sm:text-[3.75rem] lg:text-[4.5rem] lg:leading-[1.02]"
+  "font-bold tracking-[-0.035em] text-white text-[2.5rem] leading-[1.08] sm:text-[3.75rem] sm:leading-[1.05] lg:text-[4.5rem] lg:leading-[1.02]"
 
 export const HERO_SUBTEXT =
   "max-w-xl text-lg leading-[1.6] text-zinc-400 lg:text-xl lg:leading-[1.55]"

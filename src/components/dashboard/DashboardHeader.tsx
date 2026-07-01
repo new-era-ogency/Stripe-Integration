@@ -17,11 +17,13 @@ export const DASHBOARD_SECTIONS = [
 type DashboardHeaderProps = {
   isGuest: boolean
   authChecked: boolean
+  hideSectionNav?: boolean
 }
 
 export default function DashboardHeader({
   isGuest,
   authChecked,
+  hideSectionNav = false,
 }: DashboardHeaderProps) {
   const [activeSection, setActiveSection] = useState("create")
 
@@ -71,37 +73,39 @@ export default function DashboardHeader({
           </div>
         </div>
 
-        <nav
-          aria-label="Dashboard sections"
-          className="-mx-1 flex gap-1 overflow-x-auto border-t border-zinc-800/80 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {DASHBOARD_SECTIONS.map((section) => {
-            const isActive = activeSection === section.id
+        {!hideSectionNav ? (
+          <nav
+            aria-label="Dashboard sections"
+            className="-mx-1 flex gap-1 overflow-x-auto border-t border-zinc-800/80 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {DASHBOARD_SECTIONS.map((section) => {
+              const isActive = activeSection === section.id
 
-            return (
-              <a
-                key={section.id}
-                href={`#${section.id}`}
-                className={cn(
-                  "shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-violet-500/15 text-violet-200"
-                    : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
-                )}
+              return (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className={cn(
+                    "shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-violet-500/15 text-violet-200"
+                      : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
+                  )}
+                >
+                  {section.label}
+                </a>
+              )
+            })}
+            {isGuest ? (
+              <Link
+                href="/#demo"
+                className="ml-auto shrink-0 rounded-lg border border-violet-500/25 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition-colors hover:border-violet-500/40 hover:bg-violet-500/15"
               >
-                {section.label}
-              </a>
-            )
-          })}
-          {isGuest ? (
-            <Link
-              href="/#demo"
-              className="ml-auto shrink-0 rounded-lg border border-violet-500/25 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition-colors hover:border-violet-500/40 hover:bg-violet-500/15"
-            >
-              Try live preview →
-            </Link>
-          ) : null}
-        </nav>
+                Try live preview →
+              </Link>
+            ) : null}
+          </nav>
+        ) : null}
       </div>
     </header>
   )

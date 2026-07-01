@@ -50,6 +50,9 @@ import {
   prependGenerationRecord,
 } from "@/lib/generation/results"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
+import { useViewport } from "@/hooks/useViewport"
+import MobileDashboardShell from "@/components/mobile/MobileDashboardShell"
+import type { DashboardMobileTab } from "@/lib/viewport"
 
 const PRESET_TONES: Record<StylePreset, string> = {
   "viral-thread": "Engaging",
@@ -87,6 +90,8 @@ export default function DashboardPage() {
     refreshKeyStatus()
   }, [refreshKeyStatus])
   const router = useRouter()
+  const { isMobile, ready: viewportReady } = useViewport()
+  const [mobileTab, setMobileTab] = useState<DashboardMobileTab>("create")
   const generationAbortRef = useRef<AbortController | null>(null)
   const isGeneratingRef = useRef(false)
 
@@ -242,6 +247,10 @@ export default function DashboardPage() {
       setGeneratedOutputs(nextOutputs)
       setActiveGenerationId(result.generationId ?? null)
 
+      if (isMobile) {
+        setMobileTab("results")
+      }
+
       const optimisticRecord = buildOptimisticGenerationRecord(
         authUser.id,
         sourceLabel,
@@ -263,10 +272,12 @@ export default function DashboardPage() {
         )
       })
 
-      document.getElementById("results")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
+      if (!isMobile) {
+        document.getElementById("results")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        })
+      }
     } catch (error) {
       if (isAbortError(error, signal)) {
         toastSuccess("Generation stopped.")
@@ -300,6 +311,12 @@ export default function DashboardPage() {
   const handleViewGeneration = (record: GenerationRecord) => {
     setGeneratedOutputs(record.generated_content)
     setActiveGenerationId(record.id)
+
+    if (isMobile) {
+      setMobileTab("results")
+      return
+    }
+
     document.getElementById("results")?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -335,6 +352,136 @@ export default function DashboardPage() {
 
   const hasResults = hasGeneratedContent(generatedOutputs)
 
+  const guestBanner =
+    authChecked && isGuest ? (
+      <div className="mb-6 space-y-4">
+        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-violet-500/5 to-transparent px-5 py-5">
+          <p className="text-sm font-semibold text-white">
+            Free BYOK dashboard — sign in to add your OpenRouter key
+          </p>
+          <p className="mt-2 text-sm text-zinc-400">
+            PulseFlow is 100% free. Bring your own OpenRouter key in Settings,
+            add any source, and generate X, LinkedIn, and Telegram posts from
+            your browser.
+          </p>
+          <Link
+            href="/login"
+            className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-medium text-black hover:bg-zinc-200"
+          >
+            Launch Dashboard (Free)
+          </Link>
+        </div>
+        <DashboardQuickTryCard />
+      </div>
+    ) : null
+
+  const createSection = (
+    <section id="create" className="scroll-mt-36">
+      <DashboardCreateWorkspace
+        stylePreset={stylePreset}
+        onStylePresetChange={setStylePreset}
+        isLoading={isLoading}
+        generationProgress={generationProgress}
+        tier={tier}
+        isGuest={isGuest}
+        hasOpenAiKey={hasOpenAiKey}
+        onGenerate={handleGenerate}
+        onStopGeneration={handleStopGeneration}
+      />
+    </section>
+  )
+
+  const resultsSection = (
+    <section id="results" className="scroll-mt-36">
+      {hasResults ? (
+        <GeneratedOutputPanel
+          content={generatedOutputs}
+          tier={tier}
+          tgChannelId={tgChannelId}
+          onTgChannelSaved={setTgChannelId}
+          styleTone={PRESET_TONES[stylePreset]}
+        />
+      ) : (
+        <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-12 text-center">
+          <p className="text-sm font-medium text-zinc-300">
+            Your generated posts will appear here
+          </p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Use the Create tab to add a source and generate, or{" "}
+            <Link
+              href="/"
+              className="text-violet-400 hover:text-violet-300"
+            >
+              explore the landing page
+            </Link>{" "}
+            first.
+          </p>
+        </div>
+      )}
+    </section>
+  )
+
+  const historySection = (
+    <section id="history" className="scroll-mt-36">
+      <GenerationHistory
+        generations={generations}
+        isGuest={isGuest}
+        authChecked={authChecked}
+        activeId={activeGenerationId}
+        onView={handleViewGeneration}
+        onCopy={handleCopyGeneration}
+      />
+    </section>
+  )
+
+  const settingsSection = (
+    <section id="settings" className="scroll-mt-36 space-y-6">
+      {isMobile ? (
+        <DashboardStatsPanel
+          authChecked={authChecked}
+          isGuest={isGuest}
+          generationsCount={usageStats.used}
+          hasOpenAiKey={hasOpenAiKey}
+        />
+      ) : null}
+      <DashboardSettingsPanel
+        tier={tier}
+        brandVoice={brandVoice}
+        tgChannelId={tgChannelId}
+        isGuest={isGuest}
+        authChecked={authChecked}
+        onBrandVoiceSaved={setBrandVoice}
+        onTgChannelSaved={setTgChannelId}
+        onKeyChanged={handleKeyChanged}
+      />
+    </section>
+  )
+
+  if (!viewportReady) {
+    return <div className="min-h-screen bg-zinc-950" aria-hidden />
+  }
+
+  if (isMobile) {
+    return (
+      <MobileDashboardShell
+        activeTab={mobileTab}
+        onTabChange={setMobileTab}
+        header={
+          <DashboardHeader
+            isGuest={isGuest}
+            authChecked={authChecked}
+            hideSectionNav
+          />
+        }
+        topBanner={guestBanner}
+        create={createSection}
+        results={resultsSection}
+        history={historySection}
+        settings={settingsSection}
+      />
+    )
+  }
+
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
@@ -342,98 +489,14 @@ export default function DashboardPage() {
       <DashboardHeader isGuest={isGuest} authChecked={authChecked} />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {authChecked && isGuest ? (
-          <div className="mb-6 space-y-4">
-            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-violet-500/5 to-transparent px-5 py-5 sm:px-6">
-              <p className="text-sm font-semibold text-white">
-                Free BYOK dashboard — sign in to add your OpenRouter key
-              </p>
-              <p className="mt-2 text-sm text-zinc-400">
-                PulseFlow is 100% free. Bring your own OpenRouter key in Settings,
-                add any source, and generate X, LinkedIn, and Telegram posts from
-                your browser.
-              </p>
-              <Link
-                href="/login"
-                className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-medium text-black hover:bg-zinc-200"
-              >
-                Launch Dashboard (Free)
-              </Link>
-            </div>
-            <DashboardQuickTryCard />
-          </div>
-        ) : null}
+        {guestBanner}
 
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
           <div className="min-w-0 space-y-8">
-            <DashboardCreateWorkspace
-              stylePreset={stylePreset}
-              onStylePresetChange={setStylePreset}
-              isLoading={isLoading}
-              generationProgress={generationProgress}
-              tier={tier}
-              isGuest={isGuest}
-              hasOpenAiKey={hasOpenAiKey}
-              onGenerate={handleGenerate}
-              onStopGeneration={handleStopGeneration}
-            />
-
-            <section id="results" className="scroll-mt-36">
-              {hasResults ? (
-                <GeneratedOutputPanel
-                  content={generatedOutputs}
-                  tier={tier}
-                  tgChannelId={tgChannelId}
-                  onTgChannelSaved={setTgChannelId}
-                  styleTone={PRESET_TONES[stylePreset]}
-                />
-              ) : (
-                <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-12 text-center">
-                  <p className="text-sm font-medium text-zinc-300">
-                    Your generated posts will appear here
-                  </p>
-                  <p className="mt-2 text-sm text-zinc-500">
-                    Use the{" "}
-                    <a
-                      href="#create"
-                      className="text-violet-400 hover:text-violet-300"
-                    >
-                      Create
-                    </a>{" "}
-                    dashboard above, or{" "}
-                    <Link
-                      href="/#demo"
-                      className="text-violet-400 hover:text-violet-300"
-                    >
-                      try the live preview
-                    </Link>{" "}
-                    first.
-                  </p>
-                </div>
-              )}
-            </section>
-
-            <section id="history" className="scroll-mt-36">
-              <GenerationHistory
-                generations={generations}
-                isGuest={isGuest}
-                authChecked={authChecked}
-                activeId={activeGenerationId}
-                onView={handleViewGeneration}
-                onCopy={handleCopyGeneration}
-              />
-            </section>
-
-            <DashboardSettingsPanel
-              tier={tier}
-              brandVoice={brandVoice}
-              tgChannelId={tgChannelId}
-              isGuest={isGuest}
-              authChecked={authChecked}
-              onBrandVoiceSaved={setBrandVoice}
-              onTgChannelSaved={setTgChannelId}
-              onKeyChanged={handleKeyChanged}
-            />
+            {createSection}
+            {resultsSection}
+            {historySection}
+            {settingsSection}
           </div>
 
           <div className="xl:sticky xl:top-36 xl:self-start">

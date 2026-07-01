@@ -77,7 +77,7 @@ const TAB_ITEMS: {
 ]
 
 const tabTriggerClassName = cn(
-  "inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-xs font-medium text-zinc-400 transition-colors sm:px-3 sm:text-sm",
+  "inline-flex h-10 min-w-[5.5rem] shrink-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-xs font-medium text-zinc-400 transition-colors sm:min-w-0 sm:px-3 sm:text-sm",
   "after:hidden",
   "data-[state=active]:border-violet-500/40 data-[state=active]:bg-violet-500/15 data-[state=active]:text-violet-100 data-[state=active]:shadow-none",
   "dark:data-[state=active]:border-violet-500/40 dark:data-[state=active]:bg-violet-500/15 dark:data-[state=active]:text-violet-100"
@@ -269,7 +269,7 @@ export default function DashboardCreateWorkspace({
           >
             <TabsList
               variant="line"
-              className="flex h-auto w-full gap-1 rounded-xl border border-zinc-800 bg-zinc-900/60 p-1.5"
+              className="flex h-auto w-full gap-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {TAB_ITEMS.map((tab) => {
                 const Icon = tab.icon

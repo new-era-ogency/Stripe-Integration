@@ -371,7 +371,7 @@ export default function GeneratedOutputPanel({
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as OutputTabId)}
         >
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-0 rounded-none border-b border-zinc-900 bg-transparent p-0 sm:grid-cols-3 lg:grid-cols-5">
+          <TabsList className="flex h-auto w-full gap-0 overflow-x-auto rounded-none border-b border-zinc-900 bg-transparent p-0 [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-5 [&::-webkit-scrollbar]:hidden">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
