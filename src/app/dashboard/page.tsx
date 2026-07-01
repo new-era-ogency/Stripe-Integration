@@ -42,6 +42,12 @@ import {
   switchToExtractStage,
   type GenerationProgressState,
 } from "@/lib/generation/progress"
+import {
+  buildGeneratedContentFromApi,
+  buildOptimisticGenerationRecord,
+  hasGeneratedContent,
+  prependGenerationRecord,
+} from "@/lib/generation/results"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 
 const PRESET_TONES: Record<StylePreset, string> = {
@@ -81,12 +87,17 @@ export default function DashboardPage() {
   }, [refreshKeyStatus])
   const router = useRouter()
   const generationAbortRef = useRef<AbortController | null>(null)
+  const isGeneratingRef = useRef(false)
 
   const usageStats = useMemo(() => {
     return { used: generations.length }
   }, [generations.length])
 
   const fetchUserData = useCallback(async () => {
+    if (isGeneratingRef.current) {
+      return
+    }
+
     const supabase = createClient()
 
     let user
@@ -163,7 +174,9 @@ export default function DashboardPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      fetchUserData()
+      if (!isGeneratingRef.current) {
+        fetchUserData()
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -190,8 +203,22 @@ export default function DashboardPage() {
     generationAbortRef.current = abortController
     const { signal } = abortController
 
+    isGeneratingRef.current = true
     setIsLoading(true)
     setGenerationProgress(createGenerationProgress(source, tier))
+
+    const supabase = createClient()
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
+
+    if (!authUser) {
+      isGeneratingRef.current = false
+      setIsLoading(false)
+      setGenerationProgress(null)
+      router.push("/login")
+      return
+    }
 
     try {
       const { rawTranscript, sourceLabel } = await resolveTranscriptFromSource(
@@ -224,19 +251,33 @@ export default function DashboardPage() {
         signal,
       })
 
-      setGeneratedOutputs({
-        packTier: result.packTier,
-        outputX: result.outputX ?? "",
-        outputLinkedIn: result.outputLinkedIn ?? "",
-        outputTelegram: result.outputTelegram ?? "",
-        twitterThread: result.twitterThread,
-        linkedinArticle: result.linkedinArticle,
-        telegramPost: result.telegramPost,
-        shortsScript: result.shortsScript,
-        viralShortsHooks: result.viralShortsHooks,
-      })
+      const nextOutputs = buildGeneratedContentFromApi(result, rawTranscript)
+
+      setIsLoading(false)
+      setGenerationProgress(null)
+      setGeneratedOutputs(nextOutputs)
       setActiveGenerationId(result.generationId ?? null)
-      await fetchUserData()
+
+      const optimisticRecord = buildOptimisticGenerationRecord(
+        authUser.id,
+        sourceLabel,
+        rawTranscript,
+        result
+      )
+
+      if (optimisticRecord) {
+        setGenerations((current) =>
+          prependGenerationRecord(current, optimisticRecord)
+        )
+      }
+
+      isGeneratingRef.current = false
+      void fetchUserData().catch((refreshError) => {
+        console.warn(
+          "Background dashboard refresh failed:",
+          formatSupabaseError(refreshError)
+        )
+      })
 
       document.getElementById("results")?.scrollIntoView({
         behavior: "smooth",
@@ -263,6 +304,7 @@ export default function DashboardPage() {
         error instanceof Error ? error.message : "Failed to generate content"
       toastError(message)
     } finally {
+      isGeneratingRef.current = false
       if (generationAbortRef.current === abortController) {
         generationAbortRef.current = null
       }
@@ -307,11 +349,7 @@ export default function DashboardPage() {
     }
   }
 
-  const hasResults = Boolean(
-    generatedOutputs.outputX ||
-      generatedOutputs.outputLinkedIn ||
-      generatedOutputs.outputTelegram
-  )
+  const hasResults = hasGeneratedContent(generatedOutputs)
 
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
