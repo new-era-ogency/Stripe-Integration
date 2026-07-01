@@ -22,6 +22,10 @@ import { enforceOpenRouterFreeTierLimit } from "@/lib/ai/openrouter-rate-limit"
 import { getOpenRouterModelForUser } from "@/lib/ai/openrouter"
 import { buildGenerationPrompts } from "@/lib/ai/prompts"
 import { INSUFFICIENT_CREDITS_MESSAGE } from "@/lib/credits"
+import {
+  ensureUserProfileForGeneration,
+  formatSupabaseError,
+} from "@/lib/dashboard/user-data-loader"
 import type { GeneratedContent } from "@/lib/generations"
 import { saveUserGeneration } from "@/lib/generations"
 import {
@@ -173,24 +177,22 @@ export async function POST(request: Request) {
     const { rawTranscript, videoUrl } = parsed.data
     const storedSourceUrl = resolveStoredSourceUrl(videoUrl)
 
-    const { data: profile, error: profileError } = await supabase
-      .from("users")
-      .select(
-        "credits, tier, brand_voice, subscription_status, stripe_price_id, stripe_subscription_id, subscription_period_end"
+    let profile
+    try {
+      profile = await ensureUserProfileForGeneration(supabase, user.id)
+    } catch (profileError) {
+      console.error(
+        "Error fetching user profile for generation:",
+        formatSupabaseError(profileError)
       )
-      .eq("id", user.id)
-      .maybeSingle()
-
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError)
       return NextResponse.json(
-        { error: "Failed to verify subscription and credits" },
+        {
+          error:
+            "Could not load your account profile. Refresh the page and try again.",
+          code: "PROFILE_FETCH_FAILED",
+        },
         { status: 500 }
       )
-    }
-
-    if (!profile) {
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
     }
 
     const subscription = toSubscriptionRecord(profile)
@@ -203,14 +205,15 @@ export async function POST(request: Request) {
     const viralHooksAccess = requireFeature(flags, "viral_shorts_finder")
 
     const hasTrialAccess = trial.isValid
+    const credits = profile.credits ?? 0
 
-    if (profile.credits <= 0 && flags.isStarter && !hasTrialAccess) {
+    if (credits <= 0 && flags.isStarter && !hasTrialAccess) {
       return paymentRequiredResponse(INSUFFICIENT_CREDITS_MESSAGE)
     }
 
-    let newCredits = profile.credits
+    let newCredits = credits
 
-    if (profile.credits > 0) {
+    if (credits > 0) {
       const { data: deductData, error: deductError } =
         await supabase.rpc("deduct_credit")
 

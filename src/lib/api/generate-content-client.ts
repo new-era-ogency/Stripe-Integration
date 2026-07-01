@@ -1,6 +1,7 @@
 "use client"
 
 import { requireUserApiKeyHeaders } from "@/lib/api/byok-request-headers"
+import { fetchWithSignal, rethrowIfAborted } from "@/lib/generation/abort"
 import type { GeneratedContent } from "@/lib/generations"
 import type { UserTier } from "@/lib/profile"
 import { OpenAiByokError } from "@/lib/openai/client-key"
@@ -16,19 +17,26 @@ export type GenerateContentApiResponse = GeneratedContent & {
 export async function requestGenerateContent(params: {
   rawTranscript: string
   videoUrl: string
+  signal?: AbortSignal
 }): Promise<GenerateContentApiResponse> {
   let response: Response
 
   try {
-    response = await fetch("/api/generate-content", {
+    response = await fetchWithSignal("/api/generate-content", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...requireUserApiKeyHeaders(),
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        rawTranscript: params.rawTranscript,
+        videoUrl: params.videoUrl,
+      }),
+      signal: params.signal,
     })
   } catch (error) {
+    rethrowIfAborted(error, params.signal)
+
     const message =
       error instanceof Error ? error.message : "Network error during generation"
     throw new OpenAiByokError(message, "network_error")

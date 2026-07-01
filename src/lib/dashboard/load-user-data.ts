@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { fetchWithSignal } from "@/lib/generation/abort"
 import {
   buildDashboardUserData,
   fetchClaimedViralActions,
@@ -44,7 +45,7 @@ function parseDashboardApiPayload(data: Record<string, unknown>): DashboardUserD
 
 export async function fetchDashboardDataViaApi(): Promise<DashboardApiResult> {
   try {
-    const response = await fetch("/api/user-data", {
+    const response = await fetchWithSignal("/api/user-data", {
       credentials: "same-origin",
       cache: "no-store",
     })
@@ -79,10 +80,17 @@ export async function loadDashboardDataForUser(
     let apiResult = await fetchDashboardDataViaApi()
 
     if (!apiResult.ok && apiResult.status === 401) {
-      await supabase.auth.refreshSession()
-      options?.onSessionRefreshed?.()
-      await ensureServerProfile()
-      apiResult = await fetchDashboardDataViaApi()
+      try {
+        await supabase.auth.refreshSession()
+        options?.onSessionRefreshed?.()
+        await ensureServerProfile()
+        apiResult = await fetchDashboardDataViaApi()
+      } catch (refreshError) {
+        console.warn(
+          "Session refresh failed during dashboard load:",
+          formatSupabaseError(refreshError)
+        )
+      }
     }
 
     if (apiResult.ok) {

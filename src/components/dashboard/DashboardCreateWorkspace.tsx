@@ -6,13 +6,14 @@ import {
   FileText,
   Globe,
   Link2,
-  Loader2,
   Sparkles,
+  Square,
   Upload,
   Video,
   Wand2,
   Zap,
 } from "lucide-react"
+import GenerationProgressPanel from "@/components/dashboard/GenerationProgressPanel"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -26,6 +27,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import type { ContentSourceInput, ContentSourceTab } from "@/lib/content-sources/types"
+import type { GenerationProgressState } from "@/lib/generation/progress"
+import type { UserTier } from "@/lib/profile"
 import {
   validateWhisperUploadFile,
   WHISPER_MAX_FILE_BYTES,
@@ -93,10 +96,12 @@ type DashboardCreateWorkspaceProps = {
   stylePreset: StylePreset
   onStylePresetChange: (preset: StylePreset) => void
   isLoading: boolean
-  loadingMessage?: string | null
+  generationProgress?: GenerationProgressState | null
+  tier: UserTier
   isGuest: boolean
   hasOpenAiKey: boolean
   onGenerate: (source: ContentSourceInput) => void
+  onStopGeneration?: () => void
 }
 
 function formatFileSize(bytes: number): string {
@@ -110,10 +115,12 @@ export default function DashboardCreateWorkspace({
   stylePreset,
   onStylePresetChange,
   isLoading,
-  loadingMessage,
+  generationProgress,
+  tier,
   isGuest,
   hasOpenAiKey,
   onGenerate,
+  onStopGeneration,
 }: DashboardCreateWorkspaceProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<ContentSourceTab>("youtube")
@@ -467,28 +474,48 @@ export default function DashboardCreateWorkspace({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Button
-              onClick={handleGenerateClick}
-              disabled={!canSubmit}
-              className="h-12 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(139,92,246,0.5)] transition-all hover:from-violet-500 hover:to-indigo-500 hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6)] disabled:opacity-40 disabled:shadow-none"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {loadingMessage ?? "Generating your posts…"}
-                </span>
-              ) : isGuest ? (
-                "Sign in to generate"
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Generate X, LinkedIn & Telegram
-                </span>
-              )}
-            </Button>
+          <div className="space-y-3">
+            {isLoading && generationProgress ? (
+              <GenerationProgressPanel progress={generationProgress} tier={tier} />
+            ) : null}
 
-            {!isGuest && !hasOpenAiKey && hasSourceInput ? (
+            {isLoading ? (
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onStopGeneration}
+                  className="h-11 w-full rounded-xl border-red-500/30 bg-red-500/5 text-sm font-medium text-red-200 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-100"
+                >
+                  <span className="flex items-center gap-2">
+                    <Square className="size-3.5 fill-current" />
+                    Stop generation
+                  </span>
+                </Button>
+                <p className="text-center text-xs text-zinc-500">
+                  Stops transcript fetch and AI calls from this browser. If
+                  generation already reached the server, that run may still use
+                  tokens.
+                </p>
+              </div>
+            ) : (
+              <Button
+                onClick={handleGenerateClick}
+                disabled={!canSubmit}
+                className="h-12 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(139,92,246,0.5)] transition-all hover:from-violet-500 hover:to-indigo-500 hover:shadow-[0_0_28px_-4px_rgba(139,92,246,0.6)] disabled:opacity-40 disabled:shadow-none"
+              >
+                {isGuest ? (
+                  "Sign in to generate"
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Generate X, LinkedIn & Telegram
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {!isGuest && !hasOpenAiKey && hasSourceInput && !isLoading ? (
               <p className="text-center text-xs text-zinc-500">
                 Generation is locked until you connect an OpenAI API key.
               </p>

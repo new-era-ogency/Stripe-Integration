@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import DashboardHeader from "@/components/dashboard/DashboardHeader"
@@ -34,6 +34,14 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import type { ContentSourceInput } from "@/lib/content-sources/types"
 import { resolveTranscriptFromSource } from "@/lib/content-sources/resolve-transcript"
+import { isAbortError, isLikelyNetworkError } from "@/lib/generation/abort"
+import {
+  advanceToStage,
+  createGenerationProgress,
+  mapPhaseToStage,
+  switchToExtractStage,
+  type GenerationProgressState,
+} from "@/lib/generation/progress"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 
 const PRESET_TONES: Record<StylePreset, string> = {
@@ -50,7 +58,8 @@ const emptyGeneratedContent = (): GeneratedContent => ({
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
+  const [generationProgress, setGenerationProgress] =
+    useState<GenerationProgressState | null>(null)
   const [tier, setTier] = useState<UserTier>("starter")
   const [brandVoice, setBrandVoice] = useState<string | null>(null)
   const [tgChannelId, setTgChannelId] = useState<string | null>(null)
@@ -71,6 +80,7 @@ export default function DashboardPage() {
     refreshKeyStatus()
   }, [refreshKeyStatus])
   const router = useRouter()
+  const generationAbortRef = useRef<AbortController | null>(null)
 
   const usageStats = useMemo(() => {
     return { used: generations.length }
@@ -138,7 +148,11 @@ export default function DashboardPage() {
       return
     }
 
-    console.error("Error fetching user data:", result.error)
+    if (isLikelyNetworkError(new Error(result.error))) {
+      console.warn("Could not load dashboard data:", result.error)
+    } else {
+      console.error("Error fetching user data:", result.error)
+    }
     applyDashboardData(buildDashboardUserData(null, [], []))
   }, [router])
 
@@ -155,6 +169,10 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe()
   }, [fetchUserData])
 
+  const handleStopGeneration = useCallback(() => {
+    generationAbortRef.current?.abort()
+  }, [])
+
   const handleGenerate = async (source: ContentSourceInput) => {
     if (isGuest) {
       router.push("/login")
@@ -167,34 +185,43 @@ export default function DashboardPage() {
       return
     }
 
+    generationAbortRef.current?.abort()
+    const abortController = new AbortController()
+    generationAbortRef.current = abortController
+    const { signal } = abortController
+
     setIsLoading(true)
-    setLoadingMessage(null)
+    setGenerationProgress(createGenerationProgress(source, tier))
 
     try {
       const { rawTranscript, sourceLabel } = await resolveTranscriptFromSource(
         source,
-        (phase) => {
-          if (phase === "transcribing") {
-            setLoadingMessage("Transcribing audio via your OpenAI Key…")
-          } else if (phase === "fetching") {
-            setLoadingMessage(
-              source.type === "youtube"
-                ? "Fetching YouTube transcript…"
-                : "Fetching article content…"
-            )
-          } else if (phase === "openrouter_extract") {
-            setLoadingMessage(
-              "Server fetch blocked — extracting transcript via your OpenRouter key…"
-            )
-          }
+        {
+          signal,
+          onPhaseChange: (phase) => {
+            setGenerationProgress((current) => {
+              if (!current) {
+                return current
+              }
+
+              if (phase === "openrouter_extract") {
+                return switchToExtractStage(current)
+              }
+
+              return advanceToStage(current, mapPhaseToStage(phase))
+            })
+          },
         }
       )
 
-      setLoadingMessage("Generating your posts…")
+      setGenerationProgress((current) =>
+        current ? advanceToStage(current, "generate_posts") : current
+      )
 
       const result = await requestGenerateContent({
         rawTranscript,
         videoUrl: sourceLabel,
+        signal,
       })
 
       setGeneratedOutputs({
@@ -216,6 +243,11 @@ export default function DashboardPage() {
         block: "start",
       })
     } catch (error) {
+      if (isAbortError(error, signal)) {
+        toastSuccess("Generation stopped.")
+        return
+      }
+
       console.error("Generation error:", error)
 
       if (error instanceof OpenAiByokError) {
@@ -231,8 +263,11 @@ export default function DashboardPage() {
         error instanceof Error ? error.message : "Failed to generate content"
       toastError(message)
     } finally {
+      if (generationAbortRef.current === abortController) {
+        generationAbortRef.current = null
+      }
       setIsLoading(false)
-      setLoadingMessage(null)
+      setGenerationProgress(null)
     }
   }
 
@@ -313,10 +348,12 @@ export default function DashboardPage() {
               stylePreset={stylePreset}
               onStylePresetChange={setStylePreset}
               isLoading={isLoading}
-              loadingMessage={loadingMessage}
+              generationProgress={generationProgress}
+              tier={tier}
               isGuest={isGuest}
               hasOpenAiKey={hasOpenAiKey}
               onGenerate={handleGenerate}
+              onStopGeneration={handleStopGeneration}
             />
 
             <section id="results" className="scroll-mt-36">

@@ -3,7 +3,11 @@ import type {
   ResolvedTranscript,
   TranscriptResolvePhase,
 } from "@/lib/content-sources/types"
-import { OpenAiByokError } from "@/lib/openai/client-key"
+import {
+  fetchWithSignal,
+  rethrowIfAborted,
+  throwIfAborted,
+} from "@/lib/generation/abort"
 import { transcribeAudioWithWhisper } from "@/lib/openai/whisper-transcribe"
 import { extractYouTubeTranscriptViaOpenRouter } from "@/lib/youtube/extract-transcript-openrouter"
 import { TRANSCRIPT_OPENROUTER_FALLBACK_CODE } from "@/lib/youtube/transcript-constants"
@@ -32,12 +36,18 @@ function htmlToPlainText(html: string): string {
 
 async function fetchYouTubeTranscript(
   videoUrl: string,
-  onPhaseChange?: (phase: TranscriptResolvePhase) => void
+  options?: {
+    onPhaseChange?: (phase: TranscriptResolvePhase) => void
+    signal?: AbortSignal
+  }
 ): Promise<string> {
-  const response = await fetch("/api/transcript", {
+  throwIfAborted(options?.signal)
+
+  const response = await fetchWithSignal("/api/transcript", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ videoUrl }),
+    signal: options?.signal,
   })
 
   const data = (await response.json().catch(() => ({}))) as {
@@ -62,17 +72,23 @@ async function fetchYouTubeTranscript(
     data.code === TRANSCRIPT_OPENROUTER_FALLBACK_CODE ||
     response.status === 422
   ) {
-    onPhaseChange?.("openrouter_extract")
+    options?.onPhaseChange?.("openrouter_extract")
     return extractYouTubeTranscriptViaOpenRouter(
       data.canonicalUrl ?? videoUrl,
-      data.videoTitle
+      data.videoTitle,
+      options?.signal
     )
   }
 
   throw new Error(data.error || "Failed to fetch YouTube transcript")
 }
 
-async function fetchArticleTextFromUrl(url: string): Promise<string> {
+async function fetchArticleTextFromUrl(
+  url: string,
+  signal?: AbortSignal
+): Promise<string> {
+  throwIfAborted(signal)
+
   let parsed: URL
 
   try {
@@ -86,12 +102,13 @@ async function fetchArticleTextFromUrl(url: string): Promise<string> {
   }
 
   try {
-    const response = await fetch(parsed.toString(), {
+    const response = await fetchWithSignal(parsed.toString(), {
       method: "GET",
       mode: "cors",
       headers: {
         Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
       },
+      signal,
     })
 
     if (!response.ok) {
@@ -108,7 +125,9 @@ async function fetchArticleTextFromUrl(url: string): Promise<string> {
 
     const text = await response.text()
     return assertMinTextLength(text, "Fetched article text")
-  } catch {
+  } catch (error) {
+    rethrowIfAborted(error, signal)
+
     throw new Error(
       "Could not fetch this article from your browser (CORS blocked). Paste the article text in the field below and try again."
     )
@@ -122,14 +141,21 @@ function buildYouTubeSourceLabel(url: string): string {
     : url.trim()
 }
 
+export type ResolveTranscriptOptions = {
+  onPhaseChange?: (phase: TranscriptResolvePhase) => void
+  signal?: AbortSignal
+}
+
 export async function resolveTranscriptFromSource(
   source: ContentSourceInput,
-  onPhaseChange?: (phase: TranscriptResolvePhase) => void
+  options?: ResolveTranscriptOptions
 ): Promise<ResolvedTranscript> {
+  throwIfAborted(options?.signal)
+
   switch (source.type) {
     case "youtube": {
-      onPhaseChange?.("fetching")
-      const rawTranscript = await fetchYouTubeTranscript(source.url, onPhaseChange)
+      options?.onPhaseChange?.("fetching")
+      const rawTranscript = await fetchYouTubeTranscript(source.url, options)
       return {
         rawTranscript,
         sourceLabel: buildYouTubeSourceLabel(source.url),
@@ -160,8 +186,11 @@ export async function resolveTranscriptFromSource(
         )
       }
 
-      onPhaseChange?.("fetching")
-      const rawTranscript = await fetchArticleTextFromUrl(source.url)
+      options?.onPhaseChange?.("fetching")
+      const rawTranscript = await fetchArticleTextFromUrl(
+        source.url,
+        options?.signal
+      )
 
       return {
         rawTranscript,
@@ -170,17 +199,18 @@ export async function resolveTranscriptFromSource(
     }
 
     case "media": {
-      onPhaseChange?.("transcribing")
+      options?.onPhaseChange?.("transcribing")
       try {
-        const rawTranscript = await transcribeAudioWithWhisper(source.file)
+        const rawTranscript = await transcribeAudioWithWhisper(
+          source.file,
+          options?.signal
+        )
         return {
           rawTranscript: assertMinTextLength(rawTranscript, "Transcript"),
           sourceLabel: `media:${source.file.name}`,
         }
       } catch (error) {
-        if (error instanceof OpenAiByokError) {
-          throw error
-        }
+        rethrowIfAborted(error, options?.signal)
         throw error
       }
     }

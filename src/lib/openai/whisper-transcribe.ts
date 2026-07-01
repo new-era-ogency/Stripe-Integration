@@ -3,6 +3,7 @@ import {
   requireStoredOpenAiKey,
 } from "@/lib/openai/client-key"
 import { assertByokFetchHostAllowed } from "@/lib/api/byok-security"
+import { fetchWithSignal, rethrowIfAborted } from "@/lib/generation/abort"
 
 export const OPENAI_AUDIO_TRANSCRIPTIONS_URL =
   "https://api.openai.com/v1/audio/transcriptions"
@@ -79,7 +80,10 @@ async function parseWhisperErrorMessage(response: Response): Promise<string> {
 }
 
 /** Client-side BYOK Whisper transcription — key goes directly to OpenAI. */
-export async function transcribeAudioWithWhisper(file: File): Promise<string> {
+export async function transcribeAudioWithWhisper(
+  file: File,
+  signal?: AbortSignal
+): Promise<string> {
   const validationError = validateWhisperUploadFile(file)
   if (validationError) {
     throw new OpenAiByokError(validationError, "api_error")
@@ -93,12 +97,13 @@ export async function transcribeAudioWithWhisper(file: File): Promise<string> {
   formData.append("model", "whisper-1")
 
   try {
-    const response = await fetch(OPENAI_AUDIO_TRANSCRIPTIONS_URL, {
+    const response = await fetchWithSignal(OPENAI_AUDIO_TRANSCRIPTIONS_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
       },
       body: formData,
+      signal,
     })
 
     if (!response.ok) {
@@ -133,6 +138,8 @@ export async function transcribeAudioWithWhisper(file: File): Promise<string> {
 
     return text
   } catch (error) {
+    rethrowIfAborted(error, signal)
+
     if (error instanceof OpenAiByokError) {
       throw error
     }

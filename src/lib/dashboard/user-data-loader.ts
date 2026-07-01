@@ -23,13 +23,23 @@ type UserProfileRow = {
   trial_start_at?: string | null
   trial_end_at?: string | null
   trial_extended_days?: number | null
+  subscription_status?: string | null
+  stripe_price_id?: string | null
+  stripe_subscription_id?: string | null
+  subscription_period_end?: string | null
 }
 
 const PROFILE_SELECTS = [
   "credits, tier, brand_voice, tg_channel_id, account_status, trial_start_at, trial_end_at, trial_extended_days",
   "credits, tier, brand_voice, tg_channel_id",
+  "credits, tier, brand_voice",
   "credits, tier",
   "credits",
+] as const
+
+const GENERATION_PROFILE_SELECTS = [
+  "credits, tier, brand_voice, subscription_status, stripe_price_id, stripe_subscription_id, subscription_period_end",
+  ...PROFILE_SELECTS,
 ] as const
 
 const GENERATIONS_SELECT_NEW =
@@ -78,13 +88,14 @@ function mapLegacyGeneration(row: {
   }
 }
 
-export async function fetchUserProfileWithFallback(
+async function fetchUserProfileWithSelects(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
+  selects: readonly string[]
 ): Promise<UserProfileRow | null> {
   let lastError: PostgrestError | null = null
 
-  for (const select of PROFILE_SELECTS) {
+  for (const select of selects) {
     const { data, error } = await supabase
       .from("users")
       .select(select)
@@ -107,6 +118,68 @@ export async function fetchUserProfileWithFallback(
   }
 
   return null
+}
+
+export async function fetchUserProfileWithFallback(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<UserProfileRow | null> {
+  return fetchUserProfileWithSelects(supabase, userId, PROFILE_SELECTS)
+}
+
+export async function fetchUserProfileForGeneration(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<UserProfileRow | null> {
+  return fetchUserProfileWithSelects(
+    supabase,
+    userId,
+    GENERATION_PROFILE_SELECTS
+  )
+}
+
+export async function ensureUserProfileForGeneration(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<UserProfileRow> {
+  let profile = await fetchUserProfileForGeneration(supabase, userId)
+
+  if (profile) {
+    return profile
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("users")
+    .insert({ id: userId, credits: DEFAULT_USER_CREDITS })
+    .select("credits, tier, brand_voice")
+    .maybeSingle()
+
+  if (insertError) {
+    const duplicate =
+      insertError.code === "23505" ||
+      insertError.message?.toLowerCase().includes("duplicate")
+
+    if (duplicate) {
+      profile = await fetchUserProfileForGeneration(supabase, userId)
+      if (profile) {
+        return profile
+      }
+    }
+
+    throw insertError
+  }
+
+  if (created) {
+    return created as UserProfileRow
+  }
+
+  profile = await fetchUserProfileForGeneration(supabase, userId)
+
+  if (!profile) {
+    throw new Error("User profile not found")
+  }
+
+  return profile
 }
 
 export async function fetchUserGenerationsWithFallback(

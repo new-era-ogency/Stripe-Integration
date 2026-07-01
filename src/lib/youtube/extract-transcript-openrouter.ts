@@ -5,6 +5,7 @@ import {
   requireStoredOpenAiKey,
 } from "@/lib/openai/client-key"
 import { assertByokFetchHostAllowed } from "@/lib/api/byok-security"
+import { fetchWithSignal, rethrowIfAborted } from "@/lib/generation/abort"
 
 /** Web-enabled OpenRouter model for YouTube transcript extraction (BYOK). */
 export const BYOK_YOUTUBE_TRANSCRIPT_MODEL = "google/gemini-2.5-flash:online"
@@ -41,7 +42,8 @@ function parseOpenRouterError(response: Response, body: OpenRouterChatResponse):
  */
 export async function extractYouTubeTranscriptViaOpenRouter(
   videoUrl: string,
-  videoTitle?: string
+  videoTitle?: string,
+  signal?: AbortSignal
 ): Promise<string> {
   const apiKey = requireStoredOpenAiKey()
   assertByokFetchHostAllowed(OPENROUTER_CHAT_COMPLETIONS_URL)
@@ -49,7 +51,7 @@ export async function extractYouTubeTranscriptViaOpenRouter(
   const titleHint = videoTitle ? `\nVideo title: ${videoTitle}` : ""
 
   try {
-    const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
+    const response = await fetchWithSignal(OPENROUTER_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: buildOpenRouterByokHeaders(apiKey),
       body: JSON.stringify({
@@ -65,6 +67,7 @@ export async function extractYouTubeTranscriptViaOpenRouter(
         max_tokens: 12_000,
         temperature: 0.1,
       }),
+      signal,
     })
 
     const body = (await response.json()) as OpenRouterChatResponse
@@ -100,6 +103,8 @@ export async function extractYouTubeTranscriptViaOpenRouter(
 
     return rawTranscript
   } catch (error) {
+    rethrowIfAborted(error, signal)
+
     if (error instanceof OpenAiByokError) {
       throw error
     }
