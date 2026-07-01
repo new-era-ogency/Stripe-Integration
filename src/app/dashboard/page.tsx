@@ -32,6 +32,7 @@ import {
   readStoredOpenAiKey,
 } from "@/lib/openai/client-key"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import type { ContentSourceInput } from "@/lib/content-sources/types"
 import { resolveTranscriptFromSource } from "@/lib/content-sources/resolve-transcript"
 import { isAbortError, isLikelyNetworkError } from "@/lib/generation/abort"
@@ -100,22 +101,7 @@ export default function DashboardPage() {
 
     const supabase = createClient()
 
-    let user
-    try {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-      user = authUser
-    } catch (error) {
-      console.warn("Auth session check failed:", formatSupabaseError(error))
-      setIsGuest(true)
-      setTier("starter")
-      setBrandVoice(null)
-      setTgChannelId(null)
-      setGenerations([])
-      setAuthChecked(true)
-      return
-    }
+    const { user } = await getClientAuthUser(supabase)
 
     if (!user) {
       setIsGuest(true)
@@ -208,9 +194,7 @@ export default function DashboardPage() {
     setGenerationProgress(createGenerationProgress(source, tier))
 
     const supabase = createClient()
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser()
+    const { user: authUser } = await getClientAuthUser(supabase)
 
     if (!authUser) {
       isGeneratingRef.current = false

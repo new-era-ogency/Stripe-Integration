@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import {
   normalizeEmail,
   OAUTH_UNTRUSTED_EMAIL_MESSAGE,
@@ -45,9 +46,7 @@ export default function LoginForm() {
 
   const completeAuthAndRedirect = async () => {
     const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { user } = await getClientAuthUser(supabase)
 
     if (!user) {
       return

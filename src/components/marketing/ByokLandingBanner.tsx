@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ArrowRight, KeyRound } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import { useEffect, useState } from "react"
 
 export default function ByokLandingBanner() {
@@ -12,7 +13,7 @@ export default function ByokLandingBanner() {
   useEffect(() => {
     const supabase = createClient()
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    void getClientAuthUser(supabase).then(({ user }) => {
       setIsGuest(!user)
       setReady(true)
     })

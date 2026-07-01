@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import type { User } from "@supabase/supabase-js"
 import OpenAiKeyStatusBadge from "@/components/openai/OpenAiKeyStatusBadge"
 
@@ -26,7 +27,7 @@ export default function AuthNavButtons({
   useEffect(() => {
     const supabase = createClient()
 
-    supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
+    void getClientAuthUser(supabase).then(({ user: currentUser }) => {
       setUser(currentUser)
       setLoading(false)
     })

@@ -1,3 +1,5 @@
+import { isLikelyNetworkError as isLikelyNetworkErrorBase } from "@/lib/network-errors"
+
 export class GenerationAbortedError extends Error {
   constructor(message = "Generation stopped") {
     super(message)
@@ -57,23 +59,5 @@ export function isLikelyNetworkError(error: unknown): boolean {
     return false
   }
 
-  if (error instanceof TypeError) {
-    const message = error.message.toLowerCase()
-    return (
-      message.includes("failed to fetch") ||
-      message.includes("networkerror") ||
-      message.includes("load failed")
-    )
-  }
-
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase()
-    return (
-      message.includes("failed to fetch") ||
-      message.includes("network error") ||
-      message.includes("networkerror")
-    )
-  }
-
-  return false
+  return isLikelyNetworkErrorBase(error)
 }

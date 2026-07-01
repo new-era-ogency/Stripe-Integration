@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import {
   getSubscriptionFlags,
   toSubscriptionRecord,
@@ -33,14 +34,7 @@ export function useSubscription(): UseSubscriptionResult {
     setError(null)
 
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError) {
-        throw authError
-      }
+      const { user } = await getClientAuthUser(supabase)
 
       if (!user) {
         setIsAuthenticated(false)

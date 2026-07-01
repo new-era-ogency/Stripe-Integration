@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 import AuthPageShell from "@/components/auth/AuthPageShell"
 import LoginForm from "@/components/auth/LoginForm"
@@ -15,7 +16,7 @@ function LoginPageContent() {
     router.prefetch("/signup")
 
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    void getClientAuthUser(supabase).then(async ({ user }) => {
       if (!user) {
         return
       }

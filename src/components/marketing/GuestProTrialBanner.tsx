@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Crown, Sparkles } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import { TRIAL_PRO_PERIOD_DAYS } from "@/lib/trial/types"
 import { cn } from "@/lib/utils"
 
@@ -31,7 +32,7 @@ export default function GuestProTrialBanner({
 
     const supabase = createClient()
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    void getClientAuthUser(supabase).then(({ user }) => {
       setShouldShow(!user)
       setReady(true)
     })

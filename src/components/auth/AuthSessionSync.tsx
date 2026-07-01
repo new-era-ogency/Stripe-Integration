@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 
 const AUTH_ENTRY_PATHS = new Set(["/", "/login", "/signup"])
@@ -25,9 +26,7 @@ export default function AuthSessionSync() {
     const supabase = createClient()
 
     const redirectAuthenticatedUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { user } = await getClientAuthUser(supabase)
 
       if (!user) {
         return
