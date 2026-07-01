@@ -30,7 +30,6 @@ export default async function UserNav() {
         <div className="flex items-center space-x-3 sm:space-x-4">
           <SubscriptionTierBadge />
           <CreditBalance />
-          <span className="hidden text-sm text-zinc-300 sm:inline">{user.email}</span>
           <form action={signOut}>
             <Button
               type="submit"

@@ -207,6 +207,11 @@ export const proofLoop = {
 
 export const steps = solutionSection.steps
 
+export const pricingSection = {
+  description:
+    "No PulseFlow subscription during beta. Bring your own OpenRouter key and pay only for the AI runs you trigger.",
+} as const
+
 export const pricingAnchors = [
   {
     name: "PulseFlow",

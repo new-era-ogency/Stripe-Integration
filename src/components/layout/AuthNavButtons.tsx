@@ -63,9 +63,6 @@ export default function AuthNavButtons({
         {showKeyBadge ? (
           <OpenAiKeyStatusBadge size="sm" className="hidden sm:inline-flex" />
         ) : null}
-        <span className="hidden max-w-[120px] truncate text-xs text-zinc-500 lg:inline xl:max-w-[160px]">
-          {user.email}
-        </span>
         <button
           type="button"
           onClick={handleSignOut}

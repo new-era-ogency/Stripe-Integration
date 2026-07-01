@@ -165,7 +165,7 @@ export default function FeedbackForm({
         {submitted ? (
           <div className="px-5 py-8 text-center">
             <p className="text-sm leading-relaxed text-zinc-300">
-              Thank you, Rodion received your feedback. Joining the early-access
+              Thank you — we received your feedback. Joining the early-access
               club shortly…
             </p>
             <button

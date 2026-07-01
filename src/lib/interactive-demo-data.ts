@@ -79,10 +79,10 @@ export const initialTasks: DemoTask[] = [
 ]
 
 export const meetingTranscriptLines = [
-  "[00:00] Rodion: Alright — let's align on the public beta launch.",
+  "[00:00] Jamie: Alright — let's align on the public beta launch.",
   "[00:12] Alex: The interactive demo needs to be the hero. No waitlist gate.",
   "[00:28] Priya: Agreed. I ran three meetings through the pipeline — tasks landed in Kanban every time.",
-  "[00:45] Rodion: Privacy stays BYOK. Keys never hit our servers.",
+  "[00:45] Jamie: Privacy stays BYOK. Keys never hit our servers.",
   "[01:02] Alex: Decision — ship Friday with demo as primary CTA.",
   "[01:15] Priya: I'll record the Loom for the launch thread.",
 ]
@@ -92,7 +92,7 @@ export const meetingScript = {
   duration: "42:18",
   summary: `**Product sync — March 18**
 
-The team aligned on launching the BYOK dashboard publicly without a paywall. Rodion demoed the YouTube → multi-platform flow; average generation time is under a minute with OpenRouter.
+The team aligned on launching the BYOK dashboard publicly without a paywall. Jamie demoed the YouTube → multi-platform flow; average generation time is under a minute with OpenRouter.
 
 **Key themes**
 - Privacy-first: API keys never hit PulseFlow servers
