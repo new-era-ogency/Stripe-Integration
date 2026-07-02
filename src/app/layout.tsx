@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthSessionSync from "@/components/auth/AuthSessionSync";
+import IubendaCookieConsent from "@/components/consent/IubendaCookieConsent";
 import AppFooter from "@/components/layout/AppFooter";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { OpenAiKeyProvider } from "@/components/openai/OpenAiKeyProvider";
@@ -54,6 +55,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.className} dark min-h-full flex flex-col bg-[#000000] text-gray-50 antialiased`}
       >
+        <IubendaCookieConsent />
         <AuthSessionSync />
         <ToastProvider>
           <OpenAiKeyProvider>
