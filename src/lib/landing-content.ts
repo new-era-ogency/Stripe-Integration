@@ -76,21 +76,46 @@ export const problemSection = {
   label: "The problem",
   title: "Your team's best ideas die in scattered conversations.",
   description:
-    "Meetings end with verbal agreements nobody writes down. Chat threads bury action items. Kanban boards drift out of sync. You keep asking: who said we'd do that?",
+    "Modern teams run on meetings, Slack, and boards — but those tools rarely share the same truth. A sync ends with verbal agreements nobody writes down. Chat threads bury action items under the next ping. Kanban cards drift because updating the board is everyone's unofficial second job.",
+  descriptionContinued:
+    "The cost shows up every week: context disappears, decisions get re-debated, and someone always asks who said we'd do that? PulseFlow exists because that loop is fixable — if conversation, structure, and committed work live in one place.",
   pains: [
     {
       title: "Meetings without memory",
-      body: "Forty minutes of sync — zero searchable record, zero tasks created.",
+      body: "Forty minutes of alignment — and by Monday, nobody can quote what was actually agreed.",
+      detail:
+        "Recordings sit in a folder. Notes live in one person's doc. Action items stay in people's heads until they quietly slip. New teammates can't onboard from what was decided last month.",
+      bullets: [
+        "No searchable transcript tied to real tasks",
+        "Follow-ups depend on whoever remembered to write something",
+        "Decisions evaporate when attendees change",
+      ],
     },
     {
       title: "Chat that goes nowhere",
-      body: "Brilliant decisions in Slack threads that never become assigned work.",
+      body: "Brilliant calls happen in threads — then vanish under the next notification.",
+      detail:
+        "Slack wasn't built to be your system of record. Important agreements get buried, copied into Notion late (or never), and rarely linked to an owner or due date.",
+      bullets: [
+        "Context scattered across channels and DMs",
+        "Action items mixed with jokes and status noise",
+        "Manual copy-paste into five other tools",
+      ],
     },
     {
       title: "Kanban that lies",
-      body: "Boards updated manually days later, if at all.",
+      body: "The board looks green while reality is three days behind.",
+      detail:
+        "Cards move when someone has time to drag them — not when work actually changes. Stakeholders trust the board in reviews; the team knows it's fiction in standup.",
+      bullets: [
+        "Status updates lag behind real progress",
+        "Work from meetings never lands on cards",
+        "Planning meetings repeat the same open questions",
+      ],
     },
   ],
+  closingNote:
+    "The hidden tax: hours every week re-explaining context, hunting threads, and rebuilding plans that should have been captured the first time.",
 } as const
 
 export const solutionSection = {

@@ -22,10 +22,10 @@ type DashboardSettingsPanelProps = {
 }
 
 const tabTriggerClassName = cn(
-  "inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-xs font-medium text-zinc-400 transition-colors sm:px-3 sm:text-sm",
-  "after:hidden",
+  "inline-flex !h-10 min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-xs font-medium text-zinc-400 shadow-none transition-colors sm:px-3 sm:text-sm",
+  "after:hidden after:content-none",
   "data-[state=active]:border-violet-500/40 data-[state=active]:bg-violet-500/15 data-[state=active]:text-violet-100 data-[state=active]:shadow-none",
-  "dark:data-[state=active]:border-violet-500/40 dark:data-[state=active]:bg-violet-500/15 dark:data-[state=active]:text-violet-100"
+  "dark:data-[state=active]:border-violet-500/40 dark:data-[state=active]:bg-violet-500/15 dark:data-[state=active]:text-violet-100 dark:data-[state=active]:bg-violet-500/15"
 )
 
 export default function DashboardSettingsPanel({
@@ -65,7 +65,10 @@ export default function DashboardSettingsPanel({
       </div>
 
       <Tabs defaultValue="api-key" className="space-y-6">
-        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-xl border border-zinc-800 bg-zinc-950/80 p-1">
+        <TabsList
+          variant="line"
+          className="flex h-auto w-full items-stretch gap-1 rounded-xl border border-zinc-800 bg-zinc-950/80 p-1.5"
+        >
           <TabsTrigger value="api-key" className={tabTriggerClassName}>
             <KeyRound className="size-3.5 shrink-0" />
             API key

@@ -28,7 +28,7 @@ export default function SectionHeader({
     >
       <p className={SECTION_LABEL}>{label}</p>
       <h2 className={SECTION_TITLE}>{title}</h2>
-      {description ? <p className={BODY_TEXT}>{description}</p> : null}
+      {description ? <div className={BODY_TEXT}>{description}</div> : null}
     </div>
   )
 }

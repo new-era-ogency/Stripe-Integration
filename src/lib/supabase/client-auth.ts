@@ -14,23 +14,27 @@ async function getSessionUser(
     const { data } = await supabase.auth.getSession()
     return {
       user: data.session?.user ?? null,
-      fromSessionCache: true,
+      fromSessionCache: Boolean(data.session?.user),
     }
   } catch {
     return { user: null, fromSessionCache: false }
   }
 }
 
-/** Resolve the signed-in user without surfacing transient network failures. */
-export async function getClientAuthUser(
-  supabase: SupabaseClient
+function isOffline(): boolean {
+  return typeof navigator !== "undefined" && !navigator.onLine
+}
+
+async function validateUserWithServer(
+  supabase: SupabaseClient,
+  fallback: ClientAuthUserResult
 ): Promise<ClientAuthUserResult> {
   try {
     const { data, error } = await supabase.auth.getUser()
 
     if (error) {
       if (isLikelyNetworkError(error)) {
-        return getSessionUser(supabase)
+        return fallback
       }
 
       return { user: null, fromSessionCache: false }
@@ -39,9 +43,26 @@ export async function getClientAuthUser(
     return { user: data.user, fromSessionCache: false }
   } catch (error) {
     if (isLikelyNetworkError(error)) {
-      return getSessionUser(supabase)
+      return fallback
     }
 
     return { user: null, fromSessionCache: false }
   }
+}
+
+/** Resolve the signed-in user without surfacing transient network failures. */
+export async function getClientAuthUser(
+  supabase: SupabaseClient
+): Promise<ClientAuthUserResult> {
+  const cached = await getSessionUser(supabase)
+
+  if (isOffline()) {
+    return cached
+  }
+
+  if (!cached.user) {
+    return { user: null, fromSessionCache: false }
+  }
+
+  return validateUserWithServer(supabase, cached)
 }

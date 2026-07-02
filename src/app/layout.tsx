@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthSessionSync from "@/components/auth/AuthSessionSync";
-import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import AppFooter from "@/components/layout/AppFooter";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { OpenAiKeyProvider } from "@/components/openai/OpenAiKeyProvider";
@@ -54,11 +54,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.className} dark min-h-full flex flex-col bg-[#000000] text-gray-50 antialiased`}
       >
-        <GoogleAnalytics />
         <AuthSessionSync />
         <ToastProvider>
           <OpenAiKeyProvider>
-            <main className="flex-1">{children}</main>
+            <main className="flex-1">
+              {children}
+              <GoogleAnalytics gaId="G-MD54867XV4" />
+            </main>
           </OpenAiKeyProvider>
         </ToastProvider>
         <AppFooter />
