@@ -24,11 +24,14 @@ import { getAuthCallbackUrl } from "@/lib/auth/site-url"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import PersonalDataConsentField from "@/components/consent/PersonalDataConsentField"
 
 export default function SignupForm() {
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [hasAcceptedPersonalDataConsent, setHasAcceptedPersonalDataConsent] =
+    useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -88,6 +91,12 @@ export default function SignupForm() {
 
     if (password.length < 6) {
       setError("Password should be at least 6 characters.")
+      setIsSubmitting(false)
+      return
+    }
+
+    if (!hasAcceptedPersonalDataConsent) {
+      setError("Please agree to personal data processing before creating an account.")
       setIsSubmitting(false)
       return
     }
@@ -199,6 +208,12 @@ export default function SignupForm() {
         </p>
       ) : null}
 
+      <PersonalDataConsentField
+        checked={hasAcceptedPersonalDataConsent}
+        onCheckedChange={setHasAcceptedPersonalDataConsent}
+        disabled={isFormDisabled}
+      />
+
       <div className="pt-1">
         <Button
           type="button"
@@ -207,7 +222,8 @@ export default function SignupForm() {
             isFormDisabled ||
             !username.trim() ||
             !email.trim() ||
-            password.length < 6
+            password.length < 6 ||
+            !hasAcceptedPersonalDataConsent
           }
           className="h-11 w-full rounded-lg bg-white font-medium text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] transition-all duration-300 hover:bg-zinc-200 focus-visible:ring-0 disabled:opacity-50"
         >
@@ -245,7 +261,7 @@ export default function SignupForm() {
 
       <GoogleAuthButton
         isLoading={isGoogleLoading}
-        disabled={isSubmitting}
+        disabled={isSubmitting || !hasAcceptedPersonalDataConsent}
         onClick={handleGoogleSignIn}
       />
     </div>

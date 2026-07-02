@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Code2, ExternalLink } from "lucide-react"
 import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
+import CookiePreferencesLink from "@/components/consent/CookiePreferencesLink"
 import { brandIdentity, footerLinks } from "@/lib/landing-content"
 
 function FooterLink({
@@ -99,12 +100,15 @@ export default function AppFooter() {
           <p className="text-sm text-zinc-600">
             © {new Date().getFullYear()} PulseFlow. Built by an indie developer.
           </p>
-          <a
-            href="mailto:privacy@pulseflow.app"
-            className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
-          >
-            privacy@pulseflow.app
-          </a>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <CookiePreferencesLink />
+            <a
+              href="mailto:privacy@pulseflow.app"
+              className="text-sm text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              privacy@pulseflow.app
+            </a>
+          </div>
         </div>
       </div>
     </footer>

@@ -453,6 +453,7 @@ export const productAnnotations = [
 
 export const navLinks = [
   { href: "#interactive-demo", label: "Try demo", id: "interactive-demo" },
+  { href: "#problem", label: "The problem", id: "problem" },
   { href: "#features", label: "Features", id: "features" },
   { href: "#ai-meetings", label: "AI Meetings", id: "ai-meetings" },
   { href: "#pricing", label: "Pricing", id: "pricing" },

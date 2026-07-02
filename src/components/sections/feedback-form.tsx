@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Loader2, X } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
+import PersonalDataConsentField from "@/components/consent/PersonalDataConsentField"
 
 export type FeedbackTrigger = "post_generation" | "trial_exhausted" | "manual"
 
@@ -31,6 +32,8 @@ export default function FeedbackForm({
   const [rating, setRating] = useState<number | null>(null)
   const [comment, setComment] = useState("")
   const [contact, setContact] = useState("")
+  const [hasAcceptedPersonalDataConsent, setHasAcceptedPersonalDataConsent] =
+    useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +61,7 @@ export default function FeedbackForm({
       setRating(null)
       setComment("")
       setContact("")
+      setHasAcceptedPersonalDataConsent(false)
       setSubmitted(false)
       setError(null)
       setIsSubmitting(false)
@@ -79,6 +83,11 @@ export default function FeedbackForm({
 
     if (!comment.trim()) {
       setError("Tell us one thing we could improve.")
+      return
+    }
+
+    if (!hasAcceptedPersonalDataConsent) {
+      setError("Please agree to personal data processing before sending feedback.")
       return
     }
 
@@ -238,6 +247,13 @@ export default function FeedbackForm({
               />
             </div>
 
+            <PersonalDataConsentField
+              id="feedback-personal-data-consent"
+              checked={hasAcceptedPersonalDataConsent}
+              onCheckedChange={setHasAcceptedPersonalDataConsent}
+              disabled={isSubmitting}
+            />
+
             {error ? (
               <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
                 {error}
@@ -246,7 +262,7 @@ export default function FeedbackForm({
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !hasAcceptedPersonalDataConsent}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-violet-500 disabled:opacity-70"
             >
               {isSubmitting ? (
