@@ -64,12 +64,6 @@ export default function AuthNavButtons({
         {showKeyBadge ? (
           <OpenAiKeyStatusBadge size="sm" className="hidden sm:inline-flex" />
         ) : null}
-        <Link
-          href="/dashboard"
-          className="rounded-lg bg-violet-600 px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-white transition-colors hover:bg-violet-500 sm:px-4"
-        >
-          Dashboard
-        </Link>
         <button
           type="button"
           onClick={handleSignOut}
