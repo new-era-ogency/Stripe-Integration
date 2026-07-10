@@ -8,6 +8,7 @@ import PricingAnchorSection from "@/components/landing/PricingAnchorSection"
 import MobileFeaturesSection from "@/components/mobile/MobileFeaturesSection"
 import MobileLandingHero from "@/components/mobile/MobileLandingHero"
 import MobileLandingNav from "@/components/mobile/MobileLandingNav"
+import DashboardStickyBar from "@/components/marketing/DashboardStickyBar"
 import { LANDING_FRAME } from "@/lib/landing-styles"
 
 export default function MobileHomePage() {
@@ -21,6 +22,7 @@ export default function MobileHomePage() {
         <PricingAnchorSection />
         <FaqAccordion />
         <LaunchBetaSection />
+        <DashboardStickyBar />
       </div>
     </PerfModeProvider>
   )

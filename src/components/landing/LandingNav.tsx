@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AuthNavButtons from "@/components/layout/AuthNavButtons"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import { LANDING_CONTAINER } from "@/lib/landing-styles"
 import { navLinks } from "@/lib/landing-content"
@@ -94,19 +95,18 @@ export default function LandingNav() {
           })}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="#interactive-demo"
-            className="hidden rounded-lg border border-violet-500/35 bg-violet-500/15 px-3 py-2 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/25 md:inline-flex"
+            className="hidden rounded-lg border border-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-200 lg:inline-flex"
           >
             Try demo
           </a>
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium text-zinc-500 transition-colors hover:text-white md:hidden"
-          >
-            Dashboard
-          </Link>
+          <DashboardCtaLink
+            variant="nav"
+            showIcon
+            className="hidden text-xs sm:inline-flex"
+          />
           <AuthNavButtons />
         </div>
       </div>

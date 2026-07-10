@@ -216,6 +216,7 @@ export const publicRoadmap = {
 export const ctaStrategy = {
   primary: { label: "Try Interactive Demo", href: "#interactive-demo" },
   secondary: { label: "Join Early Access", href: "/login" },
+  dashboard: { label: "Open Dashboard", href: "/dashboard" },
   pricing: { label: "Start Free", href: "/dashboard" },
   footer: { label: "Book Demo", href: "mailto:hello@pulseflow.art?subject=PulseFlow%20demo" },
 } as const
@@ -452,6 +453,7 @@ export const productAnnotations = [
 ]
 
 export const navLinks = [
+  { href: "/dashboard", label: "Dashboard", id: "dashboard" },
   { href: "#interactive-demo", label: "Try demo", id: "interactive-demo" },
   { href: "#problem", label: "The problem", id: "problem" },
   { href: "#features", label: "Features", id: "features" },
@@ -466,7 +468,8 @@ export const interactiveDemoCopy = {
   title: "Try PulseFlow — no signup, no API key.",
   description:
     "Click through Kanban boards, open projects, chat with AI, and run a scripted AI Meeting upload. Everything is simulated in your browser.",
-  footnote: "This is a product preview. Connect your OpenRouter key in the dashboard when you're ready for real generation.",
+  footnote:
+    "This is a product preview. Open the dashboard to connect your OpenRouter key and run real generation.",
 } as const
 
 export const heroCopy = {
@@ -475,10 +478,10 @@ export const heroCopy = {
   title: "Meetings in.",
   titleAccent: "Tasks out.",
   subtitle: brandIdentity.supportLine,
-  primaryCta: ctaStrategy.primary.label,
-  secondaryCta: ctaStrategy.secondary.label,
+  primaryCta: ctaStrategy.dashboard.label,
+  secondaryCta: ctaStrategy.primary.label,
   microTrust:
-    "No signup for the demo · BYOK when you're ready · Zero vendor lock-in",
+    "Free dashboard · No signup required to explore · BYOK when you generate",
 }
 
 export const positioning = {
@@ -492,9 +495,9 @@ export const finalCta = {
   label: "Get started",
   title: "Play with the demo. Ship with the real product.",
   description:
-    "No signup to explore. When you're ready, join early access and connect your OpenRouter key for live generation.",
-  primaryCta: ctaStrategy.primary.label,
-  secondaryCta: ctaStrategy.secondary.label,
+    "Open the dashboard to paste a YouTube link and generate — or explore the interactive demo first. Sign in when you want history saved.",
+  primaryCta: ctaStrategy.dashboard.label,
+  secondaryCta: ctaStrategy.primary.label,
   bookDemoHref: ctaStrategy.footer.href,
   feedbackUrl:
     "https://github.com/new-era-ogency/Stripe-Integration/issues/new/choose",

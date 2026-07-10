@@ -16,6 +16,7 @@ import ProofSection from "@/components/landing/ProofSection"
 import PublicRoadmapSection from "@/components/landing/PublicRoadmapSection"
 import SolutionSection from "@/components/landing/SolutionSection"
 import MobileHomePage from "@/components/mobile/MobileHomePage"
+import DashboardStickyBar from "@/components/marketing/DashboardStickyBar"
 import { LANDING_FRAME } from "@/lib/landing-styles"
 
 function DesktopHomePage() {
@@ -34,6 +35,7 @@ function DesktopHomePage() {
       <PublicRoadmapSection />
       <FaqAccordion />
       <LaunchBetaSection />
+      <DashboardStickyBar />
     </div>
   )
 }

@@ -1,9 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { ArrowRight, KeyRound } from "lucide-react"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import { createClient } from "@/lib/supabase/client"
 import { getClientAuthUser } from "@/lib/supabase/client-auth"
+import { ctaStrategy } from "@/lib/landing-content"
 import { useEffect, useState } from "react"
 
 export default function ByokLandingBanner() {
@@ -28,7 +29,7 @@ export default function ByokLandingBanner() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (!ready || !isGuest) {
+  if (!ready) {
     return null
   }
 
@@ -38,22 +39,45 @@ export default function ByokLandingBanner() {
         <div className="flex items-center gap-2.5 text-sm text-emerald-100">
           <KeyRound className="size-4 shrink-0 text-emerald-300" />
           <span>
-            <span className="font-semibold text-white">
-              Try the interactive demo
-            </span>
-            <span className="hidden text-emerald-200/80 sm:inline">
-              {" "}
-              — no signup. Play with Kanban, AI chat, and AI Meetings in your browser.
-            </span>
+            {isGuest ? (
+              <>
+                <span className="font-semibold text-white">
+                  Free BYOK dashboard
+                </span>
+                <span className="hidden text-emerald-200/80 sm:inline">
+                  {" "}
+                  — paste a YouTube link and generate, or try the interactive demo first.
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-white">
+                  Welcome back
+                </span>
+                <span className="hidden text-emerald-200/80 sm:inline">
+                  {" "}
+                  — continue where you left off in your dashboard.
+                </span>
+              </>
+            )}
           </span>
         </div>
-        <a
-          href="/#interactive-demo"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-100 transition-colors hover:border-emerald-400/50 hover:bg-emerald-500/25"
-        >
-          Try Interactive Demo
-          <ArrowRight className="size-3.5" />
-        </a>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isGuest ? (
+            <a
+              href={ctaStrategy.primary.href}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/80 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-300 transition-colors hover:border-zinc-600 hover:text-white"
+            >
+              Try demo
+              <ArrowRight className="size-3.5" />
+            </a>
+          ) : null}
+          <DashboardCtaLink
+            variant="compact"
+            label={isGuest ? "Open dashboard" : "Go to dashboard"}
+          />
+        </div>
       </div>
     </div>
   )

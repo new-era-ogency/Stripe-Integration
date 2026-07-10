@@ -5,6 +5,7 @@ import AnimatedSection, { StaggerItem } from "@/components/landing/AnimatedSecti
 import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
 import DashboardScreenshot from "@/components/landing/DashboardScreenshot"
+import SectionDashboardCta from "@/components/marketing/SectionDashboardCta"
 import { ACCENT_TEXT, CARD_INTERACTIVE } from "@/lib/landing-styles"
 import { coreFeatures } from "@/lib/landing-content"
 import { navigateToDemoTab } from "@/lib/demo-navigation"
@@ -47,11 +48,15 @@ export default function CoreFeaturesSection() {
           ))}
         </div>
 
-        <AnimatedSection delay={0.12} className="mt-12">
-          <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-zinc-600">
+        <AnimatedSection delay={0.12} className="mt-12 space-y-8">
+          <p className="text-center text-xs font-semibold uppercase tracking-wider text-zinc-600">
             Real output — annotated dashboard
           </p>
           <DashboardScreenshot showAnnotations highlight />
+          <SectionDashboardCta
+            title="This is the real dashboard — not a mockup"
+            description="Open it now to paste a link, connect your OpenRouter key, and generate your first multi-platform pack."
+          />
         </AnimatedSection>
       </SectionHeaderSpacer>
     </SectionShell>

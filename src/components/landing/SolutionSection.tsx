@@ -7,6 +7,7 @@ import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/Section
 import SectionShell from "@/components/landing/SectionShell"
 import { CARD_INTERACTIVE } from "@/lib/landing-styles"
 import { solutionSection } from "@/lib/landing-content"
+import SectionDashboardCta from "@/components/marketing/SectionDashboardCta"
 
 const iconMap: Record<(typeof solutionSection.steps)[number]["icon"], LucideIcon> = {
   capture: Mic,
@@ -55,6 +56,13 @@ export default function SolutionSection() {
             )
           })}
         </ol>
+
+        <AnimatedSection className="mt-10">
+          <SectionDashboardCta
+            title="See the full workflow in the dashboard"
+            description="From transcript to multi-platform drafts in one place — start with a YouTube link and ship in minutes."
+          />
+        </AnimatedSection>
       </SectionHeaderSpacer>
     </SectionShell>
   )

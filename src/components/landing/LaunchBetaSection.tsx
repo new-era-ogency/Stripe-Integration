@@ -1,12 +1,11 @@
 "use client"
 
-import Link from "next/link"
 import { ArrowRight, Calendar, ExternalLink, MessageSquarePlus } from "lucide-react"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import SectionHeader from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import {
-  BTN_PRIMARY,
   BTN_SECONDARY,
   CARD_INTERACTIVE,
 } from "@/lib/landing-styles"
@@ -25,19 +24,18 @@ export default function LaunchBetaSection() {
                 description={finalCta.description}
               />
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <DashboardCtaLink
+                  variant="primary"
+                  label={finalCta.primaryCta}
+                  className="inline-flex"
+                />
                 <a
                   href={ctaStrategy.primary.href}
-                  className={`group inline-flex ${BTN_PRIMARY}`}
-                >
-                  {finalCta.primaryCta}
-                  <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </a>
-                <Link
-                  href={ctaStrategy.secondary.href}
                   className={`inline-flex ${BTN_SECONDARY}`}
                 >
                   {finalCta.secondaryCta}
-                </Link>
+                  <ArrowRight className="ml-2 size-4" />
+                </a>
                 <a
                   href={finalCta.bookDemoHref}
                   className={`inline-flex ${BTN_SECONDARY}`}

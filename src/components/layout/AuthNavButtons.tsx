@@ -64,6 +64,12 @@ export default function AuthNavButtons({
         {showKeyBadge ? (
           <OpenAiKeyStatusBadge size="sm" className="hidden sm:inline-flex" />
         ) : null}
+        <Link
+          href="/dashboard"
+          className="rounded-lg bg-violet-600 px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-white transition-colors hover:bg-violet-500 sm:px-4"
+        >
+          Dashboard
+        </Link>
         <button
           type="button"
           onClick={handleSignOut}
@@ -76,8 +82,16 @@ export default function AuthNavButtons({
   }
 
   return (
-    <Link href="/login" className={signInClassName}>
-      Sign In
-    </Link>
+    <div className="flex items-center gap-2">
+      <Link
+        href="/dashboard"
+        className="hidden rounded-lg border border-violet-500/35 bg-violet-500/15 px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-violet-200 transition-colors hover:bg-violet-500/25 sm:inline-flex"
+      >
+        Dashboard
+      </Link>
+      <Link href="/login" className={signInClassName}>
+        Sign In
+      </Link>
+    </div>
   )
 }

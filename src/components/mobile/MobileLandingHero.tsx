@@ -1,9 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { ArrowRight, MonitorSmartphone } from "lucide-react"
+import { MonitorSmartphone } from "lucide-react"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import {
-  BTN_PRIMARY,
   BTN_SECONDARY,
   HERO_BADGE_PILL,
   HERO_BYOK_BADGE,
@@ -29,12 +28,9 @@ export default function MobileLandingHero() {
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
-        <Link href="/dashboard" className={BTN_PRIMARY}>
-          Launch dashboard
-          <ArrowRight className="ml-2 size-4" />
-        </Link>
+        <DashboardCtaLink variant="primary" label={heroCopy.primaryCta} />
         <a href={ctaStrategy.primary.href} className={BTN_SECONDARY}>
-          {heroCopy.primaryCta}
+          {heroCopy.secondaryCta}
         </a>
       </div>
 

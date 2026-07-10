@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import { ChevronDown } from "lucide-react"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import SectionHeader from "@/components/landing/SectionHeader"
 import SectionShell from "@/components/landing/SectionShell"
 import {
-  BTN_PRIMARY,
   BTN_SECONDARY,
   CARD_INTERACTIVE,
   SECTION_CONTENT_GAP,
@@ -69,9 +69,7 @@ export default function FaqAccordion() {
       <AnimatedSection className={`max-w-2xl ${SECTION_CONTENT_GAP}`}>
         <p className="text-sm text-zinc-500">Still have doubts?</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <Link href="/dashboard" className={BTN_PRIMARY}>
-            Launch dashboard
-          </Link>
+          <DashboardCtaLink variant="primary" label="Launch dashboard" />
           <Link href="/guide/openrouter-key" className={BTN_SECONDARY}>
             OpenRouter setup guide
           </Link>

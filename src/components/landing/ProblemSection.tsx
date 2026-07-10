@@ -6,6 +6,7 @@ import SectionHeader, { SectionHeaderSpacer } from "@/components/landing/Section
 import SectionShell from "@/components/landing/SectionShell"
 import { BODY_TEXT, CARD_INTERACTIVE } from "@/lib/landing-styles"
 import { problemSection } from "@/lib/landing-content"
+import SectionDashboardCta from "@/components/marketing/SectionDashboardCta"
 
 export default function ProblemSection() {
   return (
@@ -63,6 +64,13 @@ export default function ProblemSection() {
               {problemSection.closingNote}
             </p>
           </div>
+        </AnimatedSection>
+
+        <AnimatedSection className="mt-8">
+          <SectionDashboardCta
+            title="Capture ideas where work actually happens"
+            description="Open the dashboard to turn a YouTube upload into structured posts — no copy-pasting between five tools."
+          />
         </AnimatedSection>
       </SectionHeaderSpacer>
     </SectionShell>

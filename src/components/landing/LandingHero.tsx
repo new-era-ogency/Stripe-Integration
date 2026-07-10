@@ -1,13 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import HeroVideoBackground from "@/components/landing/HeroVideoBackground"
 import HeroFlowPreview from "@/components/landing/HeroFlowPreview"
 import AnimatedSection from "@/components/landing/AnimatedSection"
 import {
   ACCENT_TEXT,
-  BTN_PRIMARY,
   BTN_SECONDARY,
   HERO_BADGE_PILL,
   HERO_BYOK_BADGE,
@@ -46,13 +45,13 @@ export default function LandingHero() {
               {brandIdentity.tagline}
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a href={ctaStrategy.primary.href} className={`group ${BTN_PRIMARY}`}>
-                {heroCopy.primaryCta}
-                <ArrowRight className="ml-2 size-4 transition-transform duration-200 group-hover:translate-x-1" />
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <DashboardCtaLink variant="primary" label={heroCopy.primaryCta} />
+              <a href={ctaStrategy.primary.href} className={BTN_SECONDARY}>
+                {heroCopy.secondaryCta}
               </a>
               <Link href={ctaStrategy.secondary.href} className={BTN_SECONDARY}>
-                {heroCopy.secondaryCta}
+                Sign in
               </Link>
             </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import AuthNavButtons from "@/components/layout/AuthNavButtons"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import { navLinks } from "@/lib/landing-content"
 import { cn } from "@/lib/utils"
@@ -27,6 +28,7 @@ export default function MobileLandingNav() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <DashboardCtaLink variant="compact" />
             <AuthNavButtons />
             <button
               type="button"

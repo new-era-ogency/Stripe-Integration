@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Code2, ExternalLink } from "lucide-react"
 import PulseFlowLogo from "@/components/brand/PulseFlowLogo"
 import CookiePreferencesLink from "@/components/consent/CookiePreferencesLink"
+import DashboardCtaLink from "@/components/marketing/DashboardCtaLink"
 import { brandIdentity, footerLinks } from "@/lib/landing-content"
 
 function FooterLink({
@@ -59,7 +60,10 @@ export default function AppFooter() {
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Product
             </p>
-            <ul className="mt-4 space-y-2.5">
+            <div className="mt-4">
+              <DashboardCtaLink variant="compact" className="mb-4" />
+            </div>
+            <ul className="space-y-2.5">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
                   <FooterLink href={link.href} label={link.label} />

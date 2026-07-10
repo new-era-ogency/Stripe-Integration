@@ -3,6 +3,37 @@ import { buildByokCspConnectSrc } from "./src/lib/api/byok-security";
 
 const byokConnectSrc = buildByokCspConnectSrc();
 
+const analyticsAndConsentScriptSrc = [
+  "https://www.googletagmanager.com",
+  "https://cs.iubenda.com",
+  "https://cdn.iubenda.com",
+].join(" ");
+
+const analyticsAndConsentConnectSrc = [
+  "https://www.googletagmanager.com",
+  "https://www.google-analytics.com",
+  "https://analytics.google.com",
+  "https://region1.google-analytics.com",
+  "https://cs.iubenda.com",
+  "https://cdn.iubenda.com",
+  "https://idb.iubenda.com",
+].join(" ");
+
+const analyticsAndConsentStyleSrc = "https://cdn.iubenda.com";
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${analyticsAndConsentScriptSrc}`,
+  `style-src 'self' 'unsafe-inline' ${analyticsAndConsentStyleSrc}`,
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${byokConnectSrc} https://api.telegram.org ${analyticsAndConsentConnectSrc}`,
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join("; ");
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -16,8 +47,7 @@ const securityHeaders = [
   },
   {
     key: "Content-Security-Policy",
-    value:
-      `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co ${byokConnectSrc} https://api.telegram.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`,
+    value: contentSecurityPolicy,
   },
 ];
 
