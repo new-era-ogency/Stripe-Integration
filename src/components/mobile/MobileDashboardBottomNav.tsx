@@ -1,6 +1,7 @@
 "use client"
 
 import { History, Settings, Sparkles, SquareStack } from "lucide-react"
+import NavCountBadge from "@/components/dashboard/NavCountBadge"
 import type { DashboardMobileTab } from "@/lib/viewport"
 import { cn } from "@/lib/utils"
 
@@ -18,11 +19,13 @@ const TABS: {
 type MobileDashboardBottomNavProps = {
   activeTab: DashboardMobileTab
   onTabChange: (tab: DashboardMobileTab) => void
+  unseenResultsCount: number
 }
 
 export default function MobileDashboardBottomNav({
   activeTab,
   onTabChange,
+  unseenResultsCount,
 }: MobileDashboardBottomNavProps) {
   return (
     <nav
@@ -40,14 +43,19 @@ export default function MobileDashboardBottomNav({
               type="button"
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-colors",
+                "relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-colors",
                 isActive
                   ? "bg-violet-500/15 text-violet-200"
                   : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
               )}
             >
               <Icon className="size-4" />
-              {tab.label}
+              <span className="flex items-center gap-1">
+                {tab.label}
+                {tab.id === "results" ? (
+                  <NavCountBadge count={unseenResultsCount} />
+                ) : null}
+              </span>
             </button>
           )
         })}

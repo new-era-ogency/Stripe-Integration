@@ -20,6 +20,7 @@ import type { GeneratedContent } from "@/lib/generations"
 import { isProMaxTier, isProTier, type UserTier } from "@/lib/profile"
 import TelegramPublishActions from "@/components/dashboard/TelegramPublishActions"
 import { useToast } from "@/components/feedback/ToastProvider"
+import { dash } from "@/lib/dashboard/theme-classes"
 
 type OutputTabId =
   | "twitter"
@@ -37,10 +38,12 @@ type GeneratedOutputPanelProps = {
 }
 
 const tabTriggerClass =
-  "rounded-none border-b-2 border-transparent bg-transparent px-2 py-2.5 text-[11px] uppercase tracking-wider text-zinc-500 shadow-none transition-colors data-[state=active]:border-violet-500 data-[state=active]:bg-transparent data-[state=active]:text-white sm:text-xs"
+  "rounded-none border-b-2 border-transparent bg-transparent px-2 py-2.5 text-[11px] uppercase tracking-wider text-zinc-500 shadow-none transition-colors data-[state=active]:border-violet-500 data-[state=active]:bg-transparent data-[state=active]:text-white light:text-violet-600 light:data-[state=active]:text-violet-900 sm:text-xs"
+
+const contentBlockClass = dash.contentBlock
 
 const textareaClass =
-  "min-h-[220px] resize-none rounded-lg border-zinc-800 bg-[#020202] p-4 font-sans text-sm leading-relaxed tracking-wide text-zinc-200 shadow-inner focus-visible:ring-0"
+  "min-h-[220px] resize-none rounded-lg border-zinc-800 bg-[#020202] p-4 font-sans text-sm leading-relaxed tracking-wide text-zinc-200 shadow-inner focus-visible:ring-0 light:border-violet-200 light:bg-white light:text-zinc-900"
 
 const PRO_LOCKED_TABS: OutputTabId[] = ["linkedin", "shorts"]
 
@@ -60,7 +63,7 @@ function LockedTabPlaceholder({
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
-            className="rounded-xl border border-orange-500/20 bg-[#020202] p-4"
+            className={`${contentBlockClass} border-orange-500/20 light:border-orange-200`}
           >
             <div className="mb-2 flex gap-2">
               <div className="h-2 w-20 rounded bg-zinc-800" />
@@ -82,7 +85,7 @@ function LockedTabPlaceholder({
         {["Hook", "Body", "CTA"].map((label) => (
           <div
             key={label}
-            className="rounded-xl border border-zinc-800/80 bg-[#020202] p-4"
+            className={contentBlockClass}
           >
             <div className="mb-2 h-2 w-16 rounded bg-zinc-800" />
             <div className="space-y-2">
@@ -97,7 +100,7 @@ function LockedTabPlaceholder({
 
   return (
     <div className="pointer-events-none select-none blur-sm opacity-40">
-      <div className="min-h-[280px] rounded-xl border border-zinc-800/80 bg-[#020202] p-4">
+      <div className={`min-h-[280px] ${contentBlockClass}`}>
         <div className="mb-4 h-3 w-40 rounded bg-zinc-800" />
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, index) => (
@@ -115,16 +118,16 @@ function LockedTabPlaceholder({
 
 function ProLockOverlay({ feature }: { feature: string }) {
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl border border-violet-500/20 bg-black/60 backdrop-blur-md">
+    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl border border-violet-500/20 bg-black/60 backdrop-blur-md light:border-violet-200 light:bg-white/85">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.18),transparent_70%)]" />
       <div className="relative mx-4 max-w-sm animate-in fade-in zoom-in-95 text-center duration-300">
         <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/10 shadow-[0_0_30px_-8px_rgba(139,92,246,0.5)]">
           <Lock className="size-5 animate-pulse text-violet-300" />
         </div>
-        <p className="text-sm font-medium text-white">
+        <p className={`text-sm font-medium ${dash.heading} light:text-violet-950`}>
           {feature} is a Pro feature
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+        <p className={`mt-2 text-xs leading-relaxed ${dash.body}`}>
           Deep LinkedIn articles, Shorts scripts, and the full 4-part content
           pack are included when your account has Pro access.
         </p>
@@ -135,16 +138,16 @@ function ProLockOverlay({ feature }: { feature: string }) {
 
 function ProMaxLockOverlay() {
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl border border-orange-500/25 bg-black/60 backdrop-blur-md">
+    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-xl border border-orange-500/25 bg-black/60 backdrop-blur-md light:border-orange-200 light:bg-white/85">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.2),transparent_70%)]" />
       <div className="relative mx-4 max-w-sm animate-in fade-in zoom-in-95 text-center duration-300">
         <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl border border-orange-500/40 bg-orange-500/10 shadow-[0_0_30px_-8px_rgba(249,115,22,0.55)]">
           <Flame className="size-5 text-orange-300" />
         </div>
-        <p className="text-sm font-medium text-white">
+        <p className={`text-sm font-medium ${dash.heading} light:text-violet-950`}>
           Viral Shorts Hooks is a Pro Max feature
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+        <p className={`mt-2 text-xs leading-relaxed ${dash.body}`}>
           Timestamp-based viral clip windows, hook scores, ready-to-speak scripts,
           and shot lists — available on Pro Max accounts.
         </p>
@@ -171,7 +174,7 @@ function CopyButton({ label, text }: { label: string; text: string }) {
       onClick={() => {
         void handleCopy()
       }}
-      className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-500 transition-colors hover:text-white"
+      className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-500 transition-colors hover:text-white light:text-violet-600 light:hover:text-violet-900"
       aria-label={`Copy ${label}`}
     >
       <CopyIcon className="h-3.5 w-3.5" />
@@ -186,7 +189,7 @@ function TwitterThreadView({ tweets }: { tweets: string[] }) {
       {tweets.map((tweet, index) => (
         <div
           key={`${index}-${tweet.slice(0, 24)}`}
-          className="rounded-xl border border-zinc-800/80 bg-[#020202] p-4"
+          className={contentBlockClass}
         >
           <div className="mb-2 flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-wider text-violet-400/80">
@@ -196,7 +199,7 @@ function TwitterThreadView({ tweets }: { tweets: string[] }) {
               {tweet.length}/280
             </span>
           </div>
-          <p className="text-sm leading-relaxed text-zinc-200">{tweet}</p>
+          <p className="text-sm leading-relaxed text-zinc-200 light:text-zinc-800">{tweet}</p>
         </div>
       ))}
     </div>
@@ -219,14 +222,14 @@ function ShortsScriptView({
       {sections.map((section) => (
         <div
           key={section.label}
-          className="rounded-xl border border-zinc-800/80 bg-[#020202] p-4"
+          className={contentBlockClass}
         >
           <p
             className={`mb-2 font-mono text-[10px] uppercase tracking-[0.25em] ${section.accent}`}
           >
             {section.label}
           </p>
-          <p className="text-sm leading-relaxed text-zinc-200">
+          <p className="text-sm leading-relaxed text-zinc-200 light:text-zinc-800">
             {section.value}
           </p>
         </div>
@@ -241,7 +244,7 @@ function ViralShortsHooksView({ hooks }: { hooks: ViralShortsHook[] }) {
       {hooks.map((hook, index) => (
         <div
           key={`${hook.timestampStart}-${index}`}
-          className="rounded-xl border border-orange-500/20 bg-[#020202] p-4"
+          className={`${contentBlockClass} border-orange-500/20 light:border-orange-200`}
         >
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-orange-200">
@@ -255,13 +258,13 @@ function ViralShortsHooksView({ hooks }: { hooks: ViralShortsHook[] }) {
             </span>
           </div>
 
-          <p className="mb-3 text-sm font-medium text-white">{hook.hook}</p>
+          <p className={`mb-3 text-sm font-medium ${dash.heading} light:text-violet-950`}>{hook.hook}</p>
 
-          <div className="mb-3 rounded-lg border border-zinc-800/80 bg-black/40 p-3">
+          <div className="mb-3 rounded-lg border border-zinc-800/80 bg-black/40 p-3 light:border-violet-200 light:bg-violet-50/50">
             <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
               Script
             </p>
-            <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
+            <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap light:text-zinc-700">
               {hook.script}
             </p>
           </div>
@@ -274,7 +277,7 @@ function ViralShortsHooksView({ hooks }: { hooks: ViralShortsHook[] }) {
               {hook.shotList.map((shot) => (
                 <li
                   key={shot}
-                  className="flex items-start gap-2 text-sm text-zinc-400"
+                  className="flex items-start gap-2 text-sm text-zinc-400 light:text-zinc-600"
                 >
                   <span className="text-orange-400/80">•</span>
                   <span>{shot}</span>
@@ -351,16 +354,16 @@ export default function GeneratedOutputPanel({
       Pro Pack
     </span>
   ) : (
-    <span className="font-mono text-[10px] text-zinc-600">
+    <span className={`font-mono text-[10px] ${dash.muted}`}>
       STARTER · 2/5 UNLOCKED
     </span>
   )
 
   return (
-    <Card className="mb-6 gap-0 rounded-xl border-zinc-900 bg-[#050505] py-0 shadow-[0_0_40px_-12px_rgba(139,92,246,0.12)]">
-      <CardHeader className="border-b border-zinc-900 px-5 py-4">
+    <Card className={`mb-6 gap-0 rounded-xl py-0 ${dash.panel}`}>
+      <CardHeader className={`${dash.panelHeader} light:border-violet-200`}>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
+          <CardTitle className={`text-[10px] uppercase tracking-[0.3em] ${dash.muted}`}>
             Generated Output · Deep Content Pack
           </CardTitle>
           {packBadge}
@@ -371,7 +374,7 @@ export default function GeneratedOutputPanel({
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as OutputTabId)}
         >
-          <TabsList className="flex h-auto w-full gap-0 overflow-x-auto rounded-none border-b border-zinc-900 bg-transparent p-0 [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-5 [&::-webkit-scrollbar]:hidden">
+          <TabsList className="flex h-auto w-full gap-0 overflow-x-auto rounded-none border-b border-zinc-900 bg-transparent p-0 [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-5 light:border-violet-200 [&::-webkit-scrollbar]:hidden">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
@@ -489,7 +492,7 @@ export default function GeneratedOutputPanel({
                   ) : null}
 
                   {tab.id === "viral-hooks" && !locked && !viralHooks.length ? (
-                    <p className="rounded-xl border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-500">
+                    <p className={`rounded-xl border border-dashed border-zinc-800 p-6 text-center text-sm ${dash.muted} light:border-violet-200`}>
                       No viral hooks were returned for this generation.
                     </p>
                   ) : null}

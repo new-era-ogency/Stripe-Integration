@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthSessionSync from "@/components/auth/AuthSessionSync";
-import AppFooter from "@/components/layout/AppFooter";
+import ConditionalFooter from "@/components/layout/ConditionalFooter";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import IubendaConsentScripts from "@/components/consent/IubendaConsentScripts";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { OpenAiKeyProvider } from "@/components/openai/OpenAiKeyProvider";
-import { IUBENDA_CS_CONFIG_SCRIPT } from "@/lib/consent/iubenda-config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,42 +52,24 @@ export default function RootLayout({
     <html
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full font-sans antialiased`}
+      suppressHydrationWarning
     >
       <body
         className={`${geistSans.className} dark min-h-full flex flex-col bg-[#000000] text-gray-50 antialiased`}
       >
-        <Script
-          id="iubenda-cs-config"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: IUBENDA_CS_CONFIG_SCRIPT }}
-        />
-        <Script
-          id="iubenda-autoblocking"
-          src="https://cs.iubenda.com/autoblocking/4592982.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          id="iubenda-gpp-stub"
-          src="https://cdn.iubenda.com/cs/gpp/stub.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          id="iubenda-cs"
-          src="https://cdn.iubenda.com/cs/iubenda_cs.js"
-          strategy="beforeInteractive"
-          async
-          charSet="UTF-8"
-        />
-        <AuthSessionSync />
-        <ToastProvider>
-          <OpenAiKeyProvider>
-            <main className="flex-1">
-              {children}
-              <GoogleAnalytics gaId="G-MD54867XV4" />
-            </main>
-          </OpenAiKeyProvider>
-        </ToastProvider>
-        <AppFooter />
+        <IubendaConsentScripts />
+        <ThemeProvider>
+          <AuthSessionSync />
+          <ToastProvider>
+            <OpenAiKeyProvider>
+              <main className="flex-1">
+                {children}
+                <GoogleAnalytics gaId="G-MD54867XV4" />
+              </main>
+            </OpenAiKeyProvider>
+          </ToastProvider>
+        </ThemeProvider>
+        <ConditionalFooter />
       </body>
     </html>
   );

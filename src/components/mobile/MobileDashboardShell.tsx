@@ -11,6 +11,7 @@ type MobileDashboardShellProps = {
   results: ReactNode
   history: ReactNode
   settings: ReactNode
+  unseenResultsCount?: number
   header?: ReactNode
   topBanner?: ReactNode
 }
@@ -22,6 +23,7 @@ export default function MobileDashboardShell({
   results,
   history,
   settings,
+  unseenResultsCount = 0,
   header,
   topBanner,
 }: MobileDashboardShellProps) {
@@ -41,7 +43,11 @@ export default function MobileDashboardShell({
         </div>
       </div>
 
-      <MobileDashboardBottomNav activeTab={activeTab} onTabChange={onTabChange} />
+      <MobileDashboardBottomNav
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+        unseenResultsCount={unseenResultsCount}
+      />
     </div>
   )
 }

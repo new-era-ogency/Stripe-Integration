@@ -41,6 +41,8 @@ export default function LoginForm() {
     }
   }, [searchParams])
 
+  const resetSuccess = searchParams.get("reset") === "success"
+
   const displayError = error ?? googleError
   const isFormDisabled = isGoogleLoading || isSigningIn
 
@@ -120,9 +122,17 @@ export default function LoginForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password" className={authLabelClassName}>
-          Password
-        </Label>
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="password" className={authLabelClassName}>
+            Password
+          </Label>
+          <Link
+            href="/forgot-password"
+            className="text-xs font-medium text-violet-400 transition-colors hover:text-violet-300"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Input
           id="password"
           type="password"
@@ -134,6 +144,15 @@ export default function LoginForm() {
           className={authInputClassName}
         />
       </div>
+
+      {resetSuccess ? (
+        <p
+          className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5 text-sm leading-relaxed text-emerald-200/90"
+          role="status"
+        >
+          Your password was updated. Sign in with your new password.
+        </p>
+      ) : null}
 
       {displayError ? (
         <p className="text-sm leading-relaxed text-amber-300/90" role="alert">

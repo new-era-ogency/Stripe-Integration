@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import DashboardHeader from "@/components/dashboard/DashboardHeader"
+import DashboardAnimatedView from "@/components/dashboard/DashboardAnimatedView"
 import DashboardCreateWorkspace, {
   type StylePreset,
 } from "@/components/dashboard/DashboardCreateWorkspace"
+import DashboardOverview from "@/components/dashboard/DashboardOverview"
 import DashboardQuickTryCard from "@/components/dashboard/DashboardQuickTryCard"
-import DashboardStatsPanel from "@/components/dashboard/DashboardStatsPanel"
 import DashboardSettingsPanel from "@/components/dashboard/DashboardSettingsPanel"
+import DashboardShell from "@/components/dashboard/DashboardShell"
+import DashboardStatsPanel from "@/components/dashboard/DashboardStatsPanel"
 import GeneratedOutputPanel from "@/components/dashboard/GeneratedOutputPanel"
 import GenerationHistory from "@/components/dashboard/GenerationHistory"
 import { useToast } from "@/components/feedback/ToastProvider"
@@ -50,7 +52,17 @@ import {
   prependGenerationRecord,
 } from "@/lib/generation/results"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
+import type { ContentSourceTab } from "@/lib/content-sources/types"
+import type { CreateIntent } from "@/lib/dashboard/create-intent"
+import type { DashboardView } from "@/lib/dashboard/views"
+import type { StatCardKey } from "@/components/dashboard/DashboardStatCards"
+import {
+  countUnseenResults,
+  loadViewedGenerationIds,
+  saveViewedGenerationIds,
+} from "@/lib/dashboard/viewed-generations"
 import { useViewport } from "@/hooks/useViewport"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import MobileDashboardShell from "@/components/mobile/MobileDashboardShell"
 import type { DashboardMobileTab } from "@/lib/viewport"
 
@@ -83,6 +95,20 @@ export default function DashboardPage() {
   const [isGuest, setIsGuest] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [stylePreset, setStylePreset] = useState<StylePreset>("viral-thread")
+  const [activeView, setActiveView] = useState<DashboardView>("overview")
+  const [settingsTab, setSettingsTab] = useState<
+    "api-key" | "telegram" | "brand-voice"
+  >("api-key")
+  const [historyFilter, setHistoryFilter] = useState<"all" | "month">("all")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [createSourceTab, setCreateSourceTab] = useState<ContentSourceTab>("youtube")
+  const [createIntent, setCreateIntent] = useState<CreateIntent>("default")
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string>("")
+  const [userId, setUserId] = useState<string | null>(null)
+  const [viewedGenerationIds, setViewedGenerationIds] = useState<Set<string>>(
+    () => new Set()
+  )
   const { hasOpenAiKey, openKeyModal, refreshKeyStatus } = useOpenAiKey()
   const { success: toastSuccess, error: toastError } = useToast()
 
@@ -95,9 +121,50 @@ export default function DashboardPage() {
   const generationAbortRef = useRef<AbortController | null>(null)
   const isGeneratingRef = useRef(false)
 
+  const unseenResultsCount = useMemo(
+    () => countUnseenResults(generations, viewedGenerationIds),
+    [generations, viewedGenerationIds]
+  )
+
+  const markGenerationViewed = useCallback(
+    (generationId: string | null | undefined) => {
+      if (!userId || !generationId) {
+        return
+      }
+
+      setViewedGenerationIds((current) => {
+        if (current.has(generationId)) {
+          return current
+        }
+
+        const next = new Set(current)
+        next.add(generationId)
+        saveViewedGenerationIds(userId, next)
+        return next
+      })
+    },
+    [userId]
+  )
+
+  const syncViewedGenerations = useCallback(
+    (nextUserId: string, generationIds: string[]) => {
+      setViewedGenerationIds(loadViewedGenerationIds(nextUserId, generationIds))
+    },
+    []
+  )
   const usageStats = useMemo(() => {
-    return { used: generations.length }
-  }, [generations.length])
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const generationsThisMonth = generations.filter(
+      (record) => new Date(record.created_at) >= monthStart
+    ).length
+
+    return {
+      used: generations.length,
+      generationsThisMonth,
+      draftCount: hasGeneratedContent(generatedOutputs) ? 1 : 0,
+    }
+  }, [generations, generatedOutputs])
 
   const fetchUserData = useCallback(async () => {
     if (isGeneratingRef.current) {
@@ -110,6 +177,10 @@ export default function DashboardPage() {
 
     if (!user) {
       setIsGuest(true)
+      setUserId(null)
+      setUserEmail(null)
+      setDisplayName("")
+      setViewedGenerationIds(new Set())
       setTier("starter")
       setBrandVoice(null)
       setTgChannelId(null)
@@ -117,6 +188,8 @@ export default function DashboardPage() {
       setAuthChecked(true)
       return
     }
+
+    setUserId(user.id)
 
     try {
       const redirectPath = await getPostAuthRedirectPath(supabase, user.id)
@@ -132,12 +205,25 @@ export default function DashboardPage() {
     }
 
     setIsGuest(false)
+    setUserEmail(user.email ?? null)
+
+    const metadataUsername = user.user_metadata?.username
+    const emailLocalPart = user.email?.split("@")[0] ?? ""
+    setDisplayName(
+      typeof metadataUsername === "string" && metadataUsername.trim()
+        ? metadataUsername.trim()
+        : emailLocalPart
+    )
 
     const applyDashboardData = (data: DashboardUserData) => {
       setTier(data.tier)
       setBrandVoice(data.brandVoice)
       setTgChannelId(data.tgChannelId)
       setGenerations(data.generations)
+      syncViewedGenerations(
+        user.id,
+        data.generations.map((record) => record.id)
+      )
       setAuthChecked(true)
     }
 
@@ -156,7 +242,7 @@ export default function DashboardPage() {
       console.error("Error fetching user data:", result.error)
     }
     applyDashboardData(buildDashboardUserData(null, [], []))
-  }, [router])
+  }, [router, syncViewedGenerations])
 
   useEffect(() => {
     fetchUserData()
@@ -172,6 +258,22 @@ export default function DashboardPage() {
 
     return () => subscription.unsubscribe()
   }, [fetchUserData])
+
+  useEffect(() => {
+    const onResultsView =
+      (!isMobile && activeView === "results") ||
+      (isMobile && mobileTab === "results")
+
+    if (onResultsView && activeGenerationId) {
+      markGenerationViewed(activeGenerationId)
+    }
+  }, [
+    activeView,
+    mobileTab,
+    isMobile,
+    activeGenerationId,
+    markGenerationViewed,
+  ])
 
   const handleStopGeneration = useCallback(() => {
     generationAbortRef.current?.abort()
@@ -273,10 +375,7 @@ export default function DashboardPage() {
       })
 
       if (!isMobile) {
-        document.getElementById("results")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        })
+        setActiveView("results")
       }
     } catch (error) {
       if (isAbortError(error, signal)) {
@@ -309,6 +408,7 @@ export default function DashboardPage() {
   }
 
   const handleViewGeneration = (record: GenerationRecord) => {
+    markGenerationViewed(record.id)
     setGeneratedOutputs(record.generated_content)
     setActiveGenerationId(record.id)
 
@@ -317,10 +417,7 @@ export default function DashboardPage() {
       return
     }
 
-    document.getElementById("results")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    })
+    setActiveView("results")
   }
 
   const handleCopyGeneration = async (record: GenerationRecord) => {
@@ -355,11 +452,11 @@ export default function DashboardPage() {
   const guestBanner =
     authChecked && isGuest ? (
       <div className="mb-6 space-y-4">
-        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-violet-500/5 to-transparent px-5 py-5">
-          <p className="text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-violet-500/5 to-transparent px-5 py-5 light:border-violet-200 light:from-violet-50 light:via-white light:to-violet-50/40">
+          <p className="text-sm font-semibold text-white light:text-violet-950">
             Free BYOK dashboard — sign in to add your OpenRouter key
           </p>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-400 light:text-violet-700">
             PulseFlow is 100% free. Bring your own OpenRouter key in Settings,
             add any source, and generate X, LinkedIn, and Telegram posts from
             your browser.
@@ -375,9 +472,57 @@ export default function DashboardPage() {
       </div>
     ) : null
 
+  const workspaceName = displayName
+    ? `${displayName}'s workspace`
+    : "Content Engine"
+
+  const openCreate = useCallback(
+    (tab: ContentSourceTab = "youtube", intent: CreateIntent = "default") => {
+      setCreateSourceTab(tab)
+      setCreateIntent(intent)
+      setActiveView("create")
+    },
+    []
+  )
+
+  const handleDashboardViewChange = useCallback(
+    (view: DashboardView) => {
+      if (view === "create") {
+        setCreateIntent("default")
+        setCreateSourceTab("youtube")
+      }
+      if (view === "history") {
+        setHistoryFilter("all")
+      }
+      setActiveView(view)
+    },
+    []
+  )
+
+  const handleStatCardNavigate = useCallback((key: StatCardKey) => {
+    switch (key) {
+      case "projects":
+        setHistoryFilter("all")
+        setActiveView("history")
+        break
+      case "meetings":
+        setHistoryFilter("month")
+        setActiveView("history")
+        break
+      case "tasks":
+        setActiveView("results")
+        break
+      case "team":
+        setSettingsTab("api-key")
+        setActiveView("settings")
+        break
+    }
+  }, [])
+
   const createSection = (
     <section id="create" className="scroll-mt-36">
       <DashboardCreateWorkspace
+        key={createSourceTab}
         stylePreset={stylePreset}
         onStylePresetChange={setStylePreset}
         isLoading={isLoading}
@@ -387,6 +532,7 @@ export default function DashboardPage() {
         hasOpenAiKey={hasOpenAiKey}
         onGenerate={handleGenerate}
         onStopGeneration={handleStopGeneration}
+        initialSourceTab={createSourceTab}
       />
     </section>
   )
@@ -402,11 +548,11 @@ export default function DashboardPage() {
           styleTone={PRESET_TONES[stylePreset]}
         />
       ) : (
-        <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-12 text-center">
-          <p className="text-sm font-medium text-zinc-300">
+        <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-12 text-center light:border-violet-200 light:bg-violet-50/30">
+          <p className="text-sm font-medium text-zinc-300 light:text-violet-950">
             Your generated posts will appear here
           </p>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-zinc-500 light:text-violet-700/90">
             Use the Create tab to add a source and generate, or{" "}
             <Link
               href="/"
@@ -430,6 +576,7 @@ export default function DashboardPage() {
         activeId={activeGenerationId}
         onView={handleViewGeneration}
         onCopy={handleCopyGeneration}
+        filter={historyFilter}
       />
     </section>
   )
@@ -453,12 +600,14 @@ export default function DashboardPage() {
         onBrandVoiceSaved={setBrandVoice}
         onTgChannelSaved={setTgChannelId}
         onKeyChanged={handleKeyChanged}
+        activeTab={settingsTab}
+        onTabChange={setSettingsTab}
       />
     </section>
   )
 
   if (!viewportReady) {
-    return <div className="min-h-screen bg-zinc-950" aria-hidden />
+    return <div className="min-h-screen bg-black" aria-hidden />
   }
 
   if (isMobile) {
@@ -478,37 +627,94 @@ export default function DashboardPage() {
         results={resultsSection}
         history={historySection}
         settings={settingsSection}
+        unseenResultsCount={unseenResultsCount}
       />
     )
   }
 
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.07),transparent_55%)]" />
+    <DashboardShell
+      activeView={activeView}
+      createIntent={createIntent}
+      onViewChange={handleDashboardViewChange}
+      sidebarCollapsed={sidebarCollapsed}
+      onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
+      isGuest={isGuest}
+      authChecked={authChecked}
+      userEmail={userEmail}
+      workspaceName={workspaceName}
+      generations={generations}
+      onSearchSelect={(record) => {
+        handleViewGeneration(record)
+        setActiveView("results")
+      }}
+      onMeetingsClick={() => openCreate("media", "meetings")}
+      onUnclassifiedClick={() => openCreate("text", "unclassified")}
+      unseenResultsCount={unseenResultsCount}
+      topBanner={guestBanner}
+    >
+      {activeView === "overview" ? (
+        <DashboardAnimatedView viewKey="overview">
+          <DashboardOverview
+            displayName={displayName}
+            generations={generations}
+            generationsThisMonth={usageStats.generationsThisMonth}
+            draftCount={usageStats.draftCount}
+            tier={tier}
+            hasOpenAiKey={hasOpenAiKey}
+            authChecked={authChecked}
+            isGuest={isGuest}
+            activeGenerationId={activeGenerationId}
+            onNewProject={() => openCreate("youtube", "default")}
+            onUploadMeeting={() => openCreate("media", "meetings")}
+            onViewGeneration={(record) => {
+              handleViewGeneration(record)
+              setActiveView("results")
+            }}
+            onCopyGeneration={handleCopyGeneration}
+            onStatCardNavigate={handleStatCardNavigate}
+          />
+        </DashboardAnimatedView>
+      ) : null}
 
-      <DashboardHeader isGuest={isGuest} authChecked={authChecked} />
+      {activeView === "create" ? (
+        <DashboardAnimatedView viewKey={`create-${createIntent}-${createSourceTab}`}>
+          {createSection}
+        </DashboardAnimatedView>
+      ) : null}
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {guestBanner}
+      {activeView === "results" ? (
+        <DashboardAnimatedView viewKey="results">{resultsSection}</DashboardAnimatedView>
+      ) : null}
 
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
-          <div className="min-w-0 space-y-8">
-            {createSection}
-            {resultsSection}
-            {historySection}
-            {settingsSection}
-          </div>
+      {activeView === "history" ? (
+        <DashboardAnimatedView viewKey="history">{historySection}</DashboardAnimatedView>
+      ) : null}
 
-          <div className="xl:sticky xl:top-36 xl:self-start">
+      {activeView === "settings" ? (
+        <DashboardAnimatedView viewKey="settings">
+          <section id="settings" className="scroll-mt-36 space-y-6">
             <DashboardStatsPanel
               authChecked={authChecked}
               isGuest={isGuest}
               generationsCount={usageStats.used}
               hasOpenAiKey={hasOpenAiKey}
             />
-          </div>
-        </div>
-      </div>
-    </div>
+            <DashboardSettingsPanel
+              tier={tier}
+              brandVoice={brandVoice}
+              tgChannelId={tgChannelId}
+              isGuest={isGuest}
+              authChecked={authChecked}
+              onBrandVoiceSaved={setBrandVoice}
+              onTgChannelSaved={setTgChannelId}
+              onKeyChanged={handleKeyChanged}
+              activeTab={settingsTab}
+              onTabChange={setSettingsTab}
+            />
+          </section>
+        </DashboardAnimatedView>
+      ) : null}
+    </DashboardShell>
   )
 }

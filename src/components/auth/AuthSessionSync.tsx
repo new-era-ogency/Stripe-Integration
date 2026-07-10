@@ -7,6 +7,13 @@ import { getClientAuthUser } from "@/lib/supabase/client-auth"
 import { getPostAuthRedirectPath } from "@/lib/auth/post-auth-redirect"
 
 const AUTH_ENTRY_PATHS = new Set(["/", "/login", "/signup"])
+const NO_AUTO_REDIRECT_PATHS = new Set([
+  "/reset-password",
+  "/forgot-password",
+  "/forgot-password/sent",
+  "/auth/callback",
+  "/signup/complete",
+])
 
 export default function AuthSessionSync() {
   const router = useRouter()
@@ -40,11 +47,18 @@ export default function AuthSessionSync() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) {
+        if (pathname !== "/reset-password") {
+          router.replace("/reset-password")
+        }
+        return
+      }
+
       if (event !== "SIGNED_IN" || !session) {
         return
       }
 
-      if (pathname === "/auth/callback" || pathname === "/signup/complete") {
+      if (NO_AUTO_REDIRECT_PATHS.has(pathname)) {
         return
       }
 

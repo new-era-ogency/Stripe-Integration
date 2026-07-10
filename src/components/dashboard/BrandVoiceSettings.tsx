@@ -5,6 +5,7 @@ import { Loader2, Lock, Sparkles, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { isProTier, type UserTier } from "@/lib/profile"
+import { dash } from "@/lib/dashboard/theme-classes"
 
 type BrandVoiceSettingsProps = {
   tier: UserTier
@@ -69,14 +70,12 @@ export default function BrandVoiceSettings({
   }
 
   return (
-    <section className="mb-6 overflow-hidden rounded-2xl border border-zinc-900 bg-[#050505] shadow-[0_0_40px_-12px_rgba(139,92,246,0.12)]">
-      <div className="border-b border-zinc-900 px-5 py-4">
+    <section className={`mb-6 overflow-hidden ${dash.panel}`}>
+      <div className={dash.panelHeader}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-              Pro Settings
-            </p>
-            <h2 className="mt-1 text-base font-medium text-white">
+            <p className={dash.label}>Pro Settings</p>
+            <h2 className={`mt-1 text-base font-medium ${dash.heading} light:text-violet-950`}>
               AI Brand Voice / Persona
             </h2>
           </div>
@@ -86,7 +85,7 @@ export default function BrandVoiceSettings({
               Pro Active
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 light:border-violet-200 light:bg-violet-50 light:text-violet-700">
               Starter
             </span>
           )}
@@ -95,10 +94,10 @@ export default function BrandVoiceSettings({
 
       <div className="relative px-5 py-4">
         {!authChecked ? (
-          <div className="h-32 animate-pulse rounded-xl bg-zinc-900/80" />
+          <div className={`h-32 animate-pulse rounded-xl ${dash.skeleton}`} />
         ) : (
           <>
-            <p className="mb-3 text-sm leading-relaxed text-zinc-400">
+            <p className={`mb-3 text-sm leading-relaxed ${dash.body}`}>
               Define how PulseFlow writes for you — tone, audience, vocabulary,
               and personality. Injected into every generation when you&apos;re on
               Pro.
@@ -110,19 +109,19 @@ export default function BrandVoiceSettings({
                 onChange={(event) => setDraft(event.target.value)}
                 disabled={isLocked || isSaving}
                 placeholder="Example: Write like a sharp SaaS founder — confident, concise, no fluff. Use short paragraphs, strong hooks, and practical CTAs for indie hackers."
-                className="min-h-[140px] resize-none rounded-xl border-zinc-800 bg-[#010101] text-sm leading-relaxed text-zinc-200 shadow-inner placeholder:text-zinc-700 focus-visible:border-violet-500 focus-visible:ring-0 disabled:opacity-60"
+                className={`min-h-[140px] resize-none rounded-xl border-zinc-800 bg-[#010101] text-sm leading-relaxed text-zinc-200 shadow-inner placeholder:text-zinc-700 focus-visible:border-violet-500 focus-visible:ring-0 disabled:opacity-60 light:border-violet-200 light:bg-white light:text-zinc-900 light:placeholder:text-zinc-400`}
               />
 
               {isLocked ? (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-black/55 backdrop-blur-md">
+                <div className="absolute inset-0 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-black/55 backdrop-blur-md light:border-violet-200 light:bg-white/80">
                   <div className="mx-4 max-w-sm text-center">
-                    <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10">
-                      <Lock className="size-5 text-violet-300" />
+                    <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 light:border-violet-300 light:bg-violet-50">
+                      <Lock className="size-5 text-violet-300 light:text-violet-700" />
                     </div>
-                    <p className="text-sm font-medium text-white">
+                    <p className={`text-sm font-medium ${dash.heading} light:text-violet-950`}>
                       Brand voice requires Pro access
                     </p>
-                    <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    <p className={`mt-2 text-xs leading-relaxed ${dash.body}`}>
                       Save a persistent brand voice that shapes every X,
                       LinkedIn, and Telegram output.
                     </p>

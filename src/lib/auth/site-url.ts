@@ -36,3 +36,10 @@ export function getSiteUrl(): string {
 export function getAuthCallbackUrl(): string {
   return `${getSiteUrl()}/auth/callback`
 }
+
+/** Password recovery — lands on callback, then routes to /reset-password */
+export function getPasswordResetCallbackUrl(): string {
+  const callback = new URL(getAuthCallbackUrl())
+  callback.searchParams.set("next", "reset-password")
+  return callback.toString()
+}

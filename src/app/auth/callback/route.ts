@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
   const oauthError = requestUrl.searchParams.get("error_description")
+  const next = requestUrl.searchParams.get("next")
   const origin = requestUrl.origin
 
   if (oauthError) {
@@ -48,6 +49,11 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("OAuth code exchange failed:", error.message)
+    if (next === "reset-password") {
+      return NextResponse.redirect(
+        `${origin}/forgot-password?error=${encodeURIComponent("expired")}`
+      )
+    }
     return NextResponse.redirect(`${origin}/login?error=oauth`)
   }
 
@@ -62,6 +68,12 @@ export async function GET(request: NextRequest) {
   }
 
   await supabase.auth.refreshSession()
+
+  if (next === "reset-password") {
+    redirectTarget = new URL("/reset-password", origin)
+    response.headers.set("Location", redirectTarget.toString())
+    return response
+  }
 
   const userId = data.user?.id
   let redirectPath: "/dashboard" | "/signup/complete" = "/dashboard"

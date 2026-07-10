@@ -5,6 +5,7 @@ import { Check, Loader2, Lock, Radio, Unlink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { isProTier, type UserTier } from "@/lib/profile"
+import { dash } from "@/lib/dashboard/theme-classes"
 
 type TelegramChannelSettingsProps = {
   tier: UserTier
@@ -108,7 +109,7 @@ export default function TelegramChannelSettings({
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-sm leading-relaxed text-zinc-400">
+        <p className={`text-sm leading-relaxed ${dash.body}`}>
           Connect your Telegram channel to publish generated posts in one click.
           Use @channelusername or a numeric ID (e.g. -1001234567890). Your bot
           must be an admin on the channel.
@@ -116,7 +117,7 @@ export default function TelegramChannelSettings({
       </div>
 
       {!authChecked ? (
-        <div className="h-24 animate-pulse rounded-xl bg-zinc-900/80" />
+        <div className={`h-24 animate-pulse rounded-xl ${dash.skeleton}`} />
       ) : (
         <>
           {connected ? (
@@ -136,7 +137,7 @@ export default function TelegramChannelSettings({
                 onChange={(event) => setDraft(event.target.value)}
                 disabled={isLocked || isSaving || isDisconnecting}
                 placeholder="@mychannel or -1001234567890"
-                className="h-11 border-zinc-800 bg-[#010101] font-mono text-sm text-zinc-200 placeholder:text-zinc-600"
+                className={`h-11 border-zinc-800 bg-[#010101] font-mono text-sm text-zinc-200 placeholder:text-zinc-600 light:border-violet-200 light:bg-white light:text-zinc-900 light:placeholder:text-zinc-400`}
               />
               <Button
                 type="button"
@@ -164,15 +165,15 @@ export default function TelegramChannelSettings({
             </div>
 
             {isLocked ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-black/55 backdrop-blur-md">
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-black/55 backdrop-blur-md light:border-violet-200 light:bg-white/80">
                 <div className="mx-4 max-w-sm text-center">
-                  <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10">
-                    <Lock className="size-5 text-violet-300" />
+                  <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 light:border-violet-300 light:bg-violet-50">
+                    <Lock className="size-5 text-violet-300 light:text-violet-700" />
                   </div>
-                  <p className="text-sm font-medium text-white">
+                  <p className={`text-sm font-medium ${dash.heading} light:text-violet-950`}>
                     Telegram publish requires Pro
                   </p>
-                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                  <p className={`mt-2 text-xs leading-relaxed ${dash.body}`}>
                     Upgrade to Pro to connect and change your Telegram channel.
                   </p>
                 </div>
@@ -186,7 +187,7 @@ export default function TelegramChannelSettings({
               variant="outline"
               onClick={disconnectChannel}
               disabled={isSaving || isDisconnecting}
-              className="h-10 rounded-xl border-zinc-700 bg-transparent text-sm text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+              className="h-10 rounded-xl border-zinc-700 bg-transparent text-sm text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 light:border-violet-300 light:text-violet-700 light:hover:bg-violet-50 light:hover:text-violet-900"
             >
               {isDisconnecting ? (
                 <>

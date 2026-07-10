@@ -35,8 +35,12 @@ function FooterLink({
 
 export default function AppFooter() {
   return (
-    <footer className="border-t border-zinc-900 bg-zinc-950">
-      <div className="mx-auto max-w-6xl px-6 py-14">
+    <footer className="relative border-t border-black bg-black">
+      <div
+        className="pointer-events-none absolute inset-x-0 -top-px h-24 bg-gradient-to-b from-transparent via-violet-950/15 to-black"
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl px-6 py-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <p className="flex items-center gap-2 text-sm font-bold text-white">
@@ -90,7 +94,7 @@ export default function AppFooter() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-zinc-900 pt-8">
+        <div className="mt-10 border-t border-zinc-900/50 pt-8">
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {footerLinks.resources.map((link) => (
               <li key={link.label}>
@@ -100,7 +104,7 @@ export default function AppFooter() {
           </ul>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-zinc-900 pt-6 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-zinc-900/50 pt-6 sm:flex-row">
           <p className="text-sm text-zinc-600">
             © {new Date().getFullYear()} PulseFlow. Built by an indie developer.
           </p>

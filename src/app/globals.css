@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(html.light *));
 
 @theme inline {
   --color-background: var(--background);
@@ -90,13 +91,86 @@
 
   html {
     @apply scroll-smooth font-sans antialiased;
+    transition:
+      background-color 0.55s ease,
+      color 0.55s ease;
   }
 
   body {
     @apply bg-background text-foreground;
     background-color: #000000;
     color: #f9fafb;
+    transition:
+      background-color 0.55s ease,
+      color 0.55s ease;
   }
+
+  html.light body {
+    background-color: #ffffff;
+    color: #18181b;
+  }
+
+html.light [data-dashboard-shell] {
+  color: #18181b;
+}
+
+html.light [data-dashboard-shell] .bg-card,
+html.light [data-dashboard-shell] [data-slot="card"] {
+  background-color: #ffffff !important;
+  border-color: #e9e5f5 !important;
+  color: #18181b !important;
+}
+
+html.light [data-dashboard-shell] input,
+html.light [data-dashboard-shell] textarea {
+  background-color: #ffffff !important;
+  border-color: #ddd6fe !important;
+  color: #18181b !important;
+}
+
+html.light [data-dashboard-shell] input::placeholder,
+html.light [data-dashboard-shell] textarea::placeholder {
+  color: #a1a1aa !important;
+}
+
+html.light [data-dashboard-shell] h1,
+html.light [data-dashboard-shell] h2,
+html.light [data-dashboard-shell] header h1 {
+  color: #18181b;
+}
+
+html.light [data-dashboard-shell] article.rounded-2xl,
+html.light [data-dashboard-shell] section.rounded-2xl.border {
+  background-color: #ffffff;
+  border-color: #e9e5f5;
+}
+
+html.light [data-dashboard-shell] .text-zinc-100,
+html.light [data-dashboard-shell] .text-zinc-200 {
+  color: #3f3f46;
+}
+
+html.light [data-dashboard-shell] .text-zinc-300 {
+  color: #52525b;
+}
+
+html.light [data-dashboard-shell] .text-zinc-400 {
+  color: #6d28d9;
+}
+
+html.light [data-dashboard-shell] .text-zinc-500 {
+  color: #7c3aed;
+}
+
+html.light [data-dashboard-shell] .text-zinc-600 {
+  color: #6b7280;
+}
+
+html.light [data-dashboard-shell] .bg-\[\#020202\],
+html.light [data-dashboard-shell] .bg-\[\#050505\],
+html.light [data-dashboard-shell] .bg-\[\#010101\] {
+  background-color: #ffffff;
+}
 
   a {
     @apply no-underline;
@@ -656,4 +730,99 @@
 
 .mobile-safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes dashboard-view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-nav-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dashboard-view-enter {
+  animation: dashboard-view-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-nav-item {
+  animation: dashboard-nav-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-view-enter,
+  .dashboard-nav-item {
+    animation: none;
+  }
+}
+
+/* Iubenda cookie banner — PulseFlow black + violet */
+#iubenda-cs-banner,
+.iubenda-cs-default,
+#iubenda-cs-popup,
+.iubenda-cs-content {
+  background: #000000 !important;
+  color: #e4e4e7 !important;
+  border-color: rgba(139, 92, 246, 0.35) !important;
+  box-shadow: 0 24px 64px -24px rgba(139, 92, 246, 0.45) !important;
+}
+
+#iubenda-cs-title,
+.iubenda-cs-rationale p,
+.iubenda-cs-rationale a {
+  color: #fafafa !important;
+}
+
+.iubenda-cs-rationale a {
+  color: #c4b5fd !important;
+}
+
+.iubenda-cs-btn.iubenda-cs-accept-btn,
+.iubenda-cs-btn.iubenda-cs-btn-primary {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(167, 139, 250, 0.45) !important;
+  border-radius: 0.75rem !important;
+}
+
+.iubenda-cs-btn.iubenda-cs-reject-btn,
+.iubenda-cs-btn.iubenda-cs-btn-secondary {
+  background: transparent !important;
+  color: #d4d4d8 !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  border-radius: 0.75rem !important;
+}
+
+.iubenda-cs-close-btn {
+  color: #a1a1aa !important;
+}
+
+#iubenda-cs-banner .iubenda-cs-opt-group {
+  border-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+html.light #iubenda-cs-banner,
+html.light .iubenda-cs-default,
+html.light #iubenda-cs-popup,
+html.light .iubenda-cs-content {
+  background: #f8f8fc !important;
+  color: #27272a !important;
+}
+
+html.light #iubenda-cs-title,
+html.light .iubenda-cs-rationale p {
+  color: #18181b !important;
 }

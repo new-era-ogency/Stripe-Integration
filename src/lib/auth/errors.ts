@@ -33,6 +33,20 @@ export function getAuthErrorMessage(error: AuthError): string {
     return "Please confirm your email before signing in."
   }
 
+  if (
+    message.includes("same password") ||
+    message.includes("different from the old")
+  ) {
+    return "Choose a new password that is different from your current one."
+  }
+
+  if (
+    message.includes("expired") ||
+    (message.includes("invalid") && message.includes("token"))
+  ) {
+    return "This reset link has expired. Request a new password reset email."
+  }
+
   if (message.includes("username is already taken")) {
     return "That username is already taken. Try another one."
   }

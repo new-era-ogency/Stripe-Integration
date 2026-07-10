@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   FileAudio,
   FileText,
@@ -26,13 +26,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import type { ContentSourceInput, ContentSourceTab } from "@/lib/content-sources/types"
+import type {
+  ContentSourceInput,
+  ContentSourceTab,
+} from "@/lib/content-sources/types"
 import type { GenerationProgressState } from "@/lib/generation/progress"
 import type { UserTier } from "@/lib/profile"
 import {
   validateWhisperUploadFile,
   WHISPER_MAX_FILE_BYTES,
 } from "@/lib/openai/whisper-transcribe"
+import { dash } from "@/lib/dashboard/theme-classes"
 import { cn } from "@/lib/utils"
 
 type StylePreset = "viral-thread" | "deep-dive" | "punchy-short"
@@ -79,18 +83,18 @@ const TAB_ITEMS: {
 const tabTriggerClassName = cn(
   "inline-flex h-10 min-w-[5.5rem] shrink-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-xs font-medium text-zinc-400 transition-colors sm:min-w-0 sm:px-3 sm:text-sm",
   "after:hidden",
-  "data-[state=active]:border-violet-500/40 data-[state=active]:bg-violet-500/15 data-[state=active]:text-violet-100 data-[state=active]:shadow-none",
+  "data-[state=active]:border-violet-500/40 data-[state=active]:bg-violet-500/15 data-[state=active]:text-violet-100 data-[state=active]:shadow-none light:text-violet-600 light:data-[state=active]:border-violet-400 light:data-[state=active]:bg-violet-50 light:data-[state=active]:text-violet-900",
   "dark:data-[state=active]:border-violet-500/40 dark:data-[state=active]:bg-violet-500/15 dark:data-[state=active]:text-violet-100"
 )
 
 const sourcePanelClassName =
-  "space-y-2 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-4 sm:p-5"
+  "space-y-2 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-4 sm:p-5 light:border-violet-200 light:bg-white"
 
 const inputClassName =
-  "demo-input-glow h-12 rounded-xl border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20 disabled:opacity-60"
+  "demo-input-glow h-12 rounded-xl border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20 disabled:opacity-60 light:border-violet-200 light:bg-white light:text-zinc-900 light:placeholder:text-zinc-400"
 
 const textareaClassName =
-  "min-h-[160px] resize-y rounded-xl border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20 disabled:opacity-60"
+  "min-h-[160px] resize-y rounded-xl border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20 disabled:opacity-60 light:border-violet-200 light:bg-white light:text-zinc-900 light:placeholder:text-zinc-400"
 
 type DashboardCreateWorkspaceProps = {
   stylePreset: StylePreset
@@ -102,6 +106,7 @@ type DashboardCreateWorkspaceProps = {
   hasOpenAiKey: boolean
   onGenerate: (source: ContentSourceInput) => void
   onStopGeneration?: () => void
+  initialSourceTab?: ContentSourceTab
 }
 
 function formatFileSize(bytes: number): string {
@@ -121,9 +126,14 @@ export default function DashboardCreateWorkspace({
   hasOpenAiKey,
   onGenerate,
   onStopGeneration,
+  initialSourceTab = "youtube",
 }: DashboardCreateWorkspaceProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [activeTab, setActiveTab] = useState<ContentSourceTab>("youtube")
+  const [activeTab, setActiveTab] = useState<ContentSourceTab>(initialSourceTab)
+
+  useEffect(() => {
+    setActiveTab(initialSourceTab)
+  }, [initialSourceTab])
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [articleUrl, setArticleUrl] = useState("")
   const [articleText, setArticleText] = useState("")
@@ -222,21 +232,21 @@ export default function DashboardCreateWorkspace({
 
   return (
     <section id="create" className="scroll-mt-36">
-      <Card className="overflow-hidden gap-0 rounded-2xl border-violet-500/20 bg-zinc-950 py-0 shadow-[0_24px_80px_-40px_rgba(139,92,246,0.45)]">
-        <div className="border-b border-violet-500/15 bg-gradient-to-r from-violet-600/10 via-fuchsia-600/5 to-transparent px-6 py-5 sm:px-8">
+      <Card className={`overflow-hidden gap-0 rounded-2xl border-violet-500/20 py-0 shadow-[0_24px_80px_-40px_rgba(139,92,246,0.45)] ${dash.panel} light:shadow-[0_8px_32px_-16px_rgba(109,40,217,0.12)]`}>
+        <div className="border-b border-violet-500/15 bg-gradient-to-r from-violet-600/10 via-fuchsia-600/5 to-transparent px-6 py-5 sm:px-8 light:from-violet-50 light:via-white light:to-violet-50/30">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-200">
               BYOK dashboard
             </span>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-zinc-500 light:text-violet-700">
               YouTube · articles · raw text · audio/video
             </span>
           </div>
           <CardHeader className="space-y-2 px-0 pt-4 pb-0">
-            <CardTitle className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+            <CardTitle className={`text-xl font-semibold tracking-tight sm:text-2xl ${dash.heading} light:text-violet-950`}>
               Create your content
             </CardTitle>
-            <CardDescription className="max-w-2xl text-sm text-zinc-400">
+            <CardDescription className={`max-w-2xl text-sm ${dash.body}`}>
               Choose any source, pick a tone, and generate with your connected
               OpenAI key — privately, from your browser.
             </CardDescription>
@@ -248,7 +258,7 @@ export default function DashboardCreateWorkspace({
               return (
                 <li
                   key={step.label}
-                  className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950/80 px-3 py-1.5 text-xs text-zinc-300"
+                  className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950/80 px-3 py-1.5 text-xs text-zinc-300 light:border-violet-200 light:bg-white light:text-violet-800"
                 >
                   <span className="font-mono text-[10px] text-violet-400">
                     {index + 1}
@@ -269,7 +279,7 @@ export default function DashboardCreateWorkspace({
           >
             <TabsList
               variant="line"
-              className="flex h-auto w-full gap-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex h-auto w-full gap-1 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-1.5 [scrollbar-width:none] light:border-violet-200 light:bg-violet-50/50 [&::-webkit-scrollbar]:hidden"
             >
               {TAB_ITEMS.map((tab) => {
                 const Icon = tab.icon
@@ -289,7 +299,7 @@ export default function DashboardCreateWorkspace({
 
             <TabsContent value="youtube" className="mt-0 focus-visible:outline-none">
               <div className={sourcePanelClassName}>
-              <Label htmlFor="youtube-url" className="text-sm text-zinc-300">
+              <Label htmlFor="youtube-url" className={dash.fieldLabel}>
                 YouTube URL
               </Label>
               <Input
@@ -313,7 +323,7 @@ export default function DashboardCreateWorkspace({
             <TabsContent value="article" className="mt-0 focus-visible:outline-none">
               <div className={cn(sourcePanelClassName, "space-y-4")}>
               <div className="space-y-2">
-                <Label htmlFor="article-url" className="text-sm text-zinc-300">
+                <Label htmlFor="article-url" className={dash.fieldLabel}>
                   Article URL
                 </Label>
                 <Input
@@ -333,7 +343,7 @@ export default function DashboardCreateWorkspace({
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="article-text" className="text-sm text-zinc-300">
+                <Label htmlFor="article-text" className={dash.fieldLabel}>
                   Or paste article text
                 </Label>
                 <Textarea
@@ -350,7 +360,7 @@ export default function DashboardCreateWorkspace({
 
             <TabsContent value="text" className="mt-0 focus-visible:outline-none">
               <div className={sourcePanelClassName}>
-              <Label htmlFor="raw-text" className="text-sm text-zinc-300">
+              <Label htmlFor="raw-text" className={dash.fieldLabel}>
                 Raw source text
               </Label>
               <Textarea
@@ -359,7 +369,7 @@ export default function DashboardCreateWorkspace({
                 onChange={(event) => setRawText(event.target.value)}
                 disabled={isGuest || isLoading}
                 placeholder="Paste a video script, brainstorm notes, transcript draft, or any source material…"
-                className="min-h-[220px] resize-y rounded-xl border-zinc-800 bg-zinc-900/80 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/20 disabled:opacity-60"
+                className={cn(textareaClassName, "min-h-[220px]")}
               />
               <p className="text-xs text-zinc-600">
                 Skips all transcript fetching — your text goes straight into
@@ -399,17 +409,17 @@ export default function DashboardCreateWorkspace({
                   "flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-10 text-center transition-all",
                   isDragOver
                     ? "border-violet-500/50 bg-violet-500/10"
-                    : "border-zinc-700 bg-zinc-900/40 hover:border-violet-500/30 hover:bg-violet-500/5",
+                    : "border-zinc-700 bg-zinc-900/40 hover:border-violet-500/30 hover:bg-violet-500/5 light:border-violet-200 light:bg-violet-50/30 light:hover:border-violet-300 light:hover:bg-violet-50",
                   (isGuest || isLoading) && "pointer-events-none opacity-50"
                 )}
               >
                 <span className="mb-3 flex size-12 items-center justify-center rounded-xl border border-violet-500/25 bg-violet-500/10 text-violet-300">
                   <Upload className="size-5" />
                 </span>
-                <p className="text-sm font-medium text-white">
+                <p className={`text-sm font-medium ${dash.heading} light:text-violet-950`}>
                   Drop audio or video here
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className={`mt-1 text-xs ${dash.muted}`}>
                   mp3, wav, mp4, m4a · max{" "}
                   {formatFileSize(WHISPER_MAX_FILE_BYTES)}
                 </p>
@@ -440,7 +450,7 @@ export default function DashboardCreateWorkspace({
           {keyHelper}
 
           <div className="space-y-3">
-            <Label className="text-sm text-zinc-300">Tone / style preset</Label>
+            <Label className={dash.fieldLabel}>Tone / style preset</Label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
               {STYLE_PRESETS.map((preset) => {
                 const selected = stylePreset === preset.id
@@ -453,19 +463,19 @@ export default function DashboardCreateWorkspace({
                     className={cn(
                       "flex min-h-[4.5rem] flex-col rounded-xl border px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50",
                       selected
-                        ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/30"
-                        : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900"
+                        ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/30 light:border-violet-400 light:bg-violet-50 light:ring-violet-200"
+                        : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900 light:border-violet-200 light:bg-white light:hover:border-violet-300 light:hover:bg-violet-50"
                     )}
                   >
                     <p
                       className={cn(
                         "text-sm font-medium",
-                        selected ? "text-white" : "text-zinc-200"
+                        selected ? `${dash.heading} light:text-violet-950` : "text-zinc-200 light:text-violet-800"
                       )}
                     >
                       {preset.label}
                     </p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+                    <p className={`mt-0.5 text-xs leading-relaxed ${dash.muted}`}>
                       {preset.description}
                     </p>
                   </button>
