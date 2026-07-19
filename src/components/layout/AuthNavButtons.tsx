@@ -77,12 +77,6 @@ export default function AuthNavButtons({
 
   return (
     <div className="flex items-center gap-2">
-      <Link
-        href="/dashboard"
-        className="hidden rounded-lg border border-violet-500/35 bg-violet-500/15 px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-violet-200 transition-colors hover:bg-violet-500/25 sm:inline-flex"
-      >
-        Dashboard
-      </Link>
       <Link href="/login" className={signInClassName}>
         Sign In
       </Link>
